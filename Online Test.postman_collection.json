@@ -1,0 +1,2213 @@
+{
+	"info": {
+		"_postman_id": "b4cd02dc-f876-4ed0-8b20-2240750ec66e",
+		"name": "Online Test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30163715",
+		"_collection_link": "https://technofra.postman.co/workspace/Crackteck~6f574279-4adb-4b14-8890-a1d8b0bc90ec/collection/30163715-b4cd02dc-f876-4ed0-8b20-2240750ec66e?action=share&source=collection_link&creator=30163715"
+	},
+	"item": [
+		{
+			"name": "Sales Person App",
+			"item": [
+				{
+					"name": "Authentication",
+					"item": [
+						{
+							"name": "Send OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/send-otp?phone_number=7709131547&role_id=3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"send-otp"
+									],
+									"query": [
+										{
+											"key": "phone_number",
+											"value": "7709131547"
+										},
+										{
+											"key": "role_id",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/verify-otp?phone_number=8928339535&role_id=3&otp=2821",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"verify-otp"
+									],
+									"query": [
+										{
+											"key": "phone_number",
+											"value": "8928339535"
+										},
+										{
+											"key": "role_id",
+											"value": "3"
+										},
+										{
+											"key": "otp",
+											"value": "2821"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Refresh Token",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTAyMTgxOCwiZXhwIjoxNzY1MDI1NDE4LCJuYmYiOjE3NjUwMjE4MTgsImp0aSI6Im9MSGxoeEVwRnJISHNUdDkiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.rvcTIdpPqjxskXuBn-4eLpqxeKriIEHRhph-Sev_Epk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/refresh-token?user_id=2&role_id=3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"refresh-token"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "New Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Leads",
+					"item": [
+						{
+							"name": "List of Leads",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/leads?user_id=2&role_id=3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"leads"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single Lead",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/lead/51?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"lead",
+										"51"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Lead",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"full_name\": \"Marguerite Parker2\",\r\n    \"phone\": \"8281385393\",\r\n    \"email\": \"mparker2@example.com\",\r\n    \"dob\": \"2008-04-02\",\r\n    \"gender\": \"male\",\r\n    \"company_name\": \"Hahn Group\",\r\n    \"designation\": \"Driver-Sales Worker\",\r\n    \"industry_type\": \"school\",\r\n    \"source\": \"event\",\r\n    \"requirement_type\": \"biometric\",\r\n    \"budget_range\": \"10K-50K\",\r\n    \"urgency\": \"Low\",\r\n    \"status\": \"Lost\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/lead/11?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"lead",
+										"11"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Lead",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NDkxOTY3MCwiZXhwIjoxNzY0OTIzMjcwLCJuYmYiOjE3NjQ5MTk2NzAsImp0aSI6IkNjaEd2d1Q0VDJnelNpNkkiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.t1E3ssnXKVjC_9rz9930Se0_1GwH0zrfrhUyYjFnE9c",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/lead/11?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"lead",
+										"11"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Lead",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"user_id\": 2,\r\n    \"name\": \"Saurabh Damale\",\r\n    \"company_name\": \"TechNova Solutions\",\r\n    \"designation\": \"Project Manager\",\r\n    \"phone\": \"9876543210\",\r\n    \"email\": \"saurabh2.damale@example.com\",\r\n\r\n    \"dob\": \"1990-06-15\",\r\n    \"gender\": \"Male\",\r\n    \r\n    \"address\": \"MG Road, Andheri East, Mumbai\",\r\n    \"budget_range\": \"50,000 - 1,00,000\",\r\n    \"source\": \"Google Ads\",\r\n    \"urgency\": \"High\",\r\n    \"requirement_type\": \"Website Development\",\r\n    \"industry_type\": \"IT Services\",\r\n    \"status\": \"New\"\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/lead",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"lead"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Follow Ups",
+					"item": [
+						{
+							"name": "Follow Up List",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/follow-up?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"follow-up"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single Follow Up",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/follow-up/9?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"follow-up",
+										"9"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Follow Up",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"status\": \"Done\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/follow-up/1?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"follow-up",
+										"1"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Follow Up",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/follow-up/1?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"follow-up",
+										"1"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Follow Up",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"user_id\": 2,\r\n    \"lead_id\": 9,\r\n    \"followup_date\": \"2025-12-10\",\r\n    \"followup_time\": \"15:30\",\r\n    \"status\": \"Pending\",\r\n    \"remarks\": \"Client will confirm budget in next call\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/follow-up?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"follow-up"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Meets",
+					"item": [
+						{
+							"name": "List of Meets",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/meets?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"meets"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single Meet",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/meet/10?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"meet",
+										"10"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Meet",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"meet_title\": \"Initial3 Consultation3\",\r\n    \"meeting_type\": \"Technical Visit\",\r\n    \"date\": \"1982-12-04\",\r\n    \"time\": \"16:21:24\",\r\n    \"location\": \"10804 Larkin Turnpike Apt. 716\\nLake Wilmer, CT 10601-1103\",\r\n    \"attachment\": \"https://via.placeholder.com/640x480.png/005577?text=molestias\",\r\n    \"meetAgenda\": \"Similique doloribus magnam eum sint4.\",\r\n    \"followUp\": \"Eaque molestiae minus nulla neque in consequatur nostrum4.\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/meet/10?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"meet",
+										"10"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Meet",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NDkzMDQwMSwiZXhwIjoxNzY0OTM0MDAxLCJuYmYiOjE3NjQ5MzA0MDEsImp0aSI6IkhPVWQ1bGZ5WUJuUldBdFkiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.2iHt2n0Y87v4l6RYTkkQGUYQHgzksiOHdqr7me-hI9c",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/meet/2?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"meet",
+										"2"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Meet",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"user_id\": 2,\r\n    \"lead_id\": 51,\r\n    \"meet_title\": \"Initial Consultation\",\r\n    \"meeting_type\": \"Onsite Demo\",\r\n    \"date\": \"2025-12-05\",\r\n    \"time\": \"11:00\",\r\n    \"location\": \"Client Office, Thane\",\r\n    \"attachment\": \"proposal.pdf\",\r\n    \"meetAgenda\": \"Understand project requirements and timeline\",\r\n    \"followUp\": \"Share revised proposal and schedule next meeting\",\r\n    \"status\": \"Scheduled\"\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/meet",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"meet"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Quotation",
+					"item": [
+						{
+							"name": "List of Quotation",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quotation?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quotation"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single Quotation",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quotation/6?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quotation",
+										"6"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Quotation",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"id\": 6,\r\n    \"user_id\": 2,\r\n    \"lead_id\": \"41\",\r\n    \"quote_id\": \"Q-00698\",\r\n    \"quote_date\": \"1999-11-06\",\r\n    \"expiry_date\": \"1976-06-07\",\r\n    \"products\": [\r\n        {\r\n            \"id\": 2,\r\n            \"quotation_id\": 6,\r\n            \"product_name\": \"Dell 3\",\r\n            \"hsn_code\": \"3\",\r\n            \"sku\": \"3\",\r\n            \"price\": \"792.47\",\r\n            \"quantity\": 25,\r\n            \"tax\": \"8.80\",\r\n            \"total\": \"454.30\"\r\n        },\r\n        {\r\n            \"id\": 4,\r\n            \"quotation_id\": 6,\r\n            \"product_name\": \"Dell 4\",\r\n            \"hsn_code\": \"4\",\r\n            \"sku\": \"4\",\r\n            \"price\": \"69.63\",\r\n            \"quantity\": 85,\r\n            \"tax\": \"6.36\",\r\n            \"total\": \"377.81\"\r\n        }\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quotation/6?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quotation",
+										"6"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Quotation",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quotation/6?user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quotation",
+										"6"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Quotation",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTAwNDg5MSwiZXhwIjoxNzY1MDA4NDkxLCJuYmYiOjE3NjUwMDQ4OTEsImp0aSI6ImtOR0xrTDFaUnFWa2VJcFkiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.S3jp4BAqitK7g2tKtRVoyhQTgX3ZCsKtnb8v41J6etI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"user_id\": 2,\r\n    \"lead_id\": \"29\",\r\n    \"quote_id\": \"Q-00331\",\r\n    \"quote_date\": \"2010-01-05\",\r\n    \"expiry_date\": \"1989-04-11\",\r\n    \"products\": [\r\n        {\r\n            \"quotation_id\": 3,\r\n            \"product_name\": \"Dell 3\",\r\n            \"hsn_code\": \"3\",\r\n            \"sku\": \"3\",\r\n            \"price\": \"792.47\",\r\n            \"quantity\": 25,\r\n            \"tax\": \"8.80\",\r\n            \"total\": \"454.30\"\r\n        },\r\n        {\r\n            \"quotation_id\": 3,\r\n            \"product_name\": \"Dell 4\",\r\n            \"hsn_code\": \"4\",\r\n            \"sku\": \"4\",\r\n            \"price\": \"69.63\",\r\n            \"quantity\": 85,\r\n            \"tax\": \"6.36\",\r\n            \"total\": \"377.81\"\r\n        }\r\n    ]\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quotation",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quotation"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Product",
+					"item": [
+						{
+							"name": "List Products",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/product?role_id=3&search=Dell",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"product"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "3"
+										},
+										{
+											"key": "search",
+											"value": "Dell"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvcmVmcmVzaC10b2tlbiIsImlhdCI6MTc2NTI1MzkxMCwiZXhwIjoxNzY1MjU3NTI0LCJuYmYiOjE3NjUyNTM5MjQsImp0aSI6ImFRZkd5V0pVU0o3aUlFa2giLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.xmd9KkzpJ1XJacIuDSsYJhyrM0kRPQVReL2R__t9nZE",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/product/3?role_id=3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"product",
+										"3"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Profile",
+					"item": [
+						{
+							"name": "Profile Page",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/profile?role_id=3&user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"profile"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "3"
+										},
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Profile",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"first_name\": \"Roshan\",\r\n    \"last_name\": \"Yadav\",\r\n    \"phone\": \"8928339535\",\r\n    \"email\": \"roshan.yadav@technofra.com\",\r\n    \"dob\": \"2000-01-01\",\r\n    \"gender\": \"male\",\r\n    \"current_address\": \"Whitefield\",\r\n    \"city\": \"Bengaluru\",\r\n    \"state\": \"Karnataka\",\r\n    \"country\": \"India\",\r\n    \"pincode\": \"560066\",\r\n    \"employment_type\": \"Full-time\",\r\n    \"joining_date\": \"2022-04-22\",\r\n    \"police_verification\": \"Yes\",\r\n    \"police_verification_status\": \"Completed\",\r\n    \"police_certificate\": null\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/profile?role_id=3&user_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"profile"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "3"
+										},
+										{
+											"key": "user_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Attendance",
+					"item": [
+						{
+							"name": "Attendance Page",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://crackteck.co.in/api/v1/attendance?user_id=2&role_id=2",
+									"protocol": "http",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"attendance"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Login Attendance",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/attendance?user_id=2&role_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"attendance"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Logout Attendance",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM2MDQzOCwiZXhwIjoxNzY1MzY0MDM4LCJuYmYiOjE3NjUzNjA0MzgsImp0aSI6IkJrSXpPbWNGUlFQQWwya0ciLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.U3v50tdUqAiCy2RYjWjFh9mUxOXL-X1yK1e79A0fsbk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/attendance-logout?user_id=2&role_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"attendance-logout"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Dashboard",
+					"item": [
+						{
+							"name": "Dashboard",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/dashboard?user_id=2&role_id=3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"dashboard"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Sales Overview",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/sales-overview?user_id=1",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sales-overview"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Tasks",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM1NzcxMywiZXhwIjoxNzY1MzYxMzEzLCJuYmYiOjE3NjUzNTc3MTMsImp0aSI6IkxGNTRwZ1pFQVRFRXBzUEUiLCJzdWIiOiIyIiwicHJ2IjoiYmNkNmY4YWRhOTgyY2Q2YjAzYzExMTM0YWUyZTE5OGYwNjRmZDkwMyJ9.3LhvAbmNL-g9pu_2rOhcUIAUmua2qwwE-Y24IsvzVYI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/task?user_id=1",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"task"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Customer App",
+			"item": [
+				{
+					"name": "Authentication",
+					"item": [
+						{
+							"name": "Send OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/send-otp?phone_number=8928339535&role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"send-otp"
+									],
+									"query": [
+										{
+											"key": "phone_number",
+											"value": "8928339535"
+										},
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/verify-otp?phone_number=8928339535&role_id=4&otp=3788",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"verify-otp"
+									],
+									"query": [
+										{
+											"key": "phone_number",
+											"value": "8928339535"
+										},
+										{
+											"key": "role_id",
+											"value": "4"
+										},
+										{
+											"key": "otp",
+											"value": "3788"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Refresh Token",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTI1NDE0NCwiZXhwIjoxNzY1MjU3NzQ0LCJuYmYiOjE3NjUyNTQxNDQsImp0aSI6Imx3bmQ3MnRVc052WlYxMksiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.aC7emAqDETkB2DaPIde8seywMALq-pDDxZH5vJuMekM",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/refresh-token?user_id=2&role_id=3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"refresh-token"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Register",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTAyMjYxOCwiZXhwIjoxNzY1MDI2MjE4LCJuYmYiOjE3NjUwMjI2MTgsImp0aSI6IlN6d295Z0tkcjRpVm9IdU8iLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.6dhMqcV8yp2Euf5_vjce31xYQjRiokW2rET6B7aW4Sg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "first_name",
+											"value": "Roshan",
+											"type": "text"
+										},
+										{
+											"key": "last_name",
+											"value": "Yadav",
+											"type": "text"
+										},
+										{
+											"key": "phone",
+											"value": "8928339536",
+											"type": "text"
+										},
+										{
+											"key": "email",
+											"value": "roshany544@gmail.com",
+											"type": "text"
+										},
+										{
+											"key": "dob",
+											"value": "2003-01-01",
+											"type": "text"
+										},
+										{
+											"key": "gender",
+											"value": "male",
+											"type": "text"
+										},
+										{
+											"key": "pan_no",
+											"value": "132465789",
+											"type": "text"
+										},
+										{
+											"key": "company_name",
+											"value": "technofra",
+											"type": "text"
+										},
+										{
+											"key": "company_addr",
+											"value": "kandivali",
+											"type": "text"
+										},
+										{
+											"key": "gst_no",
+											"value": "789456132789456",
+											"type": "text"
+										},
+										{
+											"key": "customer_type",
+											"value": "Customer App",
+											"type": "text"
+										},
+										{
+											"key": "branch_name",
+											"value": "malad",
+											"type": "text"
+										},
+										{
+											"key": "address",
+											"value": "qwert",
+											"type": "text"
+										},
+										{
+											"key": "address2",
+											"value": "asdfg",
+											"type": "text"
+										},
+										{
+											"key": "city",
+											"value": "mumbai",
+											"type": "text"
+										},
+										{
+											"key": "state",
+											"value": "maharashtra",
+											"type": "text"
+										},
+										{
+											"key": "country",
+											"value": "india",
+											"type": "text"
+										},
+										{
+											"key": "pincode",
+											"value": "400097",
+											"type": "text"
+										},
+										{
+											"key": "role_id",
+											"value": "4",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/signup",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"signup"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Logout",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTAyMjYxOCwiZXhwIjoxNzY1MDI2MjE4LCJuYmYiOjE3NjUwMjI2MTgsImp0aSI6IlN6d295Z0tkcjRpVm9IdU8iLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.6dhMqcV8yp2Euf5_vjce31xYQjRiokW2rET6B7aW4Sg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/logout?user_id=2&role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"logout"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Products",
+					"item": [
+						{
+							"name": "List of Products",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0MTgyOSwiZXhwIjoxNzY1MzQ1NDI5LCJuYmYiOjE3NjUzNDE4MjksImp0aSI6IjE4TmlmUWtQNnhOTjN0UVoiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.S4ooLRBmjJYPNUv8UVq_IGdslPVXleXLiWctZntX4PI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/product?role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"product"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0MTgyOSwiZXhwIjoxNzY1MzQ1NDI5LCJuYmYiOjE3NjUzNDE4MjksImp0aSI6IjE4TmlmUWtQNnhOTjN0UVoiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.S4ooLRBmjJYPNUv8UVq_IGdslPVXleXLiWctZntX4PI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/product/2?role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"product",
+										"2"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Buy Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0MTgyOSwiZXhwIjoxNzY1MzQ1NDI5LCJuYmYiOjE3NjUzNDE4MjksImp0aSI6IjE4TmlmUWtQNnhOTjN0UVoiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.S4ooLRBmjJYPNUv8UVq_IGdslPVXleXLiWctZntX4PI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/buy-product/3/?role_id=4&quantity=2&customer_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"buy-product",
+										"3",
+										""
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "4"
+										},
+										{
+											"key": "quantity",
+											"value": "2"
+										},
+										{
+											"key": "customer_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Order Product",
+					"item": [
+						{
+							"name": "Order",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0NDQ4NSwiZXhwIjoxNzY1MzQ4MDg1LCJuYmYiOjE3NjUzNDQ0ODUsImp0aSI6Im5oOWxUNEVvRUlWNGJ6dzMiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.4IrIvBPzPOxids0l215sEt7knP3tCcJFvWTIyyNbTd4",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/order?role_id=4&customer_id=2",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"order"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "4"
+										},
+										{
+											"key": "customer_id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Order Details Page",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0NDQ4NSwiZXhwIjoxNzY1MzQ4MDg1LCJuYmYiOjE3NjUzNDQ0ODUsImp0aSI6Im5oOWxUNEVvRUlWNGJ6dzMiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.4IrIvBPzPOxids0l215sEt7knP3tCcJFvWTIyyNbTd4",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/order/2?role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"order",
+										"2"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Profile",
+					"item": [
+						{
+							"name": "Profile",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0MTgyOSwiZXhwIjoxNzY1MzQ1NDI5LCJuYmYiOjE3NjUzNDE4MjksImp0aSI6IjE4TmlmUWtQNnhOTjN0UVoiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.S4ooLRBmjJYPNUv8UVq_IGdslPVXleXLiWctZntX4PI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/profile?user_id=2&role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"profile"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "2"
+										},
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Edit Customer Profile",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0MTgyOSwiZXhwIjoxNzY1MzQ1NDI5LCJuYmYiOjE3NjUzNDE4MjksImp0aSI6IjE4TmlmUWtQNnhOTjN0UVoiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.S4ooLRBmjJYPNUv8UVq_IGdslPVXleXLiWctZntX4PI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"user_id\": 2,\r\n    \"role_id\": 4,\r\n    \"first_name\": \"Roshan\",\r\n    \"last_name\": \"Yadav\",\r\n    \"phone\": \"8928339535\",\r\n    \"email\": \"support@technofra.in\",\r\n    \"dob\": \"2000-11-20\",\r\n    \"branch_name\": \"Mumbai\",\r\n    \"gender\": \"male\",\r\n    \"pan_no\": \"FGHIJ5678K\",\r\n    \"company_name\": \"Technofra\",\r\n    \"company_addr\": \"Kandivali\",\r\n    \"gst_no\": \"987564231852\",\r\n    \"customer_type\": \"AMC Customer\",\r\n    \"branches\": [\r\n        {\r\n            \"id\": 3,\r\n            \"customer_id\": 2,\r\n            \"branch_name\": \"Pune2\",\r\n            \"address\": \"400 MG Road\",\r\n            \"address2\": \"Apt 400\",\r\n            \"city\": \"Pune\",\r\n            \"state\": \"Maharashtra\",\r\n            \"country\": \"India\",\r\n            \"pincode\": \"400011\",\r\n            \"is_primary\": 1\r\n        }\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/profile",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Quick Services",
+					"item": [
+						{
+							"name": "Services List",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0NDQ4NSwiZXhwIjoxNzY1MzQ4MDg1LCJuYmYiOjE3NjUzNDQ0ODUsImp0aSI6Im5oOWxUNEVvRUlWNGJ6dzMiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.4IrIvBPzPOxids0l215sEt7knP3tCcJFvWTIyyNbTd4",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quick-service?role_id=4",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quick-service"
+									],
+									"query": [
+										{
+											"key": "role_id",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Service Form",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0NDQ4NSwiZXhwIjoxNzY1MzQ4MDg1LCJuYmYiOjE3NjUzNDQ0ODUsImp0aSI6Im5oOWxUNEVvRUlWNGJ6dzMiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.4IrIvBPzPOxids0l215sEt7knP3tCcJFvWTIyyNbTd4",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "customer_id",
+											"value": "4",
+											"type": "text"
+										},
+										{
+											"key": "product_name",
+											"value": "Dell 12",
+											"type": "text"
+										},
+										{
+											"key": "model_no",
+											"value": "987",
+											"type": "text"
+										},
+										{
+											"key": "sku",
+											"value": "897",
+											"type": "text"
+										},
+										{
+											"key": "hsn",
+											"value": "879",
+											"type": "text"
+										},
+										{
+											"key": "brand",
+											"value": "Hp",
+											"type": "text"
+										},
+										{
+											"key": "issue",
+											"value": "display",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/C:/Users/TECHNOFRA-SACHIN/Downloads/Crack/header-product-3.png"
+										},
+										{
+											"key": "role_id",
+											"value": "4",
+											"type": "text"
+										},
+										{
+											"key": "quick_service_id",
+											"value": "1",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/quick-service/3",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"quick-service",
+										"3"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "NON AMC Request",
+					"item": [
+						{
+							"name": "Installation Request",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NyYWNrdGVjay5jby5pbi9hcGkvdjEvdmVyaWZ5LW90cCIsImlhdCI6MTc2NTM0NDQ4NSwiZXhwIjoxNzY1MzQ4MDg1LCJuYmYiOjE3NjUzNDQ0ODUsImp0aSI6Im5oOWxUNEVvRUlWNGJ6dzMiLCJzdWIiOiIyIiwicHJ2IjoiMWQwYTAyMGFjZjVjNGI2YzQ5Nzk4OWRmMWFiZjBmYmQ0ZThjOGQ2MyJ9.4IrIvBPzPOxids0l215sEt7knP3tCcJFvWTIyyNbTd4",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://crackteck.co.in/api/v1/installation-request",
+									"protocol": "https",
+									"host": [
+										"crackteck",
+										"co",
+										"in"
+									],
+									"path": [
+										"api",
+										"v1",
+										"installation-request"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Repairing Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Field Executive App",
+			"item": []
+		}
+	]
+}
