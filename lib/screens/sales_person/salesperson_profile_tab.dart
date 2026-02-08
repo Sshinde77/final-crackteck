@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 import '../../model/sales_person/profile_provider.dart';
+import '../../services/api_service.dart';
+import '../../core/secure_storage_service.dart';
 
 class SalesPersonMoreScreen extends StatefulWidget {
   final String userName;
@@ -26,6 +28,7 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
   static const Color darkGreen = Color(0xFF145A00);
   bool _moreOpen = false;
   int _navIndex = 2; // 0=Home, 2=Profile
+  bool _isLoggingOut = false;
 
   // ✅ State values (you can update these later from API)
   String loginTime = "00:00 AM";
@@ -39,6 +42,68 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
       final provider = Provider.of<ProfileProvider>(context, listen: false);
       provider.loadProfile();
     });
+  }
+
+  Future<void> _handleLogout() async {
+    if (_isLoggingOut) return;
+
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Log out'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Log out'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    setState(() => _isLoggingOut = true);
+
+    try {
+      final response = await ApiService.instance.logout(roleId: widget.roleId);
+      if (!mounted) return;
+
+      if (!response.success) {
+        setState(() => _isLoggingOut = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response.message ?? 'Logout failed. Please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      await SecureStorageService.clearTokens();
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.roleSelection,
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoggingOut = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong during logout. Please try again.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -255,6 +320,31 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                     // );
                   },
                 ),
+                const SizedBox(height: 12),
+
+                _OptionTile(
+                  icon: Icons.logout,
+                  label: _isLoggingOut ? "Logging out..." : "Log out",
+                  iconColor: Colors.redAccent,
+                  textColor: Colors.redAccent,
+                  trailing: _isLoggingOut
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.redAccent,
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.arrow_forward,
+                          color: Colors.redAccent,
+                          size: 20,
+                        ),
+                  onTap: _isLoggingOut ? () {} : _handleLogout,
+                ),
               ],
             ),
           ),
@@ -312,11 +402,17 @@ class _OptionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Widget? trailing;
+  final Color iconColor;
+  final Color textColor;
 
   const _OptionTile({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.trailing,
+    this.iconColor = Colors.black54,
+    this.textColor = Colors.black54,
   });
 
   static const Color darkGreen = Color(0xFF145A00);
@@ -335,19 +431,20 @@ class _OptionTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.black54, size: 20),
+            Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black54,
+                  color: textColor,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward, color: darkGreen, size: 20),
+            trailing ??
+                const Icon(Icons.arrow_forward, color: darkGreen, size: 20),
           ],
         ),
       ),

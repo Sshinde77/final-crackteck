@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 
 class TaskScreen extends StatefulWidget {
@@ -279,15 +280,14 @@ class _TaskScreenState extends State<TaskScreen> {
         roleId: widget.roleId,
         roleName: widget.roleName,
 
-        onHome: () { /* your home navigation */ },
-        onProfile: () { /* your profile navigation */ },
+               onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
+        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-
-        onFollowUp: () {},
-        onMeeting: () {},
-        onQuotation: () {}, 
-        onLeads: () {  },
+        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
+        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
+        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
+        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
       ),
 
     );

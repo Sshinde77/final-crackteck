@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:final_crackteck/model/sales_person/profile_provider.dart';
+import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 
 class SalesPersonPersonalInfoScreen extends StatefulWidget {
@@ -219,19 +220,14 @@ class _SalesPersonPersonalInfoScreenState
         roleId: widget.roleId,
         roleName: widget.roleName,
 
-        onHome: () {
-          /* your home navigation */
-        },
-        onProfile: () {
-          /* your profile navigation */
-        },
+               onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
+        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-
-        onFollowUp: () {},
-        onMeeting: () {},
-        onQuotation: () {},
-        onLeads: () {},
+        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
+        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
+        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
+        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
       ),
     );
   }

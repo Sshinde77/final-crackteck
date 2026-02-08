@@ -1105,24 +1105,14 @@ class _SalesPersonQuotationScreenState
         currentIndex: _navIndex,
         roleId: widget.roleId,
         roleName: widget.roleName,
-        onHome: () {
-          // From quotation screen, treat Home as "back to dashboard".
-          Navigator.pop(context);
-        },
-        onProfile: () {},
+               onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
+        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () {
-          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
-        },
-        onFollowUp: () {
-          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
-        },
-        onMeeting: () {
-          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
-        },
-        // Already on Quotation; keep this as a no-op.
-        onQuotation: () {},
+        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
+        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
+        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
+        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
       ),
     );
   }

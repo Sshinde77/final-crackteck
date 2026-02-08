@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../routes/app_routes.dart';
+import '../../widgets/bottom_navigation.dart';
+
 
 class NewFollowUpScreen extends StatefulWidget {
   final int roleId;
@@ -16,6 +19,8 @@ class NewFollowUpScreen extends StatefulWidget {
 
 class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   final _formKey = GlobalKey<FormState>();
+    bool _moreOpen = false;
+  int _navIndex = 0;
 
   // Controllers
   final leadIdCtrl = TextEditingController();
@@ -356,6 +361,20 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
             ),
           ),
         ),
+      ),
+        bottomNavigationBar: CrackteckBottomSwitcher(
+        isMoreOpen: _moreOpen,
+        currentIndex: _navIndex,
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
+        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onMore: () => setState(() => _moreOpen = true),
+        onLess: () => setState(() => _moreOpen = false),
+        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
+        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
+        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
+        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
       ),
     );
   }

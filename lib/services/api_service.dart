@@ -474,11 +474,38 @@ class ApiService {
       debugPrint('🔵 API Request: POST ${ApiConstants.logout}');
       debugPrint('🔵 Request Body: {"role_id": $roleId}');
 
+      final storedUserId = await SecureStorageService.getUserId();
+      final currentAccessToken = await SecureStorageService.getAccessToken();
+
+      final headers = Map<String, String>.from(_headers)
+        ..addAll({
+          if (currentAccessToken != null && currentAccessToken.isNotEmpty)
+            'Authorization': 'Bearer $currentAccessToken',
+        });
+
+      final queryParameters = <String, String>{
+        'role_id': roleId.toString(),
+        if (storedUserId != null) 'user_id': storedUserId.toString(),
+      };
+
+      final requestBody = <String, dynamic>{
+        'role_id': roleId,
+        if (storedUserId != null) 'user_id': storedUserId,
+      };
+
+      final uri = Uri.parse(ApiConstants.logout).replace(
+        queryParameters: queryParameters,
+      );
+
+      debugPrint('API Request: POST $uri');
+      debugPrint('Request Query: $queryParameters');
+      debugPrint('Request Body: $requestBody');
+
       final response = await http
           .post(
-            Uri.parse(ApiConstants.logout),
-            headers: _headers,
-            body: jsonEncode({'role_id': roleId}),
+            uri,
+            headers: headers,
+            body: jsonEncode(requestBody),
           )
           .timeout(ApiConstants.requestTimeout);
 

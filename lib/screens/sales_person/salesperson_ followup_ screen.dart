@@ -838,17 +838,17 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
         roleName: _roleName,
         onHome: () {
           // From follow-up screen, treat Home as "back to dashboard".
-          Navigator.pop(context);
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
         },
-        onProfile: () {},
+        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
         onLeads: () {
           Navigator.pushNamed(context, AppRoutes.salespersonLeads);
         },
-        onFollowUp: () {},
-        onMeeting: () {},
-        onQuotation: () {},
+        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
+        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
+        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
       ),
     );
   }
