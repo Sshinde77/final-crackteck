@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:final_crackteck/model/sales_person/followup_model.dart';
 import 'package:final_crackteck/model/sales_person/followup_provider.dart';
+import 'package:final_crackteck/screens/sales_person/Sales_new_follow-up_screen.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
@@ -60,12 +61,58 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     super.dispose();
   }
 
+  Future<void> _openEditFollowUp(FollowUpItem item) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewFollowUpScreen(
+          roleId: _roleId,
+          roleName: _roleName,
+          isEdit: true,
+          followUpId: item.followUpId,
+          initialLeadId: item.leadNumericId,
+          initialLeadIdDisplay: item.leadId,
+          initialClientName: item.name,
+          initialPhone: item.number,
+          initialEmail: item.email,
+          initialFollowUpDate: item.date,
+          initialFollowUpTime: item.time,
+          initialRemarks: item.remarks,
+          initialFollowUpStatus: item.statusText,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    if (updated == true) {
+      await Provider.of<FollowUpProvider>(context, listen: false).loadFollowUps();
+    }
+  }
+
+  Future<void> _deleteFollowUp(FollowUpItem item) async {
+    final provider = Provider.of<FollowUpProvider>(context, listen: false);
+    final deleted = await provider.deleteFollowUp(item.followUpId);
+    if (!mounted) return;
+
+    if (deleted) {
+      _snack("Follow-up deleted successfully");
+      return;
+    }
+
+    _snack(provider.error ?? "Failed to delete follow-up. Please try again.");
+  }
+
   void _showViewPopup(FollowUpItem item) {
     showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.35),
       builder: (ctx) {
+        String apiValue(String value) {
+          final v = value.trim();
+          return v.isEmpty ? '-' : v;
+        }
+
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(
@@ -78,107 +125,24 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ===== HEADER =====
                   const Text(
                     "Follow-Up",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 12),
-
-                  _row("Lead ID", item.leadId),
-                  _row("Number", item.number),
-                  _row("Name", item.name),
-                  _row("Email", "example@.com"), // static for now
-                  _row("Date", item.date),
-                  _row("Time", item.time),
-
-                  const SizedBox(height: 6),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Status",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      Text(
-                        statusLabel(item.status),
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  _row("Remarks", "Interested in Mac support service"),
-
-                  const SizedBox(height: 18),
-
-                  // ===== TIMELINE =====
-                  Row(
-                    children: [
-                      _dot(active: true),
-                      _line(),
-                      _dot(active: true),
-                      _line(),
-                      _dot(active: false),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("20/03/25", style: TextStyle(fontSize: 10)),
-                      Text("22/03/25", style: TextStyle(fontSize: 10)),
-                      Text("25/03/25", style: TextStyle(fontSize: 10)),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ===== CALL / CHAT =====
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.call),
-                          label: const Text("Call"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: darkGreen,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.chat),
-                          label: const Text("Chat"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: darkGreen,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
+                  _row("Lead ID", apiValue(item.leadId)),
+                  _row("Name", apiValue(item.name)),
+                  _row("Phone", apiValue(item.number)),
+                  _row("Email", apiValue(item.email)),
+                  _row("Requirement Type", apiValue(item.requirementType)),
+                  _row("Budget Range", apiValue(item.budgetRange)),
+                  _row("Urgency", apiValue(item.urgency)),
+                  _row("Lead Status", apiValue(item.leadStatusText)),
+                  _row("Follow-up Date", apiValue(item.date)),
+                  _row("Follow-up Time", apiValue(item.time)),
+                  _row("Follow-up Status", apiValue(item.statusText)),
+                  _row("Remarks", apiValue(item.remarks)),
                   const SizedBox(height: 12),
-
-                  // ===== EDIT / DELETE =====
                   Row(
                     children: [
                       Expanded(
@@ -189,7 +153,10 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _openEditFollowUp(item);
+                            },
                             icon: const Icon(Icons.edit, color: Colors.orange),
                             label: const Text(
                               "Edit",
@@ -210,7 +177,10 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _deleteFollowUp(item);
+                            },
                             icon: const Icon(Icons.delete, color: Colors.red),
                             label: const Text(
                               "Delete",
@@ -253,37 +223,29 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     );
   }
 
-  Widget _dot({required bool active}) {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(
-        color: active ? Colors.green : Colors.grey.shade300,
-        shape: BoxShape.circle,
-      ),
-      child: active
-          ? const Icon(Icons.check, size: 12, color: Colors.white)
-          : null,
-    );
-  }
-
-  Widget _line() {
-    return Expanded(child: Container(height: 2, color: Colors.green));
-  }
-
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   DateTime? _parseDMY(String dmy) {
-    // expects dd/MM/yyyy
+    // supports yyyy-MM-dd and dd/MM/yyyy
     try {
+      if (dmy.contains('-')) {
+        final parsed = DateTime.tryParse(dmy);
+        if (parsed != null) {
+          return DateTime(parsed.year, parsed.month, parsed.day);
+        }
+      }
+
       final parts = dmy.split("/");
-      if (parts.length != 3) return null;
-      final dd = int.parse(parts[0]);
-      final mm = int.parse(parts[1]);
-      final yy = int.parse(parts[2]);
-      return DateTime(yy, mm, dd);
+      if (parts.length == 3) {
+        final dd = int.parse(parts[0]);
+        final mm = int.parse(parts[1]);
+        final yy = int.parse(parts[2]);
+        return DateTime(yy, mm, dd);
+      }
+
+      return null;
     } catch (_) {
       return null;
     }
@@ -293,24 +255,27 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   String _formatDMY(DateTime d) {
-    final dd = d.day.toString().padLeft(2, '0');
+    final yyyy = d.year.toString().padLeft(4, '0');
     final mm = d.month.toString().padLeft(2, '0');
-    final yy = d.year.toString();
-    return "$dd/$mm/$yy";
+    final dd = d.day.toString().padLeft(2, '0');
+    return "$yyyy-$mm-$dd";
   }
 
   FollowUpItem _mapFollowUpModelToItem(FollowUpModel model) {
     final nestedLead = model.lead;
     final name = nestedLead?.name ?? '';
-    final company = nestedLead?.companyName ?? '';
-    final industry = nestedLead?.industryType ?? '';
     final number = nestedLead?.phone ?? '';
+    final email = nestedLead?.email ?? '';
+    final requirementType = nestedLead?.requirementType ?? '';
+    final budgetRange = nestedLead?.budgetRange ?? '';
+    final urgency = nestedLead?.urgency ?? '';
+    final leadStatus = nestedLead?.status.toLowerCase() ?? '';
 
-    final statusRaw = model.status.toLowerCase();
+    final followUpStatusRaw = model.status.toLowerCase();
     FollowUpStatus status;
-    if (statusRaw == 'done' || statusRaw == 'completed') {
+    if (followUpStatusRaw == 'done' || followUpStatusRaw == 'completed') {
       status = FollowUpStatus.confirmed;
-    } else if (statusRaw == 'cancelled' || statusRaw == 'canceled') {
+    } else if (followUpStatusRaw == 'cancelled' || followUpStatusRaw == 'canceled') {
       status = FollowUpStatus.cancelled;
     } else {
       // Treat "Pending", "Rescheduled" and any unknowns as pending.
@@ -320,15 +285,23 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     final idStr = model.leadId.isNotEmpty
         ? model.leadId
         : (nestedLead?.id.toString() ?? '');
+    final leadNumericId = int.tryParse(idStr) ?? nestedLead?.id;
 
     return FollowUpItem(
+      followUpId: model.id.toString(),
       leadId: idStr,
+      leadNumericId: leadNumericId,
       name: name,
       number: number,
+      email: email,
+      requirementType: requirementType,
+      budgetRange: budgetRange,
+      urgency: urgency,
+      leadStatusText: leadStatus,
       date: _formatDMY(model.followupDate),
       time: model.followupTime,
-      company: company,
-      industry: industry,
+      statusText: followUpStatusRaw,
+      remarks: model.remarks,
       status: status,
     );
   }
@@ -345,8 +318,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
           x.number.toLowerCase().contains(q) ||
           x.date.toLowerCase().contains(q) ||
           x.time.toLowerCase().contains(q) ||
-          x.company.toLowerCase().contains(q) ||
-          x.industry.toLowerCase().contains(q) ||
+          x.statusText.toLowerCase().contains(q) ||
           statusLabel(x.status).toLowerCase().contains(q);
 
       final matchesStatus =
@@ -731,7 +703,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                         return FollowUpCard(
                           item: item,
                           onView: () => _showViewPopup(item),
-                          onEdit: () => _snack("Edit ${item.leadId}"),
+                          onEdit: () => _openEditFollowUp(item),
                           onStatusTap: () =>
                               _snack("Status: ${statusLabel(item.status)}"),
                         );
@@ -885,12 +857,11 @@ class FollowUpCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _kv("Lead ID", item.leadId),
           _kv("Name", item.name),
-          _kv("Number", item.number),
-          _kv("Date", item.date),
-          _kv("Time", item.time),
-          _kv("Status", statusLabel(item.status)),
+          _kv("Phone", item.number),
+          _kv("Follow-up Date", item.date),
+          _kv("Follow-up Time", item.time),
+          _kv("Status", item.statusText),
           const SizedBox(height: 12),
 
           // View / Edit / Status (same style as Leads)
@@ -1013,25 +984,38 @@ class _SmallButton extends StatelessWidget {
 enum FollowUpStatus { confirmed, pending, cancelled }
 
 class FollowUpItem {
+  final String followUpId;
   final String leadId;
+  final int? leadNumericId;
   final String name;
   final String number;
-  final String date; // dd/MM/yyyy
+  final String email;
+  final String requirementType;
+  final String budgetRange;
+  final String urgency;
+  final String leadStatusText;
+  final String date; // yyyy-MM-dd
   final String time;
-
-  final String company;
-  final String industry;
+  final String remarks;
+  final String statusText;
 
   final FollowUpStatus status;
 
   FollowUpItem({
+    required this.followUpId,
     required this.leadId,
+    required this.leadNumericId,
     required this.name,
     required this.number,
+    required this.email,
+    required this.requirementType,
+    required this.budgetRange,
+    required this.urgency,
+    required this.leadStatusText,
     required this.date,
     required this.time,
-    required this.company,
-    required this.industry,
+    required this.remarks,
+    required this.statusText,
     required this.status,
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../constants/api_constants.dart';
+import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 import '../../model/sales_person/lead_model.dart';
@@ -9,11 +11,33 @@ import '../../services/api_service.dart';
 class NewFollowUpScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
+  final bool isEdit;
+  final String? followUpId;
+  final int? initialLeadId;
+  final String? initialLeadIdDisplay;
+  final String? initialClientName;
+  final String? initialPhone;
+  final String? initialEmail;
+  final String? initialFollowUpDate;
+  final String? initialFollowUpTime;
+  final String? initialRemarks;
+  final String? initialFollowUpStatus;
 
   const NewFollowUpScreen({
     Key? key,
     required this.roleId,
     required this.roleName,
+    this.isEdit = false,
+    this.followUpId,
+    this.initialLeadId,
+    this.initialLeadIdDisplay,
+    this.initialClientName,
+    this.initialPhone,
+    this.initialEmail,
+    this.initialFollowUpDate,
+    this.initialFollowUpTime,
+    this.initialRemarks,
+    this.initialFollowUpStatus,
   }) : super(key: key);
   @override
   State<NewFollowUpScreen> createState() => _NewFollowUpScreenState();
@@ -26,6 +50,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
 
   // Controllers
   final contactCtrl = TextEditingController();
+  final leadIdCtrl = TextEditingController();
   final dateCtrl = TextEditingController();
   final timeCtrl = TextEditingController();
   final clientNameCtrl = TextEditingController();
@@ -33,13 +58,14 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   final remarksCtrl = TextEditingController();
 
   // State
-  String? statusValue;
   int? selectedLeadId;
   bool leadsLoading = false;
+  bool submitLoading = false;
   String? leadLoadError;
   final List<LeadModel> leadOptions = [];
 
-  final List<String> statusOptions = const ["Hold", "Converted", "Lost"];
+  DateTime? _selectedFollowUpDate;
+  TimeOfDay? _selectedFollowUpTime;
 
   // Theme-ish colors similar to your UI
   static const Color midGreen = Color(0xFF1F8B00);
@@ -48,12 +74,23 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLeadOptions();
+    if (_isEditMode) {
+      _applyInitialEditValues();
+      if (selectedLeadId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _onLeadSelected(selectedLeadId);
+        });
+      }
+    } else {
+      _loadLeadOptions();
+    }
   }
 
   @override
   void dispose() {
     contactCtrl.dispose();
+    leadIdCtrl.dispose();
     dateCtrl.dispose();
     timeCtrl.dispose();
     clientNameCtrl.dispose();
@@ -69,6 +106,83 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       return int.tryParse(value) ?? fallback;
     }
     return fallback;
+  }
+
+  bool get _isEditMode => widget.isEdit;
+
+  String _displayDate(DateTime value) {
+    final dd = value.day.toString().padLeft(2, "0");
+    final mm = value.month.toString().padLeft(2, "0");
+    final yyyy = value.year.toString();
+    return "$dd/$mm/$yyyy";
+  }
+
+  DateTime? _parseDateInput(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return null;
+
+    final isoParsed = DateTime.tryParse(value);
+    if (isoParsed != null) return isoParsed;
+
+    final parts = value.split('/');
+    if (parts.length == 3) {
+      final dd = int.tryParse(parts[0]);
+      final mm = int.tryParse(parts[1]);
+      final yy = int.tryParse(parts[2]);
+      if (dd != null && mm != null && yy != null) {
+        return DateTime(yy, mm, dd);
+      }
+    }
+    return null;
+  }
+
+  TimeOfDay? _parseTimeInput(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return null;
+
+    final match = RegExp(r'^(\d{1,2}):(\d{2})(?::\d{2})?$').firstMatch(value);
+    if (match != null) {
+      final hh = int.tryParse(match.group(1)!);
+      final mm = int.tryParse(match.group(2)!);
+      if (hh != null &&
+          mm != null &&
+          hh >= 0 &&
+          hh <= 23 &&
+          mm >= 0 &&
+          mm <= 59) {
+        return TimeOfDay(hour: hh, minute: mm);
+      }
+    }
+    return null;
+  }
+
+  String _displayTime(TimeOfDay value) {
+    final hh = value.hour.toString().padLeft(2, '0');
+    final mm = value.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
+  void _applyInitialEditValues() {
+    selectedLeadId = widget.initialLeadId;
+    leadIdCtrl.text =
+        (widget.initialLeadIdDisplay ?? widget.initialLeadId?.toString() ?? '')
+            .trim();
+    clientNameCtrl.text = (widget.initialClientName ?? '').trim();
+    contactCtrl.text = _sanitizePhone(widget.initialPhone ?? '');
+    emailCtrl.text = (widget.initialEmail ?? '').trim();
+    remarksCtrl.text = (widget.initialRemarks ?? '').trim();
+
+    final parsedDate = _parseDateInput(widget.initialFollowUpDate);
+    if (parsedDate != null) {
+      _selectedFollowUpDate = parsedDate;
+      dateCtrl.text = _displayDate(parsedDate);
+    }
+
+    final parsedTime = _parseTimeInput(widget.initialFollowUpTime);
+    if (parsedTime != null) {
+      _selectedFollowUpTime = parsedTime;
+      timeCtrl.text = _displayTime(parsedTime);
+    }
   }
 
   Future<void> _loadLeadOptions() async {
@@ -175,9 +289,10 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedFollowUpDate ?? now,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2035, 12, 31),
     );
@@ -185,27 +300,140 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       final dd = picked.day.toString().padLeft(2, "0");
       final mm = picked.month.toString().padLeft(2, "0");
       final yyyy = picked.year.toString();
-      setState(() => dateCtrl.text = "$dd/$mm/$yyyy");
+      setState(() {
+        _selectedFollowUpDate = picked;
+        dateCtrl.text = "$dd/$mm/$yyyy";
+      });
     }
   }
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: _selectedFollowUpTime ?? TimeOfDay.now(),
     );
     if (picked != null) {
-      setState(() => timeCtrl.text = picked.format(context));
+      setState(() {
+        _selectedFollowUpTime = picked;
+        timeCtrl.text = _displayTime(picked);
+      });
     }
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+  String _toApiDate(DateTime value) {
+    final yyyy = value.year.toString().padLeft(4, '0');
+    final mm = value.month.toString().padLeft(2, '0');
+    final dd = value.day.toString().padLeft(2, '0');
+    return '$yyyy-$mm-$dd';
+  }
 
-    // Your submit logic here (API call etc.)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Submitted")),
-    );
+  String _toApiTime(TimeOfDay value) {
+    final hh = value.hour.toString().padLeft(2, '0');
+    final mm = value.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (submitLoading) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final userId = await SecureStorageService.getUserId();
+    final accessToken = await SecureStorageService.getAccessToken();
+
+    if (userId == null || accessToken == null || accessToken.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Authentication error. Please log in again.")),
+      );
+      return;
+    }
+
+    if (_selectedFollowUpDate == null || _selectedFollowUpTime == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Please select follow-up date and time.")),
+      );
+      return;
+    }
+    if (selectedLeadId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Lead ID is missing.")),
+      );
+      return;
+    }
+
+    setState(() => submitLoading = true);
+    try {
+      final endpoint = _isEditMode
+          ? Uri.parse(
+              ApiConstants.edit_follow_up.replaceFirst(
+                '{follow_up_id}',
+                widget.followUpId ?? '',
+              ),
+            ).replace(
+              queryParameters: {'user_id': userId.toString()},
+            )
+          : Uri.parse(ApiConstants.new_follow_up).replace(
+              queryParameters: {'user_id': userId.toString()},
+            );
+
+      if (_isEditMode && (widget.followUpId == null || widget.followUpId!.trim().isEmpty)) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Follow-up ID is missing for edit.")),
+        );
+        return;
+      }
+
+      final body = <String, dynamic>{
+        'user_id': userId,
+        'lead_id': selectedLeadId,
+        'followup_date': _toApiDate(_selectedFollowUpDate!),
+        'followup_time': _toApiTime(_selectedFollowUpTime!),
+        'remarks': remarksCtrl.text.trim(),
+        'status': 'pending',
+      };
+
+      final response = _isEditMode
+          ? await ApiService.put(
+              endpoint.toString(),
+              body,
+              token: accessToken,
+            )
+          : await ApiService.post(
+              endpoint.toString(),
+              body,
+              token: accessToken,
+            );
+
+      String message = _isEditMode
+          ? "Follow-up updated successfully"
+          : "Follow-up submitted";
+      bool success = true;
+      if (response is Map<String, dynamic>) {
+        if (response['message'] != null) {
+          message = response['message'].toString();
+        }
+        if (response['success'] is bool) {
+          success = response['success'] as bool;
+        } else if (response['status'] is bool) {
+          success = response['status'] as bool;
+        }
+      }
+
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+
+      if (success && mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text("Failed to submit follow-up: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => submitLoading = false);
+      }
+    }
   }
 
   InputDecoration _decor(String hint, {Widget? suffixIcon, Widget? prefixIcon}) {
@@ -282,72 +510,28 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     );
   }
 
-  Widget _statusDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _label("Status"),
-        DropdownButtonFormField<String>(
-          value: statusValue,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
-          decoration: _decor(
-            "Select",
-            suffixIcon: const Padding(
-              padding: EdgeInsets.only(right: 6),
-              child: Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
-            ),
-          ),
-          hint: const Text(
-            "Select",
-            style: TextStyle(color: Colors.black38, fontSize: 13),
-          ),
-          items: statusOptions.map((s) {
-            return DropdownMenuItem<String>(
-              value: s,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(
-                  s,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-          dropdownColor: const Color(0xFFF2F2F2), // grey list like your screenshot
-          onChanged: (val) => setState(() => statusValue = val),
-          validator: (v) => (v == null || v.isEmpty) ? "Please select status" : null,
-        ),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
   Widget _leadDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label("Lead"),
+        _label("Lead ID"),
         DropdownButtonFormField<int>(
           value: selectedLeadId,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
-          decoration: _decor("Select lead"),
+          decoration: _decor("Select lead ID"),
           hint: Text(
-            leadsLoading ? "Loading leads..." : "Select lead",
+            leadsLoading ? "Loading lead IDs..." : "Select lead ID",
             style: const TextStyle(color: Colors.black38, fontSize: 13),
           ),
           items: leadOptions.map((lead) {
-            final displayText = '${lead.id} - ${lead.name}'.trim();
+            final leadIdText = lead.leadNumber.trim().isEmpty
+                ? lead.id.toString()
+                : lead.leadNumber.trim();
             return DropdownMenuItem<int>(
               value: lead.id,
               child: Text(
-                displayText,
+                leadIdText,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 13,
@@ -416,8 +600,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "New Follow-Up",
+        title: Text(
+          _isEditMode ? "Edit Follow-Up" : "New Follow-Up",
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
@@ -449,13 +633,31 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
             key: _formKey,
             child: Column(
               children: [
-                _leadDropdown(),
+                if (_isEditMode)
+                  _textField(
+                    label: "Lead ID",
+                    controller: leadIdCtrl,
+                    readOnly: true,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? "Lead ID missing" : null,
+                  )
+                else
+                  _leadDropdown(),
+
+                _textField(
+                  label: "Client Name",
+                  controller: clientNameCtrl,
+                  hint: "",
+                  readOnly: true,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? "Select lead ID first" : null,
+                ),
 
                 _textField(
                   label: "Contact Number",
                   controller: contactCtrl,
                   hint: "",
                   keyboardType: TextInputType.phone,
+                  readOnly: true,
                   prefixIcon: const SizedBox(
                     width: 52,
                     child: Center(
@@ -465,11 +667,25 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                       ),
                     ),
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Enter contact number" : null,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? "Select lead ID first" : null,
                 ),
 
                 _textField(
-                  label: "Date",
+                  label: "Email ID",
+                  controller: emailCtrl,
+                  hint: "",
+                  keyboardType: TextInputType.emailAddress,
+                  readOnly: true,
+                  validator: (v) {
+                    final value = (v ?? "").trim();
+                    if (value.isEmpty) return "Select lead ID first";
+                    if (!value.contains("@") || !value.contains(".")) return "Invalid email in lead data";
+                    return null;
+                  },
+                ),
+
+                _textField(
+                  label: "Follow Up Date",
                   controller: dateCtrl,
                   readOnly: true,
                   onTap: _pickDate,
@@ -478,7 +694,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                 ),
 
                 _textField(
-                  label: "Time",
+                  label: "Follow Up Time",
                   controller: timeCtrl,
                   readOnly: true,
                   onTap: _pickTime,
@@ -486,31 +702,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   validator: (v) => (v == null || v.trim().isEmpty) ? "Select time" : null,
                 ),
 
-                _statusDropdown(),
-
                 _textField(
-                  label: "Client Name",
-                  controller: clientNameCtrl,
-                  hint: "",
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Enter client name" : null,
-                ),
-
-                _textField(
-                  label: "Email",
-                  controller: emailCtrl,
-                  hint: "",
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    final value = (v ?? "").trim();
-                    if (value.isEmpty) return "Enter email";
-                    // simple email check
-                    if (!value.contains("@") || !value.contains(".")) return "Enter valid email";
-                    return null;
-                  },
-                ),
-
-                _textField(
-                  label: "Remarks",
+                  label: "Remark",
                   controller: remarksCtrl,
                   hint: "",
                   maxLines: 2,
@@ -522,7 +715,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: _submit,
+                    onPressed: submitLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: darkGreen,
                       shape: RoundedRectangleBorder(
@@ -530,9 +723,11 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      "Submit",
-                      style: TextStyle(
+                    child: Text(
+                      submitLoading
+                          ? "Submitting..."
+                          : (_isEditMode ? "Update" : "Submit"),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: 16,

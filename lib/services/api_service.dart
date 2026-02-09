@@ -1511,6 +1511,95 @@ class ApiService {
     }
   }
 
+  /// Delete a follow-up
+  /// DELETE /follow-up/{follow_up_id}?user_id={userId}
+  static Future<Map<String, dynamic>> deleteFollowUp(String followUpId) async {
+    final storedUserId = await SecureStorageService.getUserId();
+
+    if (storedUserId == null) {
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final endpoint = ApiConstants.delete_follow_up.replaceFirst(
+      '{follow_up_id}',
+      followUpId,
+    );
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {'user_id': storedUserId.toString()},
+    );
+
+    try {
+      debugPrint('DELETE Follow-up API Request: $url');
+
+      final response = await _performAuthenticatedDelete(url);
+
+      debugPrint('DELETE Follow-up API Response Status: ${response.statusCode}');
+      debugPrint('DELETE Follow-up API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204) {
+        if (response.body.trim().isEmpty) {
+          return {'success': true, 'message': 'Follow-up deleted successfully'};
+        }
+
+        dynamic decoded;
+        try {
+          decoded = jsonDecode(response.body);
+        } catch (_) {
+          return {
+            'success': true,
+            'message': 'Follow-up deleted successfully',
+            'raw': response.body,
+          };
+        }
+
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['success'] == false) {
+            throw Exception(
+              (decoded['message'] ?? 'Failed to delete follow-up').toString(),
+            );
+          }
+          return decoded;
+        }
+
+        return {'success': true, 'data': decoded};
+      }
+
+      String message = 'Failed to delete follow-up: ${response.statusCode}';
+      if (response.body.trim().isNotEmpty) {
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map<String, dynamic>) {
+            final dynamic apiMessage = decoded['message'] ?? decoded['error'];
+            if (apiMessage != null && apiMessage.toString().trim().isNotEmpty) {
+              message = apiMessage.toString().trim();
+            }
+          }
+        } catch (_) {}
+      }
+      throw Exception(message);
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout deleting follow-up: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet while deleting follow-up: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error deleting follow-up: $e');
+      rethrow;
+    }
+  }
+
   /// Fetch follow-up list for salesperson
   /// GET /follow-up?user_id={userId}&role_id={roleId}&page={page}
   static Map<String, dynamic> _normalizeFollowUpResponse(dynamic decoded) {

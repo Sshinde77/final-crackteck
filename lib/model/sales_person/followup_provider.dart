@@ -77,6 +77,28 @@ class FollowUpProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteFollowUp(String followUpId) async {
+    error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.deleteFollowUp(followUpId);
+
+      followUps = followUps
+          .where((f) => f.id.toString() != followUpId)
+          .toList();
+      if (total > 0) {
+        total -= 1;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = _normalizeError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   int _asInt(dynamic value, {int fallback = 0}) {
     if (value == null) return fallback;
     if (value is int) return value;
