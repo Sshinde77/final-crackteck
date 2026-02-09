@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../model/sales_person/lead_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../widgets/bottom_navigation.dart';
 
 class NewMeetingScreen extends StatefulWidget {
@@ -23,7 +25,6 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
   int _navIndex = 0;
 
   // Controllers
-  final leadIdCtrl = TextEditingController();
   final clientNameCtrl = TextEditingController();
   final dateCtrl = TextEditingController();
   final timeCtrl = TextEditingController();
@@ -35,6 +36,10 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
 
   // Dropdown state
   String? statusValue;
+  int? selectedLeadId;
+  bool leadsLoading = false;
+  String? leadLoadError;
+  final List<LeadModel> leadOptions = [];
   final List<String> statusOptions = const ["Hold", "Converted", "Lost"];
 
   // Attachment UI state (UI-only here)
@@ -44,8 +49,13 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
   @override
+  void initState() {
+    super.initState();
+    _loadLeadOptions();
+  }
+
+  @override
   void dispose() {
-    leadIdCtrl.dispose();
     clientNameCtrl.dispose();
     dateCtrl.dispose();
     timeCtrl.dispose();
@@ -55,6 +65,100 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
     agendaCtrl.dispose();
     followupTaskCtrl.dispose();
     super.dispose();
+  }
+
+  int _asInt(dynamic value, {int fallback = 1}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  Map<String, dynamic>? _extractLeadMap(Map<String, dynamic> payload) {
+    final data = payload['data'];
+    if (data is Map<String, dynamic>) return data;
+
+    final lead = payload['lead'];
+    if (lead is Map<String, dynamic>) return lead;
+
+    if (payload.containsKey('id')) return payload;
+    return null;
+  }
+
+  Future<void> _loadLeadOptions() async {
+    setState(() {
+      leadsLoading = true;
+      leadLoadError = null;
+    });
+
+    try {
+      final List<LeadModel> allLeads = [];
+      int page = 1;
+      int lastPage = 1;
+
+      do {
+        final result = await ApiService.fetchLeads('', widget.roleId, page: page);
+        final data = result['data'];
+        if (data is List) {
+          for (final item in data) {
+            if (item is Map<String, dynamic>) {
+              allLeads.add(LeadModel.fromJson(item));
+            }
+          }
+        }
+
+        final meta = result['meta'];
+        if (meta is Map<String, dynamic>) {
+          lastPage = _asInt(meta['last_page'], fallback: page);
+        } else {
+          lastPage = page;
+        }
+        page++;
+      } while (page <= lastPage);
+
+      if (!mounted) return;
+      setState(() {
+        leadOptions
+          ..clear()
+          ..addAll(allLeads);
+        leadsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        leadsLoading = false;
+        leadLoadError = e.toString();
+      });
+    }
+  }
+
+  Future<void> _onLeadSelected(int? leadId) async {
+    setState(() => selectedLeadId = leadId);
+    if (leadId == null) {
+      clientNameCtrl.clear();
+      return;
+    }
+
+    final localLead = leadOptions.where((lead) => lead.id == leadId).toList();
+    if (localLead.isNotEmpty) {
+      clientNameCtrl.text = localLead.first.name;
+    }
+
+    try {
+      final detail = await ApiService.fetchLeadDetail(
+        leadId.toString(),
+        roleId: widget.roleId,
+      );
+      if (!mounted || selectedLeadId != leadId) return;
+
+      final detailMap = _extractLeadMap(detail);
+      if (detailMap == null) return;
+
+      final detailLead = LeadModel.fromJson(detailMap);
+      clientNameCtrl.text = detailLead.name;
+    } catch (_) {
+      // Keep locally selected lead values if detail call fails.
+    }
   }
 
   Future<void> _pickDate() async {
@@ -220,6 +324,75 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
     );
   }
 
+  Widget _leadDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label("Lead"),
+        DropdownButtonFormField<int>(
+          value: selectedLeadId,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+          decoration: _decor(
+            "Select lead",
+            suffixIcon: const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+            ),
+          ),
+          hint: Text(
+            leadsLoading ? "Loading leads..." : "Select lead",
+            style: const TextStyle(color: Colors.black38, fontSize: 13),
+          ),
+          dropdownColor: const Color(0xFFEFEFEF),
+          items: leadOptions.map((lead) {
+            return DropdownMenuItem<int>(
+              value: lead.id,
+              child: Text(
+                '${lead.id} - ${lead.name}',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: leadsLoading ? null : _onLeadSelected,
+          validator: (v) => v == null ? "Please select lead" : null,
+        ),
+        if (leadsLoading)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (!leadsLoading && leadLoadError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    "Failed to load leads",
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: _loadLeadOptions, child: const Text("Retry")),
+              ],
+            ),
+          ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
   Widget _attachmentsBox() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,12 +510,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
             key: _formKey,
             child: Column(
               children: [
-                _textField(
-                  label: "Lead ID",
-                  controller: leadIdCtrl,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? "Enter Lead ID" : null,
-                ),
+                _leadDropdown(),
                 _textField(
                   label: "Client / Lead Name",
                   controller: clientNameCtrl,

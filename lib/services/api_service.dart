@@ -994,6 +994,89 @@ class ApiService {
     }
   }
 
+  /// Fetch service requests list for field executive
+  /// GET /service-requests?user_id={userId}&role_id={roleId}
+  static Future<List<Map<String, dynamic>>> fetchServiceRequests({
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'ðŸ”´ Missing userId in secure storage when calling fetchServiceRequests',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+    final url = Uri.parse(ApiConstants.serviceRequest).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('ðŸ”µ API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('ðŸŸ¡ API Response Status: ${response.statusCode}');
+      debugPrint('ðŸŸ¡ API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'ðŸ”´ HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load service requests: ${response.statusCode}',
+        );
+      }
+
+      final dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Server returned non-JSON service requests response');
+      }
+
+      List<dynamic> rawList = const [];
+
+      if (decoded is List) {
+        rawList = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['serviceRequests'] is List) {
+          rawList = decoded['serviceRequests'] as List;
+        } else if (decoded['service_requests'] is List) {
+          rawList = decoded['service_requests'] as List;
+        } else if (decoded['data'] is List) {
+          rawList = decoded['data'] as List;
+        }
+      }
+
+      return rawList
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } on TimeoutException catch (e) {
+      debugPrint('ðŸ”´ Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('ðŸ”´ No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('ðŸ”´ Error fetching service requests: $e');
+      rethrow;
+    }
+  }
+
   /// Fetch leads list
   /// GET /leads?user_id={userId}&role_id={roleId}&page={page}
   static Future<Map<String, dynamic>> fetchLeads(
@@ -1061,6 +1144,78 @@ class ApiService {
     } catch (e) {
       debugPrint('🔴 Error fetching leads: $e');
       throw Exception('Failed to load leads: $e');
+    }
+  }
+
+  /// Fetch single lead details
+  /// GET /lead/{lead_id}?user_id={userId}&role_id={roleId}
+  static Future<Map<String, dynamic>> fetchLeadDetail(
+    String leadId, {
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId = (storedRoleId ?? roleId)?.toString();
+
+    final endpoint = ApiConstants.view_detail_lead.replaceFirst(
+      '{lead_id}',
+      leadId,
+    );
+
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        if (storedUserId != null) 'user_id': storedUserId.toString(),
+        if (effectiveRoleId != null && effectiveRoleId.isNotEmpty)
+          'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('ðŸ”µ API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('ðŸŸ¡ API Response Status: ${response.statusCode}');
+      debugPrint('ðŸŸ¡ API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'ðŸ”´ HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode == 200) {
+        dynamic decoded;
+        try {
+          decoded = jsonDecode(response.body);
+        } catch (_) {
+          decoded = {
+            'message': 'Server returned non-JSON',
+            'raw': response.body,
+          };
+        }
+
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+        if (decoded is List && decoded.isNotEmpty) {
+          return {'data': decoded.first};
+        }
+        return {'data': decoded};
+      }
+
+      throw Exception('Failed to load lead details: ${response.statusCode}');
+    } on TimeoutException catch (e) {
+      debugPrint('ðŸ”´ Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('ðŸ”´ No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('ðŸ”´ Error fetching lead details: $e');
+      throw Exception('Failed to load lead details: $e');
     }
   }
 

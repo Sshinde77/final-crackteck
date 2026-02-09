@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 
 class FieldExecutiveHomeTab extends StatefulWidget {
   final int roleId;
@@ -18,72 +19,38 @@ class FieldExecutiveHomeTab extends StatefulWidget {
 class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
   final TextEditingController _searchCtrl = TextEditingController();
   JobTab _activeTab = JobTab.installations;
+  List<JobItem> _jobs = [];
+  bool _jobsLoading = true;
+  String? _jobsError;
 
-  final List<JobItem> _jobs = [
-    JobItem(
-      title: 'Desktop Installation',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#LYCFF776567DS',
-      location: 'Kandivali (West)',
-      priority: 'High',
-      tab: JobTab.installations,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-    JobItem(
-      title: 'Office CCTV Installation',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#UORD898985DYU',
-      location: 'Malad (East)',
-      priority: 'High',
-      tab: JobTab.installations,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-    JobItem(
-      title: 'Windows laptop repair',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#HWDSF776567DS',
-      location: 'Borivali (West)',
-      priority: 'High',
-      tab: JobTab.repairs,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-    JobItem(
-      title: 'Service Check (Windows)',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#HWDSF776567DS',
-      location: 'Malad (East)',
-      priority: 'High',
-      tab: JobTab.amc,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-    JobItem(
-      title: 'Quick Keyboard Fix',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#QSKB112233AA',
-      location: 'Borivali (West)',
-      priority: 'High',
-      tab: JobTab.quickService,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-    JobItem(
-      title: 'Quick Wi-Fi Setup',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#QSWF445566BB',
-      location: 'Malad (East)',
-      priority: 'Medium',
-      tab: JobTab.quickService,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-    JobItem(
-      title: 'Quick OS Tune-up',
-      description: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
-      serviceId: '#QSOS778899CC',
-      location: 'Kandivali (West)',
-      priority: 'Low',
-      tab: JobTab.quickService,
-      imageUrl: 'https://via.placeholder.com/80',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadServiceRequests();
+  }
+
+  Future<void> _loadServiceRequests() async {
+    setState(() {
+      _jobsLoading = true;
+      _jobsError = null;
+    });
+
+    try {
+      final list = await ApiService.fetchServiceRequests(roleId: widget.roleId);
+      if (!mounted) return;
+
+      setState(() {
+        _jobs = list.map(JobItem.fromApi).toList();
+        _jobsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _jobsLoading = false;
+        _jobsError = e.toString();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -321,47 +288,102 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
               ),
               const SizedBox(height: 16),
 
-              // Job List
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
-                itemCount: visibleJobs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final job = visibleJobs[index];
-                  // Make all job types navigable; pass jobType so detail screen can render accordingly
-                  String jobTypeStr = job.tab == JobTab.installations
-                      ? 'installations'
-                      : job.tab == JobTab.repairs
-                          ? 'repairs'
-                          : job.tab == JobTab.amc
-                              ? 'amc'
-                              : 'quick_service';
-
-                  return InkWell(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.FieldExecutiveInstallationDetailScreen,
-                        arguments: fieldexecutiveinstallationdetailArguments(
-                          roleId: widget.roleId,
-                          roleName: widget.roleName,
-                          title: job.title,
-                          serviceId: job.serviceId,
-                          location: job.location,
-                          priority: job.priority,
-                          jobType: jobTypeStr,
-                        ),
-                      );
-                    },
-                    child: _JobCard(
-                      job: job,
-                      isSmall: isSmall,
+              if (_jobsLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_jobsError != null)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.red.shade100),
                     ),
-                  );
-                },
-              ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Failed to load service requests',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _jobsError!,
+                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: _loadServiceRequests,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (visibleJobs.isEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24),
+                  child: const Center(
+                    child: Text(
+                      'No service requests found',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
+                  itemCount: visibleJobs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final job = visibleJobs[index];
+                    // Make all job types navigable; pass jobType so detail screen can render accordingly
+                    String jobTypeStr = job.tab == JobTab.installations
+                        ? 'installations'
+                        : job.tab == JobTab.repairs
+                            ? 'repairs'
+                            : job.tab == JobTab.amc
+                                ? 'amc'
+                                : 'quick_service';
+
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.FieldExecutiveInstallationDetailScreen,
+                          arguments: fieldexecutiveinstallationdetailArguments(
+                            roleId: widget.roleId,
+                            roleName: widget.roleName,
+                            title: job.title,
+                            serviceId: job.serviceId,
+                            location: job.location,
+                            priority: job.priority,
+                            jobType: jobTypeStr,
+                          ),
+                        );
+                      },
+                      child: _JobCard(
+                        job: job,
+                        isSmall: isSmall,
+                      ),
+                    );
+                  },
+                ),
               const SizedBox(height: 20),
             ],
           ),
@@ -498,13 +520,17 @@ class _JobCard extends StatelessWidget {
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    job.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                child: job.imageUrl.isEmpty
+                    ? const Icon(Icons.build_circle_outlined, color: Colors.grey)
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          job.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.build_circle_outlined, color: Colors.grey),
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -624,4 +650,97 @@ class JobItem {
     required this.tab,
     required this.imageUrl,
   });
+
+  factory JobItem.fromApi(Map<String, dynamic> json) {
+    String readStr(List<String> keys, {String fallback = ''}) {
+      for (final key in keys) {
+        final value = json[key];
+        if (value == null) continue;
+        final str = value.toString().trim();
+        if (str.isNotEmpty) return str;
+      }
+      return fallback;
+    }
+
+    final title = readStr(
+      const ['title', 'service_name', 'service_title', 'name', 'issue', 'problem'],
+      fallback: 'Service Request',
+    );
+
+    final description = readStr(
+      const ['description', 'details', 'notes', 'remark', 'remarks'],
+      fallback: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
+    );
+
+    final location = readStr(
+      const ['location', 'address', 'city', 'area'],
+      fallback: '-',
+    );
+
+    final rawServiceId = readStr(
+      const ['service_id', 'serviceId', 'request_id', 'id', 'ticket_no'],
+      fallback: '-',
+    );
+    final serviceId = rawServiceId == '-' || rawServiceId.isEmpty
+        ? '-'
+        : (rawServiceId.startsWith('#') ? rawServiceId : '#$rawServiceId');
+
+    final priority = readStr(
+      const ['priority', 'priority_level', 'urgency'],
+      fallback: 'Medium',
+    );
+
+    final tab = _tabFromRawType(
+      readStr(
+        const [
+          'job_type',
+          'service_type',
+          'request_type',
+          'category',
+          'service_category',
+          'type',
+        ],
+      ),
+      title: title,
+      description: description,
+    );
+
+    final imageUrl = readStr(
+      const ['image_url', 'image', 'service_image', 'product_image'],
+      fallback: '',
+    );
+
+    return JobItem(
+      title: title,
+      description: description,
+      serviceId: serviceId,
+      location: location,
+      priority: _normalizePriority(priority),
+      tab: tab,
+      imageUrl: imageUrl,
+    );
+  }
+
+  static String _normalizePriority(String raw) {
+    final value = raw.trim().toLowerCase();
+    if (value.contains('high') || value == '1' || value == 'urgent') {
+      return 'High';
+    }
+    if (value.contains('low') || value == '3') {
+      return 'Low';
+    }
+    return 'Medium';
+  }
+
+  static JobTab _tabFromRawType(
+    String raw, {
+    required String title,
+    required String description,
+  }) {
+    final source = '$raw $title $description'.toLowerCase();
+    if (source.contains('repair')) return JobTab.repairs;
+    if (source.contains('amc')) return JobTab.amc;
+    if (source.contains('quick')) return JobTab.quickService;
+    return JobTab.installations;
+  }
 }

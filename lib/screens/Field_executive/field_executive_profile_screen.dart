@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/secure_storage_service.dart';
+import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import 'field_excutive_attendance.dart';
 import 'field_executive_feedback.dart';
 import 'field_executive_payment.dart';
@@ -28,9 +31,72 @@ class CombinedProfileScreen extends StatefulWidget {
 class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
+  bool _isLoggingOut = false;
 
   String loginTime = "00:00 AM";
   String logoutTime = "00:00 PM";
+
+  Future<void> _handleLogout() async {
+    if (_isLoggingOut) return;
+
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Log out'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Log out'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    setState(() => _isLoggingOut = true);
+
+    try {
+      final response = await ApiService.instance.logout(roleId: widget.roleId);
+      if (!mounted) return;
+
+      if (!response.success) {
+        setState(() => _isLoggingOut = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response.message ?? 'Logout failed. Please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      await SecureStorageService.clearTokens();
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.roleSelection,
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoggingOut = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong during logout. Please try again.'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +269,26 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
               },),
               const SizedBox(height: 12),
               _OptionTile(icon: Icons.privacy_tip_outlined, label: "Help & Support", onTap: () {}),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.logout,
+                label: _isLoggingOut ? "Logging out..." : "Log out",
+                iconColor: Colors.redAccent,
+                textColor: Colors.redAccent,
+                trailing: _isLoggingOut
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.redAccent,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.arrow_forward, color: Colors.redAccent),
+                onTap: _isLoggingOut ? () {} : _handleLogout,
+              ),
             ],
           ),
         ),
@@ -271,8 +357,18 @@ class _OptionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Widget? trailing;
+  final Color iconColor;
+  final Color textColor;
 
-  const _OptionTile({required this.icon, required this.label, required this.onTap});
+  const _OptionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.trailing,
+    this.iconColor = const Color(0xFF145A00),
+    this.textColor = Colors.black,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -289,10 +385,19 @@ class _OptionTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF145A00)),
+            Icon(icon, color: iconColor),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
-            const Icon(Icons.arrow_forward, color: Color(0xFF145A00)),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ),
+            trailing ?? const Icon(Icons.arrow_forward, color: Color(0xFF145A00)),
           ],
         ),
       ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
+import '../../model/sales_person/lead_model.dart';
+import '../../services/api_service.dart';
 
 
 class NewFollowUpScreen extends StatefulWidget {
@@ -19,11 +21,10 @@ class NewFollowUpScreen extends StatefulWidget {
 
 class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   final _formKey = GlobalKey<FormState>();
-    bool _moreOpen = false;
+  bool _moreOpen = false;
   int _navIndex = 0;
 
   // Controllers
-  final leadIdCtrl = TextEditingController();
   final contactCtrl = TextEditingController();
   final dateCtrl = TextEditingController();
   final timeCtrl = TextEditingController();
@@ -33,6 +34,10 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
 
   // State
   String? statusValue;
+  int? selectedLeadId;
+  bool leadsLoading = false;
+  String? leadLoadError;
+  final List<LeadModel> leadOptions = [];
 
   final List<String> statusOptions = const ["Hold", "Converted", "Lost"];
 
@@ -41,8 +46,13 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
   @override
+  void initState() {
+    super.initState();
+    _loadLeadOptions();
+  }
+
+  @override
   void dispose() {
-    leadIdCtrl.dispose();
     contactCtrl.dispose();
     dateCtrl.dispose();
     timeCtrl.dispose();
@@ -50,6 +60,118 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     emailCtrl.dispose();
     remarksCtrl.dispose();
     super.dispose();
+  }
+
+  int _asInt(dynamic value, {int fallback = 1}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      return int.tryParse(value) ?? fallback;
+    }
+    return fallback;
+  }
+
+  Future<void> _loadLeadOptions() async {
+    setState(() {
+      leadsLoading = true;
+      leadLoadError = null;
+    });
+
+    try {
+      final List<LeadModel> allLeads = [];
+      int page = 1;
+      int lastPage = 1;
+
+      do {
+        final result = await ApiService.fetchLeads('', widget.roleId, page: page);
+        final data = result['data'];
+
+        if (data is List) {
+          for (final item in data) {
+            if (item is Map<String, dynamic>) {
+              allLeads.add(LeadModel.fromJson(item));
+            }
+          }
+        }
+
+        final meta = result['meta'];
+        if (meta is Map<String, dynamic>) {
+          lastPage = _asInt(meta['last_page'], fallback: page);
+        } else {
+          lastPage = page;
+        }
+
+        page++;
+      } while (page <= lastPage);
+
+      if (!mounted) return;
+      setState(() {
+        leadOptions
+          ..clear()
+          ..addAll(allLeads);
+        leadsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        leadsLoading = false;
+        leadLoadError = e.toString();
+      });
+    }
+  }
+
+  Future<void> _onLeadSelected(int? leadId) async {
+    setState(() => selectedLeadId = leadId);
+    if (leadId == null) {
+      contactCtrl.clear();
+      clientNameCtrl.clear();
+      emailCtrl.clear();
+      return;
+    }
+
+    final localLead = leadOptions.where((lead) => lead.id == leadId).toList();
+    if (localLead.isNotEmpty) {
+      final lead = localLead.first;
+      clientNameCtrl.text = lead.name;
+      emailCtrl.text = lead.email;
+      contactCtrl.text = _sanitizePhone(lead.phone);
+    }
+
+    try {
+      final leadDetail = await ApiService.fetchLeadDetail(
+        leadId.toString(),
+        roleId: widget.roleId,
+      );
+      if (!mounted || selectedLeadId != leadId) return;
+
+      final detailMap = _extractLeadMap(leadDetail);
+      if (detailMap == null) return;
+
+      final detailLead = LeadModel.fromJson(detailMap);
+      clientNameCtrl.text = detailLead.name;
+      emailCtrl.text = detailLead.email;
+      contactCtrl.text = _sanitizePhone(detailLead.phone);
+    } catch (_) {
+      // Keep already-filled local lead values if detail API fails.
+    }
+  }
+
+  Map<String, dynamic>? _extractLeadMap(Map<String, dynamic> payload) {
+    final data = payload['data'];
+    if (data is Map<String, dynamic>) return data;
+
+    final lead = payload['lead'];
+    if (lead is Map<String, dynamic>) return lead;
+
+    if (payload.containsKey('id')) return payload;
+    return null;
+  }
+
+  String _sanitizePhone(String value) {
+    return value
+        .replaceAll('+91', '')
+        .replaceAll('+', '')
+        .trim();
   }
 
   Future<void> _pickDate() async {
@@ -206,6 +328,72 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     );
   }
 
+  Widget _leadDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label("Lead"),
+        DropdownButtonFormField<int>(
+          value: selectedLeadId,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+          decoration: _decor("Select lead"),
+          hint: Text(
+            leadsLoading ? "Loading leads..." : "Select lead",
+            style: const TextStyle(color: Colors.black38, fontSize: 13),
+          ),
+          items: leadOptions.map((lead) {
+            final displayText = '${lead.id} - ${lead.name}'.trim();
+            return DropdownMenuItem<int>(
+              value: lead.id,
+              child: Text(
+                displayText,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: leadsLoading ? null : _onLeadSelected,
+          validator: (v) => v == null ? "Please select lead" : null,
+        ),
+        if (leadsLoading)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (!leadsLoading && leadLoadError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    "Failed to load leads",
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _loadLeadOptions,
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -261,12 +449,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
             key: _formKey,
             child: Column(
               children: [
-                _textField(
-                  label: "Lead ID",
-                  controller: leadIdCtrl,
-                  hint: "",
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Enter Lead ID" : null,
-                ),
+                _leadDropdown(),
 
                 _textField(
                   label: "Contact Number",
@@ -362,19 +545,31 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
           ),
         ),
       ),
-        bottomNavigationBar: CrackteckBottomSwitcher(
+      bottomNavigationBar: CrackteckBottomSwitcher(
         isMoreOpen: _moreOpen,
         currentIndex: _navIndex,
         roleId: widget.roleId,
         roleName: widget.roleName,
-        onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }

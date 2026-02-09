@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../model/sales_person/lead_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../widgets/bottom_navigation.dart';
 
 class NewQuotationScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class NewQuotationScreen extends StatefulWidget {
 
 class _NewQuotationScreenState extends State<NewQuotationScreen> {
   static const Color midGreen = Color(0xFF1F8B00);
+  static const Color darkGreen = Color(0xFF145A00);
   bool _moreOpen = false;
   int _navIndex = 0;
 
@@ -27,6 +30,10 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
   bool showOverlay = false;
 
   final TextEditingController searchCtrl = TextEditingController();
+  int? selectedLeadId;
+  bool leadsLoading = false;
+  String? leadLoadError;
+  final List<LeadModel> leadOptions = [];
 
   // ✅ products list (demo)
   final List<ProductItem> _allProducts = const [
@@ -39,9 +46,107 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadLeadOptions();
+  }
+
+  @override
   void dispose() {
     searchCtrl.dispose();
     super.dispose();
+  }
+
+  int _asInt(dynamic value, {int fallback = 1}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  Map<String, dynamic>? _extractLeadMap(Map<String, dynamic> payload) {
+    final data = payload['data'];
+    if (data is Map<String, dynamic>) return data;
+
+    final lead = payload['lead'];
+    if (lead is Map<String, dynamic>) return lead;
+
+    if (payload.containsKey('id')) return payload;
+    return null;
+  }
+
+  Future<void> _loadLeadOptions() async {
+    setState(() {
+      leadsLoading = true;
+      leadLoadError = null;
+    });
+
+    try {
+      final List<LeadModel> allLeads = [];
+      int page = 1;
+      int lastPage = 1;
+
+      do {
+        final result = await ApiService.fetchLeads('', widget.roleId, page: page);
+        final data = result['data'];
+        if (data is List) {
+          for (final item in data) {
+            if (item is Map<String, dynamic>) {
+              allLeads.add(LeadModel.fromJson(item));
+            }
+          }
+        }
+
+        final meta = result['meta'];
+        if (meta is Map<String, dynamic>) {
+          lastPage = _asInt(meta['last_page'], fallback: page);
+        } else {
+          lastPage = page;
+        }
+        page++;
+      } while (page <= lastPage);
+
+      if (!mounted) return;
+      setState(() {
+        leadOptions
+          ..clear()
+          ..addAll(allLeads);
+        leadsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        leadsLoading = false;
+        leadLoadError = e.toString();
+      });
+    }
+  }
+
+  Future<void> _onLeadSelected(int? leadId) async {
+    setState(() => selectedLeadId = leadId);
+
+    if (leadId == null) return;
+
+    try {
+      final detail = await ApiService.fetchLeadDetail(
+        leadId.toString(),
+        roleId: widget.roleId,
+      );
+      if (!mounted || selectedLeadId != leadId) return;
+
+      final detailMap = _extractLeadMap(detail);
+      if (detailMap == null) return;
+
+      final detailedLead = LeadModel.fromJson(detailMap);
+      final idx = leadOptions.indexWhere((l) => l.id == detailedLead.id);
+      if (idx >= 0) {
+        setState(() {
+          leadOptions[idx] = detailedLead;
+        });
+      }
+    } catch (_) {
+      // Keep locally selected lead values if detail call fails.
+    }
   }
 
   List<ProductItem> get _filteredProducts {
@@ -100,7 +205,7 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                _input('Lead ID', 'L-001'),
+                _leadDropdown(),
                 _input('Quotation ID', 'QTN-001'),
                 _dateInput('Quotation Date', '12-01-2025'),
                 _dateInput('Expiration Date', '12-01-2025'),
@@ -281,6 +386,118 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
+    );
+  }
+
+  Widget _leadDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _label('Lead'),
+          DropdownButtonFormField<int>(
+            value: selectedLeadId,
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+            decoration: _dropdownDecor(
+              'Select lead',
+              suffixIcon: const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+              ),
+            ),
+            hint: Text(
+              leadsLoading ? 'Loading leads...' : 'Select lead',
+              style: const TextStyle(color: Colors.black38, fontSize: 13),
+            ),
+            dropdownColor: const Color(0xFFEFEFEF),
+            items: leadOptions.map((lead) {
+              return DropdownMenuItem<int>(
+                value: lead.id,
+                child: Text(
+                  '${lead.id} - ${lead.name}',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: leadsLoading ? null : _onLeadSelected,
+          ),
+          if (leadsLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+          if (!leadsLoading && leadLoadError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Failed to load leads',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  TextButton(onPressed: _loadLeadOptions, child: const Text('Retry')),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _label(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.black54,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _dropdownDecor(String hint, {Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
+      filled: true,
+      fillColor: Colors.white,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.blue, width: 1.6),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.red, width: 1.6),
+      ),
+      suffixIcon: suffixIcon,
     );
   }
 
