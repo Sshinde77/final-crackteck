@@ -762,6 +762,38 @@ class ApiService {
     }
   }
 
+  static Future<http.Response> _performAuthenticatedDelete(Uri url) async {
+    int retryCount = 0;
+    while (true) {
+      final accessToken = await SecureStorageService.getAccessToken();
+      final headers = <String, String>{
+        'Accept': 'application/json',
+        if (accessToken != null && accessToken.isNotEmpty)
+          'Authorization': 'Bearer $accessToken',
+      };
+
+      final response = await http
+          .delete(url, headers: headers)
+          .timeout(ApiConstants.requestTimeout);
+
+      if (!_isUnauthorizedResponse(response)) {
+        return response;
+      }
+
+      if (retryCount >= _maxAuthRetries) {
+        await _handleAuthFailure();
+        return response;
+      }
+
+      retryCount++;
+      final refreshed = await _attemptTokenRefresh();
+      if (!refreshed) {
+        await _handleAuthFailure();
+        return response;
+      }
+    }
+  }
+
   /// Fetch dashboard data for a specific user
   /// GET /dashboard?user_id={userId}&role_id={roleId}
   static Future<Map<String, dynamic>> fetchDashboard(String userId) async {
@@ -1381,6 +1413,101 @@ class ApiService {
     } catch (e) {
       debugPrint('ðŸ”´ Error fetching lead details: $e');
       throw Exception('Failed to load lead details: $e');
+    }
+  }
+
+  /// Delete a lead
+  /// DELETE /lead/{lead_id}?user_id={userId}&role_id={roleId}
+  static Future<Map<String, dynamic>> deleteLead(
+    String leadId, {
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId = (storedRoleId ?? roleId)?.toString();
+
+    if (storedUserId == null) {
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final endpoint = ApiConstants.delete_lead.replaceFirst('{lead_id}', leadId);
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        if (effectiveRoleId != null && effectiveRoleId.isNotEmpty)
+          'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('DELETE API Request: $url');
+
+      final response = await _performAuthenticatedDelete(url);
+
+      debugPrint('DELETE API Response Status: ${response.statusCode}');
+      debugPrint('DELETE API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204) {
+        if (response.body.trim().isEmpty) {
+          return {'success': true, 'message': 'Lead deleted successfully'};
+        }
+
+        dynamic decoded;
+        try {
+          decoded = jsonDecode(response.body);
+        } catch (_) {
+          return {
+            'success': true,
+            'message': 'Lead deleted successfully',
+            'raw': response.body,
+          };
+        }
+
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['success'] == false) {
+            throw Exception(
+              (decoded['message'] ?? 'Failed to delete lead').toString(),
+            );
+          }
+          return decoded;
+        }
+
+        return {'success': true, 'data': decoded};
+      }
+
+      String message = 'Failed to delete lead: ${response.statusCode}';
+      if (response.body.trim().isNotEmpty) {
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map<String, dynamic>) {
+            final dynamic apiMessage = decoded['message'] ?? decoded['error'];
+            if (apiMessage != null && apiMessage.toString().trim().isNotEmpty) {
+              message = apiMessage.toString().trim();
+            }
+          }
+        } catch (_) {}
+      }
+      throw Exception(message);
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout deleting lead: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet while deleting lead: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error deleting lead: $e');
+      rethrow;
     }
   }
 
@@ -2097,6 +2224,26 @@ class ApiService {
       return jsonDecode(res.body);
     } catch (e) {
       debugPrint('🔴 POST Error: $e');
+      rethrow;
+    }
+  }
+
+  /// Generic PUT request
+  static Future<dynamic> put(String url, Map body, {String? token}) async {
+    try {
+      final headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final res = await http
+          .put(Uri.parse(url), headers: headers, body: jsonEncode(body))
+          .timeout(ApiConstants.requestTimeout);
+
+      return jsonDecode(res.body);
+    } catch (e) {
+      debugPrint('ðŸ”´ PUT Error: $e');
       rethrow;
     }
   }

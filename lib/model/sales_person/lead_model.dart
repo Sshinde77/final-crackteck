@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 /// Model representing a single lead from `/api/v1/leads`.
 class LeadModel {
   final int id;
+  final String leadNumber;
   final String name;
   final String phone;
   final String email;
@@ -21,6 +22,7 @@ class LeadModel {
 
   LeadModel({
     required this.id,
+    required this.leadNumber,
     required this.name,
     required this.phone,
     required this.email,
@@ -61,6 +63,7 @@ class LeadModel {
 
     final model = LeadModel(
       id: _toInt(json['id']),
+      leadNumber: _toString(json['lead_number']),
       name: _toString(json['name']),
       phone: _toString(json['phone']),
       email: _toString(json['email']),
@@ -85,4 +88,3 @@ class LeadModel {
     return model;
   }
 }
-

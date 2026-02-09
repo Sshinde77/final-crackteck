@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import 'package:final_crackteck/model/sales_person/lead_model.dart';
 import 'package:final_crackteck/model/sales_person/leads_provider.dart';
+import 'package:final_crackteck/screens/sales_person/sales_new_lead_screens.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../widgets/bottom_navigation.dart';
 
 class SalesPersonLeadsScreen extends StatefulWidget {
@@ -148,17 +150,26 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
 
     DateTime parsedDate = DateTime.now();
     if (model.createdAt.isNotEmpty) {
-      parsedDate = DateTime.tryParse(model.createdAt) ?? parsedDate;
+      parsedDate =
+          DateTime.tryParse(model.createdAt) ??
+          DateTime.tryParse(model.createdAt.replaceFirst(' ', 'T')) ??
+          parsedDate;
     }
 
     return _LeadItem(
       leadId: model.id.toString(),
+      leadNumber: model.leadNumber,
       name: model.name,
       number: model.phone,
+      email: model.email,
       company: model.companyName,
       industry: model.industryType,
+      requirementType: model.requirementType,
+      budgetRange: model.budgetRange,
       urgency: model.urgency,
+      statusRaw: model.status,
       status: status,
+      createdAtRaw: model.createdAt,
       leadDate: parsedDate,
     );
   }
@@ -515,6 +526,11 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.35),
       builder: (ctx) {
+        String apiValue(String value) {
+          final trimmed = value.trim();
+          return trimmed.isEmpty ? '-' : trimmed;
+        }
+
         Widget kv(String k, String v, {Color? valueColor}) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 6),
@@ -596,48 +612,26 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  kv("Lead ID", lead.leadId),
-                  kv("Name", lead.name),
-                  kv("Number", lead.number),
-                  kv("Company Name", lead.company),
-                  kv("Industry", lead.industry),
-                  kv("Email", "example@.com"),
-                  kv("Budget range", "50k"),
-                  kv("Source", "Website"),
-                  kv("Requirement", "CCTV"),
-                  kv("Lead Status", "Hold"),
-                  kv("Type", "Non- AMC"),
+                  kv(
+                    "Lead Number",
+                    apiValue(
+                      lead.leadNumber.isNotEmpty ? lead.leadNumber : lead.leadId,
+                    ),
+                  ),
+                  kv("Name", apiValue(lead.name)),
+                  kv("Phone", apiValue(lead.number)),
+                  kv("Email", apiValue(lead.email)),
+                  kv("Requirement Type", apiValue(lead.requirementType)),
+                  kv("Budget Range", apiValue(lead.budgetRange)),
                   kv(
                     "Urgency",
-                    lead.urgency,
+                    apiValue(lead.urgency),
                     valueColor: lead.urgency.toLowerCase() == "high"
                         ? Colors.red
                         : Colors.black,
                   ),
-                  kv(
-                    "Address",
-                    "Office No 501, 5th Floor,\nGhanshyam Enclave, New Link\nRd, Kandivali West,\nMumbai, Maharashtra 400067",
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      actionButton(
-                        label: "Call",
-                        icon: Icons.call,
-                        bg: darkGreen,
-                        fg: Colors.white,
-                        onTap: () => _snack(context, "Call ${lead.number}"),
-                      ),
-                      const SizedBox(width: 12),
-                      actionButton(
-                        label: "Chat",
-                        icon: Icons.chat_bubble_outline,
-                        bg: darkGreen,
-                        fg: Colors.white,
-                        onTap: () => _snack(context, "Chat ${lead.leadId}"),
-                      ),
-                    ],
-                  ),
+                  kv("Status", apiValue(lead.statusRaw)),
+                  kv("Created At", apiValue(lead.createdAtRaw)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -646,7 +640,10 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                         icon: Icons.edit_outlined,
                         bg: const Color(0xFFFFE6D6),
                         fg: Colors.deepOrange,
-                        onTap: () => _snack(context, "Edit ${lead.leadId}"),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _openEditLead(lead);
+                        },
                       ),
                       const SizedBox(width: 12),
                       actionButton(
@@ -654,7 +651,10 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                         icon: Icons.delete_outline,
                         bg: const Color(0xFFFFE0E0),
                         fg: Colors.red,
-                        onTap: () => _snack(context, "Delete ${lead.leadId}"),
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await _deleteLead(lead);
+                        },
                       ),
                     ],
                   ),
@@ -664,6 +664,40 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _openEditLead(_LeadItem lead) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewLeadScreen(
+          roleId: _roleId,
+          roleName: _roleName,
+          leadId: lead.leadId,
+          isEdit: true,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (updated == true) {
+      await Provider.of<LeadsProvider>(context, listen: false).loadLeads('', 0);
+    }
+  }
+
+  Future<void> _deleteLead(_LeadItem lead) async {
+    final leadsProvider = Provider.of<LeadsProvider>(context, listen: false);
+    final deleted = await leadsProvider.deleteLead(lead.leadId);
+    if (!mounted) return;
+
+    if (deleted) {
+      _snack(context, "Lead deleted successfully");
+      return;
+    }
+
+    _snack(
+      context,
+      leadsProvider.error ?? "Failed to delete lead. Please try again.",
     );
   }
 
@@ -800,7 +834,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                         return _LeadCard(
                           lead: lead,
                           onView: () => _openLeadDetailsPopup(lead),
-                          onEdit: () => _snack(context, "Edit ${lead.leadId}"),
+                          onEdit: () => _openEditLead(lead),
                           onStatusTap: () => _snack(
                             context,
                             "${lead.status.label} ${lead.leadId}",
@@ -903,7 +937,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
         currentIndex: _navIndex,
         roleId: _roleId,
         roleName: _roleName,
-        onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
+                onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
         onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
@@ -923,7 +957,7 @@ class _LeadCard extends StatelessWidget {
   final _LeadItem lead;
   final VoidCallback onView;
   final VoidCallback onEdit;
-  final VoidCallback onStatusTap;
+  final VoidCallback onStatusTap; 
 
   const _LeadCard({
     required this.lead,
@@ -950,8 +984,6 @@ class _LeadCard extends StatelessWidget {
           _kv("Lead ID", lead.leadId),
           _kv("Name", lead.name),
           _kv("Number", lead.number),
-          _kv("Company Name", lead.company),
-          _kv("Industry", lead.industry),
           _kv("Urgency", lead.urgency),
           const SizedBox(height: 12),
           Row(
@@ -1129,23 +1161,35 @@ extension LeadStatusX on LeadStatus {
 
 class _LeadItem {
   final String leadId;
+  final String leadNumber;
   final String name;
   final String number;
+  final String email;
   final String company;
   final String industry;
+  final String requirementType;
+  final String budgetRange;
   final String urgency;
+  final String statusRaw;
   final LeadStatus status;
+  final String createdAtRaw;
 
   final DateTime leadDate;
 
   const _LeadItem({
     required this.leadId,
+    required this.leadNumber,
     required this.name,
     required this.number,
+    required this.email,
     required this.company,
     required this.industry,
+    required this.requirementType,
+    required this.budgetRange,
     required this.urgency,
+    required this.statusRaw,
     required this.status,
+    required this.createdAtRaw,
     required this.leadDate,
   });
 }

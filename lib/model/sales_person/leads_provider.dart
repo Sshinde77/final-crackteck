@@ -16,6 +16,15 @@ class LeadsProvider extends ChangeNotifier {
 
   bool get hasMore => currentPage < lastPage;
 
+  String _normalizeError(Object e) {
+    final raw = e.toString().trim();
+    const prefix = 'Exception: ';
+    if (raw.startsWith(prefix)) {
+      return raw.substring(prefix.length).trim();
+    }
+    return raw;
+  }
+
   Future<void> loadLeads(String userId, int roleId, {int page = 1, bool append = false}) async {
     loading = true;
     error = null;
@@ -62,10 +71,30 @@ class LeadsProvider extends ChangeNotifier {
         perPage = parsed.length;
       }
     } catch (e) {
-      error = e.toString();
+      error = _normalizeError(e);
     } finally {
       loading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> deleteLead(String leadId) async {
+    error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.deleteLead(leadId);
+
+      leads = leads.where((lead) => lead.id.toString() != leadId).toList();
+      if (total > 0) {
+        total -= 1;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = _normalizeError(e);
+      notifyListeners();
+      return false;
     }
   }
 
@@ -79,4 +108,3 @@ class LeadsProvider extends ChangeNotifier {
     return fallback;
   }
 }
-
