@@ -1011,7 +1011,7 @@ class ApiService {
     }
 
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
-    final url = Uri.parse(ApiConstants.serviceRequest).replace(
+    final url = Uri.parse(ApiConstants.serviceRequests).replace(
       queryParameters: {
         'user_id': storedUserId.toString(),
         'role_id': effectiveRoleId,
@@ -1073,6 +1073,171 @@ class ApiService {
       throw Exception('No internet connection. Please check your network.');
     } catch (e) {
       debugPrint('ðŸ”´ Error fetching service requests: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetch a single service request detail for field executive.
+  ///
+  /// Tries multiple common backend shapes/endpoints:
+  /// 1) GET /service-request?user_id=&role_id=&service_id=
+  /// 2) GET /service-request?user_id=&role_id=&request_id=
+  /// 3) GET /service-request/{id}?user_id=&role_id=
+  /// If all fail, falls back to searching in /service-requests list.
+  static Future<Map<String, dynamic>> fetchServiceRequestDetail(
+    String serviceId, {
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchServiceRequestDetail',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+    final rawId = serviceId.trim();
+    final normalizedId = rawId.replaceFirst(RegExp(r'^#'), '');
+
+    bool matchesId(Map<String, dynamic> item) {
+      String normalize(dynamic value) {
+        final s = value?.toString().trim() ?? '';
+        if (s.isEmpty) return '';
+        return s.replaceFirst(RegExp(r'^#'), '').toLowerCase();
+      }
+
+      final expected = normalizedId.toLowerCase();
+      final candidates = <dynamic>[
+        item['service_id'],
+        item['serviceId'],
+        item['request_id'],
+        item['ticket_no'],
+        item['id'],
+      ];
+      for (final c in candidates) {
+        if (normalize(c) == expected) return true;
+      }
+      return false;
+    }
+
+    Map<String, dynamic>? parseSingle(dynamic decoded) {
+      List<dynamic> listCandidate = const [];
+
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['data'] is Map<String, dynamic>) {
+          return Map<String, dynamic>.from(decoded['data'] as Map);
+        }
+        if (decoded['serviceRequest'] is Map<String, dynamic>) {
+          return Map<String, dynamic>.from(decoded['serviceRequest'] as Map);
+        }
+        if (decoded['service_request'] is Map<String, dynamic>) {
+          return Map<String, dynamic>.from(decoded['service_request'] as Map);
+        }
+        if (decoded['request'] is Map<String, dynamic>) {
+          return Map<String, dynamic>.from(decoded['request'] as Map);
+        }
+        if (decoded['serviceRequest'] is List) {
+          listCandidate = decoded['serviceRequest'] as List;
+        } else if (decoded['service_requests'] is List) {
+          listCandidate = decoded['service_requests'] as List;
+        } else if (decoded['data'] is List) {
+          listCandidate = decoded['data'] as List;
+        }
+      } else if (decoded is List) {
+        listCandidate = decoded;
+      }
+
+      if (listCandidate.isEmpty) return null;
+
+      final mapped = listCandidate
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+
+      for (final item in mapped) {
+        if (matchesId(item)) {
+          return item;
+        }
+      }
+
+      if (mapped.isNotEmpty) {
+        return mapped.first;
+      }
+
+      return null;
+    }
+
+    Future<Map<String, dynamic>?> tryFetch(Uri url) async {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        return null;
+      }
+
+      return parseSingle(decoded);
+    }
+
+    try {
+      final base = <String, String>{
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      };
+
+      final attempts = <Uri>[
+        Uri.parse(ApiConstants.serviceRequest).replace(
+          queryParameters: {...base, 'service_id': normalizedId},
+        ),
+        Uri.parse(ApiConstants.serviceRequest).replace(
+          queryParameters: {...base, 'request_id': normalizedId},
+        ),
+        Uri.parse('${ApiConstants.serviceRequest}/$normalizedId').replace(
+          queryParameters: base,
+        ),
+      ];
+
+      for (final uri in attempts) {
+        final found = await tryFetch(uri);
+        if (found != null) {
+          return found;
+        }
+      }
+
+      // Fallback to list endpoint in case detail endpoint is unavailable.
+      final list = await fetchServiceRequests(roleId: roleId);
+      for (final item in list) {
+        if (matchesId(item)) {
+          return item;
+        }
+      }
+
+      throw Exception('Service request details not found for $serviceId');
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching service request detail: $e');
       rethrow;
     }
   }

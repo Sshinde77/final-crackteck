@@ -56,7 +56,11 @@ class ApiConstants {
   // Delivery Person Endpoints
   static const String registervehicle = "$baseUrl/vehicle-registration";
   static const String deliveryPersonDashboard = "$baseUrl/delivery-person-dashboard";
-  static const String serviceRequest = "$baseUrl/service-requests";
+  
+  //field executive 
+    static const String serviceRequests = "$baseUrl/service-requests";
+    static const String serviceRequest = "$baseUrl/service-request";
+
 
   // Country Code
   static const String defaultCountryCode = '+91';

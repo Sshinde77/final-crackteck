@@ -690,20 +690,7 @@ class JobItem {
       fallback: 'Medium',
     );
 
-    final tab = _tabFromRawType(
-      readStr(
-        const [
-          'job_type',
-          'service_type',
-          'request_type',
-          'category',
-          'service_category',
-          'type',
-        ],
-      ),
-      title: title,
-      description: description,
-    );
+    final tab = _tabFromServiceType(readStr(const ['service_type']));
 
     final imageUrl = readStr(
       const ['image_url', 'image', 'service_image', 'product_image'],
@@ -732,15 +719,32 @@ class JobItem {
     return 'Medium';
   }
 
-  static JobTab _tabFromRawType(
-    String raw, {
-    required String title,
-    required String description,
-  }) {
-    final source = '$raw $title $description'.toLowerCase();
-    if (source.contains('repair')) return JobTab.repairs;
-    if (source.contains('amc')) return JobTab.amc;
-    if (source.contains('quick')) return JobTab.quickService;
+  static JobTab _tabFromServiceType(String rawServiceType) {
+    final serviceType = rawServiceType.trim().toLowerCase();
+
+    // Numeric mappings, if backend sends enum codes.
+    if (serviceType == '1') return JobTab.installations;
+    if (serviceType == '2') return JobTab.repairs;
+    if (serviceType == '3') return JobTab.amc;
+    if (serviceType == '4') return JobTab.quickService;
+
+    // String mappings from API.
+    if (serviceType == 'installation' || serviceType == 'installations') {
+      return JobTab.installations;
+    }
+    if (serviceType == 'repair' || serviceType == 'repairs') {
+      return JobTab.repairs;
+    }
+    if (serviceType == 'amc') {
+      return JobTab.amc;
+    }
+    if (serviceType == 'quick_service' ||
+        serviceType == 'quick service' ||
+        serviceType == 'quickservice') {
+      return JobTab.quickService;
+    }
+
+    // Unknown/missing service_type defaults to Installations tab.
     return JobTab.installations;
   }
 }
