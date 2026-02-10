@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:final_crackteck/model/sales_person/meeting_model.dart';
 import 'package:final_crackteck/model/sales_person/meetings_provider.dart';
+import 'package:final_crackteck/screens/sales_person/sales_add_new_meeting.dart';
+import 'package:final_crackteck/services/api_service.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/bottom_navigation.dart';
 
@@ -242,6 +244,8 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
       meetingType: model.meetingType,
       agenda: model.meetAgenda,
       followUpTask: model.followUp,
+      meetingNotes: model.meetingNotes,
+      attendees: model.attendees,
     );
   }
 
@@ -582,6 +586,112 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _openNewMeeting() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewMeetingScreen(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    if (created == true) {
+      await Provider.of<MeetingsProvider>(
+        context,
+        listen: false,
+      ).refreshMeetings('', widget.roleId);
+    }
+  }
+
+  Future<void> _openMeetingEditor(_MeetingItem item) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewMeetingScreen(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          initialMeetingId: int.tryParse(item.meetingId),
+          initialLeadId: int.tryParse(item.leadId),
+          initialClientLeadName: item.leadName.trim().isNotEmpty
+              ? item.leadName.trim()
+              : item.title.trim(),
+          initialMeetingTitle: item.meetingTitle.trim().isNotEmpty
+              ? item.meetingTitle.trim()
+              : item.title.trim(),
+          initialMeetingType: item.meetingType,
+          initialStartDate: item.rawDate,
+          initialStartTime: item.rawStartTime.trim().isNotEmpty
+              ? item.rawStartTime
+              : item.rawTime,
+          initialEndTime: item.rawEndTime,
+          initialAgenda: item.agenda,
+          initialFollowUpTask: item.followUpTask,
+          initialLocation: item.location,
+          initialStatus: item.status,
+          initialMeetingNotes: item.meetingNotes,
+          initialAttendees: item.attendees,
+          lockPrimaryFields: true,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    if (updated == true) {
+      await Provider.of<MeetingsProvider>(
+        context,
+        listen: false,
+      ).refreshMeetings('', widget.roleId);
+    }
+  }
+
+  Future<void> _deleteMeeting(_MeetingItem item) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Delete Meeting'),
+          content: Text('Delete meeting ${item.meetingId}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    try {
+      final result = await ApiService.deleteMeeting(item.meetingId);
+      if (!mounted) return;
+
+      final message =
+          (result['message']?.toString().trim().isNotEmpty ?? false)
+              ? result['message'].toString()
+              : 'Meeting deleted successfully';
+      _snack(message);
+      await Provider.of<MeetingsProvider>(
+        context,
+        listen: false,
+      ).refreshMeetings('', widget.roleId);
+    } catch (e) {
+      if (!mounted) return;
+      _snack('Failed to delete meeting: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final meetingsProvider = Provider.of<MeetingsProvider>(context);
@@ -715,10 +825,20 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                             showDialog(
                               context: context,
                               barrierDismissible: true,
-                              builder: (_) => _MeetingCenterDialog(item: item),
+                              builder: (_) => _MeetingCenterDialog(
+                                item: item,
+                                onEdit: () {
+                                  Navigator.pop(context);
+                                  _openMeetingEditor(item);
+                                },
+                                onDelete: () async {
+                                  Navigator.pop(context);
+                                  await _deleteMeeting(item);
+                                },
+                              ),
                             );
                           },
-                          onEdit: () => _snack("Edit ${item.meetingId}"),
+                          onEdit: () => _openMeetingEditor(item),
                           onStatusTap: () =>
                               _snack("Status ${item.pillStatus}"),
                         );
@@ -779,9 +899,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                       right: 16,
                       bottom: 18,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.salespernewsonMeeting);
-                        },
+                        onTap: _openNewMeeting,
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           height: 40,
@@ -1039,6 +1157,8 @@ class _MeetingItem {
   final String requirementType;
   final String budgetRange;
   final String meetingTitle;
+  final String meetingNotes;
+  final List<String> attendees;
 
   const _MeetingItem({
     required this.leadId,
@@ -1063,6 +1183,8 @@ class _MeetingItem {
     this.requirementType = '',
     this.budgetRange = '',
     this.meetingTitle = '',
+    this.meetingNotes = '',
+    this.attendees = const <String>[],
   });
 }
 
@@ -1070,8 +1192,10 @@ const Color kDarkGreen = Color(0xFF145A00);
 
 class _MeetingCenterDialog extends StatelessWidget {
   final _MeetingItem item;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const _MeetingCenterDialog({required this.item});
+  const _MeetingCenterDialog({required this.item, this.onEdit, this.onDelete});
 
   List<String> _splitTimeRange(String value) {
     final raw = value.trim();
@@ -1259,7 +1383,7 @@ class _MeetingCenterDialog extends StatelessWidget {
                         label: "Edit",
                         bg: const Color(0xFFFFE6D6),
                         fg: Colors.deepOrange,
-                        onTap: () {},
+                        onTap: onEdit ?? () {},
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1269,7 +1393,7 @@ class _MeetingCenterDialog extends StatelessWidget {
                         label: "Delete",
                         bg: const Color(0xFFFFE6E6),
                         fg: Colors.red,
-                        onTap: () {},
+                        onTap: onDelete ?? () {},
                       ),
                     ),
                   ],

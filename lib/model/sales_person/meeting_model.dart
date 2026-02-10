@@ -16,6 +16,8 @@ class MeetingModel {
   final String? attachment;
   final String meetAgenda;
   final String followUp;
+  final String meetingNotes;
+  final List<String> attendees;
   final String status;
   final String createdAt;
   final String updatedAt;
@@ -35,6 +37,8 @@ class MeetingModel {
     this.attachment,
     required this.meetAgenda,
     required this.followUp,
+    this.meetingNotes = '',
+    this.attendees = const <String>[],
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -69,6 +73,25 @@ class MeetingModel {
       return null;
     }
 
+    List<String> parseAttendees(dynamic value) {
+      if (value is List) {
+        return value
+            .map((e) => toStr(e).trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      if (value is String) {
+        final raw = value.trim();
+        if (raw.isEmpty) return const <String>[];
+        return raw
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      return const <String>[];
+    }
+
     return MeetingModel(
       id: toInt(json['id']),
       userId: toInt(json['user_id']),
@@ -83,6 +106,8 @@ class MeetingModel {
       attachment: json['attachment'] == null ? null : toStr(json['attachment']),
       meetAgenda: toStr(json['meetAgenda'] ?? json['meet_agenda'] ?? json['agenda']),
       followUp: toStr(json['followUp'] ?? json['follow_up']),
+      meetingNotes: toStr(json['meeting_notes'] ?? json['notes']),
+      attendees: parseAttendees(json['attendees']),
       status: toStr(json['status']),
       createdAt: toStr(json['created_at']),
       updatedAt: toStr(json['updated_at']),
