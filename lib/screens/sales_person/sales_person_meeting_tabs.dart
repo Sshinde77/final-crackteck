@@ -44,7 +44,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
       final provider = Provider.of<MeetingsProvider>(context, listen: false);
       // We pass placeholder IDs here; ApiService.fetchMeetings will prefer
       // the values stored in SecureStorageService, matching fetchLeads pattern.
-      provider.loadMeetings('', 0);
+      provider.loadMeetings('', widget.roleId);
     });
   }
 
@@ -229,12 +229,19 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
       contactEmailOrPhone: (nestedLead?.phone ?? '').isNotEmpty
           ? (nestedLead?.phone ?? '')
           : (nestedLead?.email ?? ''),
+      leadName: nestedLead?.name ?? '',
+      phone: nestedLead?.phone ?? '',
+      email: nestedLead?.email ?? '',
+      requirementType: nestedLead?.requirementType ?? '',
+      budgetRange: nestedLead?.budgetRange ?? '',
+      meetingTitle: model.meetTitle,
       rawDate: model.date,
       rawTime: model.time,
+      rawStartTime: model.startTime,
+      rawEndTime: model.endTime,
       meetingType: model.meetingType,
       agenda: model.meetAgenda,
       followUpTask: model.followUp,
-      attachment: model.attachment ?? '',
     );
   }
 
@@ -245,13 +252,13 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     final list = baseItems.where((x) {
       final matchesSearch =
           q.isEmpty ||
-          x.leadId.toLowerCase().contains(q) ||
-          x.meetingId.toLowerCase().contains(q) ||
-          x.title.toLowerCase().contains(q) ||
-          x.dateTime.toLowerCase().contains(q) ||
-          x.location.toLowerCase().contains(q) ||
-          x.status.toLowerCase().contains(q) ||
-          x.pillStatus.toLowerCase().contains(q);
+              x.leadId.toLowerCase().contains(q) ||
+              x.meetingId.toLowerCase().contains(q) ||
+              x.title.toLowerCase().contains(q) ||
+              x.dateTime.toLowerCase().contains(q) ||
+              x.location.toLowerCase().contains(q) ||
+              x.status.toLowerCase().contains(q) ||
+              x.pillStatus.toLowerCase().contains(q);
 
       final matchesStatus =
           _statusFilters.isEmpty || _statusFilters.contains(x.pillStatus);
@@ -259,10 +266,10 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
       final matchesDate = _selectedDate == null
           ? true
           : (() {
-              final d = _parseMeetingDate(x.dateTime);
-              if (d == null) return false;
-              return _isSameDay(d, _selectedDate!);
-            })();
+        final d = _parseMeetingDate(x.dateTime);
+        if (d == null) return false;
+        return _isSameDay(d, _selectedDate!);
+      })();
 
       return matchesSearch && matchesStatus && matchesDate;
     }).toList();
@@ -691,7 +698,8 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
 
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => meetingsProvider.refreshMeetings('', 0),
+                onRefresh: () =>
+                    meetingsProvider.refreshMeetings('', widget.roleId),
                 child: Stack(
                   children: [
                     ListView.separated(
@@ -745,7 +753,10 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: () =>
-                                    meetingsProvider.loadMeetings('', 0),
+                                    meetingsProvider.loadMeetings(
+                                      '',
+                                      widget.roleId,
+                                    ),
                                 child: const Text('Retry'),
                               ),
                             ],
@@ -1017,10 +1028,17 @@ class _MeetingItem {
   final String contactEmailOrPhone;
   final String rawDate;
   final String rawTime;
+  final String rawStartTime;
+  final String rawEndTime;
   final String meetingType;
   final String agenda;
   final String followUpTask;
-  final String attachment;
+  final String leadName;
+  final String phone;
+  final String email;
+  final String requirementType;
+  final String budgetRange;
+  final String meetingTitle;
 
   const _MeetingItem({
     required this.leadId,
@@ -1034,10 +1052,17 @@ class _MeetingItem {
     this.contactEmailOrPhone = '',
     this.rawDate = '',
     this.rawTime = '',
+    this.rawStartTime = '',
+    this.rawEndTime = '',
     this.meetingType = '',
     this.agenda = '',
     this.followUpTask = '',
-    this.attachment = '',
+    this.leadName = '',
+    this.phone = '',
+    this.email = '',
+    this.requirementType = '',
+    this.budgetRange = '',
+    this.meetingTitle = '',
   });
 }
 
@@ -1048,20 +1073,49 @@ class _MeetingCenterDialog extends StatelessWidget {
 
   const _MeetingCenterDialog({required this.item});
 
+  List<String> _splitTimeRange(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return const <String>[];
+
+    final match = RegExp(
+      r'^\s*(.+?)\s*(?:-|–|to)\s*(.+?)\s*$',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    if (match != null) {
+      return <String>[match.group(1)!.trim(), match.group(2)!.trim()];
+    }
+    return <String>[raw];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final name = item.contactName.isNotEmpty ? item.contactName : item.title;
-    final emailOrPhone = item.contactEmailOrPhone.isNotEmpty
-        ? item.contactEmailOrPhone
-        : '';
+    final name = item.leadName.isNotEmpty
+        ? item.leadName
+        : (item.contactName.isNotEmpty ? item.contactName : item.title);
+    final phone = item.phone.trim();
+    final email = item.email.trim();
+    final requirementType = item.requirementType.trim();
+    final budgetRange = item.budgetRange.trim();
+    final meetingTitle = item.meetingTitle.trim().isNotEmpty
+        ? item.meetingTitle.trim()
+        : item.title;
+    final meetingType = item.meetingType.trim();
+    final location = item.location.trim();
     final popupDate = item.rawDate.isNotEmpty
         ? item.rawDate
         : (item.dateTime.split('–').first.trim());
     final popupTime = item.rawTime.isNotEmpty
         ? item.rawTime
         : (item.dateTime.split('–').length > 1
-              ? item.dateTime.split('–')[1].trim()
-              : '');
+        ? item.dateTime.split('–')[1].trim()
+        : '');
+    final parsedRange = _splitTimeRange(popupTime);
+    final startTime = item.rawStartTime.trim().isNotEmpty
+        ? item.rawStartTime.trim()
+        : (parsedRange.isNotEmpty ? parsedRange.first : '');
+    final endTime = item.rawEndTime.trim().isNotEmpty
+        ? item.rawEndTime.trim()
+        : (parsedRange.length > 1 ? parsedRange[1] : '');
 
     return Center(
       child: Material(
@@ -1093,26 +1147,41 @@ class _MeetingCenterDialog extends StatelessWidget {
 
                 _KVRow(label: "Lead ID", value: item.leadId),
                 _KVRow(label: "Meeting ID", value: item.meetingId),
-                if (name.isNotEmpty) _KVRow(label: "Name", value: name),
-                if (emailOrPhone.isNotEmpty)
-                  _KVRow(label: "Title", value: emailOrPhone),
-                if (popupDate.isNotEmpty)
-                  _KVRow(label: "Date", value: popupDate),
-                if (popupTime.isNotEmpty)
-                  _KVRow(label: "Time", value: popupTime),
+                _KVRow(label: "Name", value: name.isNotEmpty ? name : '--'),
+                _KVRow(label: "Phone", value: phone.isNotEmpty ? phone : '--'),
+                _KVRow(label: "Email", value: email.isNotEmpty ? email : '--'),
+                _KVRow(
+                  label: "Requirement Type",
+                  value: requirementType.isNotEmpty ? requirementType : '--',
+                ),
+                _KVRow(
+                  label: "Budget Range",
+                  value: budgetRange.isNotEmpty ? budgetRange : '--',
+                ),
+                _KVRow(label: "Meeting Title", value: meetingTitle),
+                _KVRow(
+                  label: "Meeting Type",
+                  value: meetingType.isNotEmpty ? meetingType : '--',
+                ),
+                _KVRow(label: "Date", value: popupDate.isNotEmpty ? popupDate : '--'),
+                _KVRow(
+                  label: "Start Time",
+                  value: startTime.isNotEmpty ? startTime : '--',
+                ),
+                _KVRow(
+                  label: "End Time",
+                  value: endTime.isNotEmpty ? endTime : '--',
+                ),
+                _KVRow(
+                  label: "Location / Meeting Link",
+                  value: location.isNotEmpty ? location : '--',
+                  multiline: true,
+                ),
                 _KVRow(
                   label: "Status",
                   value: item.status,
                   statusRed: item.pillStatus == 'Cancelled',
                 ),
-                if (item.meetingType.isNotEmpty)
-                  _KVRow(label: "Type", value: item.meetingType),
-                if (item.location.isNotEmpty)
-                  _KVRow(
-                    label: "Location / Meeting Link",
-                    value: item.location,
-                    multiline: true,
-                  ),
                 if (item.agenda.isNotEmpty)
                   _KVRow(
                     label: "Meeting Agenda / Notes",
@@ -1128,57 +1197,57 @@ class _MeetingCenterDialog extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      width: 140,
-                      child: Text(
-                        "Attachments",
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        height: 86,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.black12,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          "IMAGE",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // Row(
+                //   crossAxisAlignment: CrossAxisAlignment.start,
+                //   children: [
+                //     const SizedBox(
+                //       width: 140,
+                //       child: Text(
+                //         "Attachments",
+                //         style: TextStyle(fontSize: 12, color: Colors.black54),
+                //       ),
+                //     ),
+                //     Expanded(
+                //       child: Container(
+                //         height: 86,
+                //         alignment: Alignment.center,
+                //         decoration: BoxDecoration(
+                //           color: Colors.black12,
+                //           borderRadius: BorderRadius.circular(10),
+                //         ),
+                //         child: const Text(
+                //           "IMAGE",
+                //           style: TextStyle(
+                //             fontWeight: FontWeight.w800,
+                //             color: Colors.black54,
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
 
                 const SizedBox(height: 16),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: _GreenButton(
-                        icon: Icons.call,
-                        label: "Call",
-                        onTap: () {},
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _GreenButton(
-                        icon: Icons.chat_bubble_outline,
-                        label: "Chat",
-                        onTap: () {},
-                      ),
-                    ),
-                  ],
-                ),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: _GreenButton(
+                //         icon: Icons.call,
+                //         label: "Call",
+                //         onTap: () {},
+                //       ),
+                //     ),
+                //     const SizedBox(width: 12),
+                //     Expanded(
+                //       child: _GreenButton(
+                //         icon: Icons.chat_bubble_outline,
+                //         label: "Chat",
+                //         onTap: () {},
+                //       ),
+                //     ),
+                //   ],
+                // ),
 
                 const SizedBox(height: 12),
 

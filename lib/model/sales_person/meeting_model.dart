@@ -10,6 +10,8 @@ class MeetingModel {
   final String meetingType;
   final String date;
   final String time;
+  final String startTime;
+  final String endTime;
   final String location;
   final String? attachment;
   final String meetAgenda;
@@ -27,6 +29,8 @@ class MeetingModel {
     required this.meetingType,
     required this.date,
     required this.time,
+    required this.startTime,
+    required this.endTime,
     required this.location,
     this.attachment,
     required this.meetAgenda,
@@ -68,20 +72,26 @@ class MeetingModel {
     return MeetingModel(
       id: toInt(json['id']),
       userId: toInt(json['user_id']),
-      leadId: toStr(json['lead_id']),
-      meetTitle: toStr(json['meet_title']),
-      meetingType: toStr(json['meeting_type']),
-      date: toStr(json['date']),
-      time: toStr(json['time']),
-      location: toStr(json['location']),
+      leadId: toStr(json['lead_id'] ?? json['leadId']),
+      meetTitle: toStr(json['meet_title'] ?? json['title']),
+      meetingType: toStr(json['meeting_type'] ?? json['meetingType']),
+      date: toStr(json['date'] ?? json['meeting_date']),
+      time: toStr(json['time'] ?? json['meeting_time']),
+      startTime: toStr(json['start_time'] ?? json['startTime']),
+      endTime: toStr(json['end_time'] ?? json['endTime']),
+      location: toStr(json['location'] ?? json['meeting_link']),
       attachment: json['attachment'] == null ? null : toStr(json['attachment']),
-      meetAgenda: toStr(json['meetAgenda']),
-      followUp: toStr(json['followUp']),
+      meetAgenda: toStr(json['meetAgenda'] ?? json['meet_agenda'] ?? json['agenda']),
+      followUp: toStr(json['followUp'] ?? json['follow_up']),
       status: toStr(json['status']),
       createdAt: toStr(json['created_at']),
       updatedAt: toStr(json['updated_at']),
-      lead: parseLead(json['lead']),
+      lead: parseLead(
+        json['lead'] ??
+            json['lead_data'] ??
+            json['leadDetail'] ??
+            json['lead_detail'],
+      ),
     );
   }
 }
-

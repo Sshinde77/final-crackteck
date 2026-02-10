@@ -1819,6 +1819,29 @@ class ApiService {
 
       final nestedData = decoded['data'];
       if (nestedData is Map<String, dynamic>) {
+        // Laravel-style paginator shape:
+        // { data: { data: [...], current_page, last_page, ... } }
+        final nestedDataList = nestedData['data'];
+        if (nestedDataList is List) {
+          final normalized = Map<String, dynamic>.from(decoded);
+          normalized['data'] = nestedDataList;
+          if (normalized['meta'] is! Map<String, dynamic>) {
+            final meta = <String, dynamic>{
+              if (nestedData['current_page'] != null)
+                'current_page': nestedData['current_page'],
+              if (nestedData['last_page'] != null)
+                'last_page': nestedData['last_page'],
+              if (nestedData['per_page'] != null)
+                'per_page': nestedData['per_page'],
+              if (nestedData['total'] != null) 'total': nestedData['total'],
+            };
+            if (meta.isNotEmpty) {
+              normalized['meta'] = meta;
+            }
+          }
+          return normalized;
+        }
+
         final nestedMeetings = nestedData['meets'] ?? nestedData['meetings'];
         if (nestedMeetings is List) {
           final normalized = Map<String, dynamic>.from(decoded);
@@ -1944,13 +1967,15 @@ class ApiService {
     final effectiveUserId = storedUserId?.toString() ?? userId;
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
 
-    final url = Uri.parse(ApiConstants.meets_page).replace(
-      queryParameters: {
-        'user_id': effectiveUserId,
-        'role_id': effectiveRoleId,
-        'page': page.toString(),
-      },
-    );
+    final query = <String, String>{
+      'user_id': effectiveUserId,
+      'page': page.toString(),
+    };
+    if (effectiveRoleId.trim().isNotEmpty && effectiveRoleId != '0') {
+      query['role_id'] = effectiveRoleId;
+    }
+
+    final url = Uri.parse(ApiConstants.meets_page).replace(queryParameters: query);
 
     try {
       debugPrint('🔵 API Request: GET $url');
@@ -1979,7 +2004,16 @@ class ApiService {
           };
         }
 
-        return _normalizeMeetingsResponse(decoded);
+        final normalized = _normalizeMeetingsResponse(decoded);
+        if (normalized['data'] is List) {
+          return normalized;
+        }
+
+        return {
+          'data': _extractMeetingsList(decoded),
+          if (normalized['meta'] is Map<String, dynamic>)
+            'meta': normalized['meta'],
+        };
       }
 
       if (response.statusCode == 404) {
