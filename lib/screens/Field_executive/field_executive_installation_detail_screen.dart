@@ -34,6 +34,7 @@ class FieldExecutiveInstallationDetailScreen extends StatefulWidget {
 class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveInstallationDetailScreen> {
   bool isAccepted = false;
   bool _isAccepting = false;
+  String _serviceRequestStatus = '';
   DateTime? selectedDate;
   CaseTransferStatus caseTransferStatus = CaseTransferStatus.none;
   bool _isLoadingDetail = true;
@@ -59,8 +60,11 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
         roleId: widget.roleId,
       );
       if (!mounted) return;
+      final status = _extractServiceRequestStatus(detail);
       setState(() {
         _detailData = detail;
+        _serviceRequestStatus = status;
+        isAccepted = isAccepted || _isEngineerApprovedStatus(status);
         _isLoadingDetail = false;
       });
     } catch (e) {
@@ -124,64 +128,24 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     );
   }
 
-  bool _isTruthy(dynamic value) {
-    if (value == null) return false;
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-    final text = value.toString().trim().toLowerCase();
-    if (text.isEmpty || text == 'null' || text == 'false' || text == '0') {
-      return false;
-    }
-    return true;
-  }
+  String _extractServiceRequestStatus(Map<String, dynamic>? raw) {
+    if (raw == null) return '';
 
-  bool _isAcceptedFromApi(Map<String, dynamic>? raw) {
-    if (raw == null) return false;
+    final rootStatus = _readFromMap(raw, const ['status']);
+    if (rootStatus.isNotEmpty) return rootStatus;
 
     final requestMap = _asMap(raw['service_request']) ??
         _asMap(raw['request']) ??
         _asMap(raw['service']);
-
-    final sources = <Map<String, dynamic>>[
-      raw,
-      if (requestMap != null) requestMap,
-    ];
-
-    for (final source in sources) {
-      for (final key in const ['is_accepted', 'accepted', 'isAccepted']) {
-        if (_isTruthy(source[key])) return true;
-      }
-
-      for (final key in const [
-        'accepted_by',
-        'accepted_by_id',
-        'acceptedBy',
-        'acceptedById',
-      ]) {
-        if (_isTruthy(source[key])) return true;
-      }
-
-      final acceptedAt = _readFromMap(
-        source,
-        const ['accepted_at', 'acceptedAt', 'accepted_time'],
-      );
-      if (acceptedAt.isNotEmpty) return true;
-
-      final status = _readFromMap(
-        source,
-        const ['status', 'request_status', 'service_status'],
-      ).toLowerCase();
-      if (status.contains('accept') ||
-          status == 'in_progress' ||
-          status == 'in progress') {
-        return true;
-      }
-    }
-
-    return false;
+    return _readFromMap(requestMap, const ['status']);
   }
 
-  bool get _isRequestAccepted => isAccepted || _isAcceptedFromApi(_detailData);
+  bool _isEngineerApprovedStatus(String status) {
+    return status.trim().toLowerCase() == 'engineer_approved';
+  }
+
+  bool get _isRequestAccepted =>
+      isAccepted || _isEngineerApprovedStatus(_serviceRequestStatus);
 
   Map<String, dynamic>? _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
