@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../model/field executive/field_executive_product_service.dart';
+import '../../model/field executive/field_executive_service_request_detail.dart';
 import '../../routes/app_routes.dart';
+import '../../constants/api_constants.dart';
 import '../../services/api_service.dart';
 
 enum CaseTransferStatus { none, pending }
@@ -31,17 +33,13 @@ class FieldExecutiveInstallationDetailScreen extends StatefulWidget {
 
 class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveInstallationDetailScreen> {
   bool isAccepted = false;
+  bool _isAccepting = false;
   DateTime? selectedDate;
   CaseTransferStatus caseTransferStatus = CaseTransferStatus.none;
   bool _isLoadingDetail = true;
   String? _detailError;
   Map<String, dynamic>? _detailData;
   static const primaryGreen = Color(0xFF1E7C10);
-  static const _fallbackThumbUrls = [
-    'https://via.placeholder.com/100',
-    'https://via.placeholder.com/100',
-    'https://via.placeholder.com/100',
-  ];
 
   @override
   void initState() {
@@ -74,6 +72,117 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     }
   }
 
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _serviceRequestDbIdForApi() {
+    final fromDetail = _readFromMap(
+      _detailData,
+      const ['id', 'service_request_id'],
+    );
+    if (fromDetail.isNotEmpty) {
+      return fromDetail.replaceFirst(RegExp(r'^#'), '').trim();
+    }
+    return widget.serviceId.replaceFirst(RegExp(r'^#'), '').trim();
+  }
+
+  Future<void> _acceptServiceRequest() async {
+    if (_isAccepting) return;
+
+    final serviceRequestId = _serviceRequestDbIdForApi();
+    if (int.tryParse(serviceRequestId) == null) {
+      _snack('Service request id is invalid for accept API');
+      return;
+    }
+
+    setState(() {
+      _isAccepting = true;
+    });
+
+    final response = await ApiService.acceptServiceRequest(
+      serviceRequestId,
+      roleId: widget.roleId,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isAccepting = false;
+      if (response.success) {
+        isAccepted = true;
+      }
+    });
+
+    _snack(
+      response.message ??
+          (response.success
+              ? 'Service request accepted'
+              : 'Failed to accept service request'),
+    );
+  }
+
+  bool _isTruthy(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final text = value.toString().trim().toLowerCase();
+    if (text.isEmpty || text == 'null' || text == 'false' || text == '0') {
+      return false;
+    }
+    return true;
+  }
+
+  bool _isAcceptedFromApi(Map<String, dynamic>? raw) {
+    if (raw == null) return false;
+
+    final requestMap = _asMap(raw['service_request']) ??
+        _asMap(raw['request']) ??
+        _asMap(raw['service']);
+
+    final sources = <Map<String, dynamic>>[
+      raw,
+      if (requestMap != null) requestMap,
+    ];
+
+    for (final source in sources) {
+      for (final key in const ['is_accepted', 'accepted', 'isAccepted']) {
+        if (_isTruthy(source[key])) return true;
+      }
+
+      for (final key in const [
+        'accepted_by',
+        'accepted_by_id',
+        'acceptedBy',
+        'acceptedById',
+      ]) {
+        if (_isTruthy(source[key])) return true;
+      }
+
+      final acceptedAt = _readFromMap(
+        source,
+        const ['accepted_at', 'acceptedAt', 'accepted_time'],
+      );
+      if (acceptedAt.isNotEmpty) return true;
+
+      final status = _readFromMap(
+        source,
+        const ['status', 'request_status', 'service_status'],
+      ).toLowerCase();
+      if (status.contains('accept') ||
+          status == 'in_progress' ||
+          status == 'in progress') {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool get _isRequestAccepted => isAccepted || _isAcceptedFromApi(_detailData);
+
   Map<String, dynamic>? _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value);
@@ -89,6 +198,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     for (final key in keys) {
       final value = source[key];
       if (value == null) continue;
+      if (value is Map || value is List) continue;
       final text = value.toString().trim();
       if (text.isNotEmpty) return text;
     }
@@ -130,6 +240,171 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     return 'Medium';
   }
 
+  String _normalizeServiceType(String raw) {
+    final value = raw.trim().toLowerCase();
+    if (value.isEmpty) return '';
+    if (value == '1' ||
+        value == 'installation' ||
+        value == 'installations') {
+      return 'Installation';
+    }
+    if (value == '2' || value == 'repair' || value == 'repairs') {
+      return 'Repair';
+    }
+    if (value == '3' || value == 'amc') {
+      return 'AMC';
+    }
+    if (value == '4' ||
+        value == 'quick_service' ||
+        value == 'quick service' ||
+        value == 'quickservice') {
+      return 'Quick Service';
+    }
+    return raw.trim();
+  }
+
+  String _maskPhoneNumber(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty || raw.trim() == '-') return '-';
+    if (digits.length <= 4) return '****';
+    final maskedLength = digits.length - 4;
+    return '${'*' * maskedLength}${digits.substring(maskedLength)}';
+  }
+
+  void _addUrl(List<String> urls, dynamic value) {
+    if (value == null) return;
+    if (value is String) {
+      final normalized = _normalizeImageSource(value);
+      if (normalized.isEmpty) return;
+      if (!urls.contains(normalized)) urls.add(normalized);
+      return;
+    }
+    if (value is List) {
+      for (final item in value) {
+        _addUrl(urls, item);
+      }
+      return;
+    }
+    final map = _asMap(value);
+    if (map == null) return;
+    for (final key in const [
+      'url',
+      'image',
+      'image_url',
+      'path',
+      'file',
+      'src',
+      'thumbnail',
+      'thumb',
+    ]) {
+      _addUrl(urls, map[key]);
+    }
+  }
+
+  bool _looksLikeHtml(String raw) {
+    final value = raw.trimLeft().toLowerCase();
+    return value.startsWith('<!doctype html') || value.startsWith('<html');
+  }
+
+  String _normalizeImageSource(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return '';
+    if (value.toLowerCase() == 'null') return '';
+    if (_looksLikeHtml(value)) return '';
+    if (value.startsWith('data:image/')) return value;
+    if (value.contains('<') && value.contains('>')) return '';
+
+    final parsed = Uri.tryParse(value);
+    if (parsed != null && parsed.hasScheme) {
+      final scheme = parsed.scheme.toLowerCase();
+      if (scheme == 'http' || scheme == 'https') return parsed.toString();
+      return '';
+    }
+
+    final base = Uri.parse(ApiConstants.baseUrl);
+    final origin = Uri(
+      scheme: base.scheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+    );
+
+    final relative = value.startsWith('//')
+        ? Uri.parse('https:$value')
+        : value.startsWith('/')
+            ? Uri.parse(value)
+            : Uri.parse('/$value');
+
+    return origin.resolveUri(relative).toString();
+  }
+
+  Widget _buildImageFallback({
+    IconData icon = Icons.image_not_supported,
+    double iconSize = 40,
+  }) {
+    return Container(
+      color: Colors.grey.shade100,
+      alignment: Alignment.center,
+      child: Icon(icon, color: Colors.grey.shade500, size: iconSize),
+    );
+  }
+
+  List<Map<String, dynamic>> get _productMaps {
+    final products = <Map<String, dynamic>>[];
+
+    void collectProducts(dynamic node) {
+      if (node == null) return;
+      final map = _asMap(node);
+      if (map != null) {
+        products.add(map);
+        return;
+      }
+      if (node is List) {
+        for (final item in node) {
+          collectProducts(item);
+        }
+      }
+    }
+
+    for (final key in const [
+      'products',
+      'product',
+      'product_detail',
+      'product_details',
+      'service_products',
+      'service_product',
+      'items',
+      'item',
+      'service',
+    ]) {
+      collectProducts(_detailData?[key]);
+    }
+
+    final unique = <String>{};
+    final deduped = <Map<String, dynamic>>[];
+    for (final product in products) {
+      final identity =
+          '${product['id']}-${product['product_id']}-${product['product_code']}-${product['sku']}-${product['name']}-${product['product_name']}';
+      if (unique.add(identity)) {
+        deduped.add(product);
+      }
+    }
+    return deduped;
+  }
+
+  Map<String, dynamic>? get _customerMap =>
+      _asMap(_detailData?['customer']) ??
+      _asMap(_detailData?['customer_details']) ??
+      _asMap(_detailData?['user']) ??
+      _asMap(_detailData?['lead_details']);
+
+  Map<String, dynamic>? get _productMap => _productMaps.isEmpty ? null : _productMaps.first;
+
+  String _readProductField(List<String> keys, {String fallback = ''}) {
+    final productValue = _readFromMap(_productMap, keys);
+    if (productValue.isNotEmpty) return productValue;
+    return _field(keys, fallback: fallback);
+  }
+
   String _formatDateMaybe(String raw) {
     if (raw.trim().isEmpty) return '';
     final parsed = DateTime.tryParse(raw);
@@ -147,6 +422,10 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
             ? 'Visit charge of Rs 159 waived in final bill; spare part / repair cost extra. Technician will diagnose and provide repair estimate.'
             : 'Visit charge of Rs 159 waived in final bill; spare part / repair cost extra',
       );
+  String get _requestId => _field(
+        const ['request_id', 'requestId', 'service_id', 'serviceId', 'ticket_no', 'id'],
+        fallback: widget.serviceId,
+      );
   String get _serviceId => _normalizeServiceId(
         _field(
           const ['service_id', 'serviceId', 'request_id', 'id', 'ticket_no'],
@@ -155,10 +434,32 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
       );
   String get _location =>
       _field(const ['location', 'city', 'area'], fallback: widget.location);
-  String get _fullAddress => _field(
-        const ['address', 'full_address', 'service_address', 'location'],
-        fallback: _location,
-      );
+  FieldExecutiveServiceRequestDetail? get _detailModel {
+    final detail = _detailData;
+    if (detail == null) return null;
+    return FieldExecutiveServiceRequestDetail.fromJson(detail);
+  }
+
+  String get _formattedCustomerAddress {
+    final detailModel = _detailModel;
+    final addressId = detailModel?.customerAddressId ?? '';
+    if (addressId.trim().isEmpty) {
+      return 'Address Not Available';
+    }
+
+    final address = detailModel?.customerAddress;
+    if (address == null || !address.hasData) {
+      return 'Address Not Available';
+    }
+
+    final formatted = address.formattedMultiline.trim();
+    if (formatted.isEmpty) {
+      return 'Address Not Available';
+    }
+
+    return formatted;
+  }
+
   String get _priority => _normalizePriority(
         _field(
           const ['priority', 'priority_level', 'urgency'],
@@ -169,16 +470,136 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
         const ['image_url', 'image', 'service_image', 'product_image'],
         fallback: '',
       );
-  String get _customerName => _field(
-        const ['customer_name', 'customer', 'name', 'full_name'],
-        fallback: '-',
-      );
+  String get _customerName {
+    final firstName = _readFromMap(
+      _customerMap,
+      const ['first_name', 'firstName', 'firstname'],
+    );
+    final lastName = _readFromMap(
+      _customerMap,
+      const ['last_name', 'lastName', 'lastname'],
+    );
+
+    final fullName = [firstName, lastName]
+        .where((part) => part.trim().isNotEmpty)
+        .join(' ')
+        .trim();
+    if (fullName.isNotEmpty) return fullName;
+
+    final rootFirstName = _readFromMap(
+      _detailData,
+      const ['first_name', 'firstName', 'firstname'],
+    );
+    final rootLastName = _readFromMap(
+      _detailData,
+      const ['last_name', 'lastName', 'lastname'],
+    );
+    final rootFullName = [rootFirstName, rootLastName]
+        .where((part) => part.trim().isNotEmpty)
+        .join(' ')
+        .trim();
+    if (rootFullName.isNotEmpty) return rootFullName;
+
+    final fallback = _field(
+      const ['customer_name', 'full_name', 'name'],
+      fallback: '-',
+    );
+    return fallback.trim().isEmpty ? '-' : fallback;
+  }
   String get _customerNumber => _field(
         const ['customer_phone', 'customer_number', 'phone', 'mobile', 'phone_number', 'contact_number'],
         fallback: '-',
       );
+  String get _customerNumberForDisplay =>
+      _isRequestAccepted ? _customerNumber : _maskPhoneNumber(_customerNumber);
   String get _serviceType =>
-      _field(const ['service_type', 'serviceType', 'type'], fallback: _title);
+      _normalizeServiceType(
+        _field(
+          const ['service_type', 'serviceType', 'service_type_name', 'type'],
+          fallback: widget.jobType,
+        ),
+      );
+  String get _productTitle => _readProductField(
+        const ['product_name', 'name', 'title', 'service_name'],
+        fallback: _title,
+      );
+  String get _productBrand =>
+      _readProductField(const ['brand', 'brand_name', 'company', 'make']);
+  String get _productModel =>
+      _readProductField(const ['model', 'model_name', 'variant']);
+  String get _productCode => _readProductField(
+        const ['product_code', 'sku', 'serial_number', 'product_id', 'id'],
+      );
+  String get _productLocation =>
+      _readProductField(const ['location', 'city', 'area'], fallback: _location);
+  bool get _hasMultipleProducts => _productMaps.length > 1;
+  List<String> get _productImageUrls {
+    final urls = <String>[];
+
+    for (final product in _productMaps) {
+      for (final key in const [
+        'images',
+        'product_images',
+        'gallery',
+        'photos',
+        'media',
+        'attachments',
+        'product_image',
+        'image_url',
+        'image',
+        'thumbnail',
+      ]) {
+        _addUrl(urls, product[key]);
+      }
+    }
+
+    return urls.take(20).toList();
+  }
+
+  List<String> get _attachmentMediaUrls {
+    final urls = <String>[];
+    for (final key in const [
+      'images',
+      'photos',
+      'media',
+      'attachments',
+      'before_images',
+      'after_images',
+      'videos',
+    ]) {
+      _addUrl(urls, _detailData?[key]);
+    }
+    return urls.take(20).toList();
+  }
+
+  String get _heroImageUrl {
+    if (_productImageUrls.isNotEmpty) return _productImageUrls.first;
+    final normalizedImage = _normalizeImageSource(_imageUrl);
+    if (normalizedImage.isNotEmpty) return normalizedImage;
+    return '';
+  }
+
+  String get _productImage {
+    if (_productImageUrls.isNotEmpty) return _productImageUrls.first;
+    return _normalizeImageSource(
+      _readProductField(
+      const ['product_image', 'image_url', 'image', 'thumbnail'],
+      fallback: _imageUrl,
+      ),
+    );
+  }
+  String get _productDetailText {
+    final parts = <String>[
+      if (_productBrand.isNotEmpty) _productBrand,
+      if (_productModel.isNotEmpty) _productModel,
+      if (_productCode.isNotEmpty) 'Code: $_productCode',
+    ];
+    if (parts.isNotEmpty) return parts.join(' | ');
+    return _readProductField(
+      const ['description', 'details', 'product_description'],
+      fallback: _description,
+    );
+  }
 
   String get _schedule {
     final raw = _field(
@@ -202,49 +623,17 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   }
 
   List<String> get _mediaUrls {
-    final urls = <String>[];
-
-    void addUrl(dynamic value) {
-      if (value == null) return;
-      final text = value.toString().trim();
-      if (text.isEmpty) return;
-      if (!urls.contains(text)) urls.add(text);
+    final productImages = _productImageUrls;
+    if (productImages.length > 1) {
+      return productImages.skip(1).toList();
     }
-
-    void collect(dynamic node) {
-      if (node == null) return;
-      if (node is String) {
-        addUrl(node);
-        return;
-      }
-      if (node is List) {
-        for (final item in node) {
-          collect(item);
-        }
-        return;
-      }
-      final map = _asMap(node);
-      if (map == null) return;
-      for (final key in const ['url', 'image', 'image_url', 'path', 'file']) {
-        collect(map[key]);
-      }
+    if (productImages.length == 1) {
+      return const [];
     }
-
-    for (final key in const [
-      'images',
-      'photos',
-      'media',
-      'attachments',
-      'before_images',
-      'after_images',
-      'videos',
-    ]) {
-      collect(_detailData?[key]);
-    }
-
-    if (urls.isEmpty) return _fallbackThumbUrls;
-    return urls.take(8).toList();
+    return _attachmentMediaUrls;
   }
+
+  bool get _showMediaSection => _mediaUrls.isNotEmpty;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -301,7 +690,15 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     );
   }
 
-  Widget _buildProductCard(String title, String desc, String serviceId, String location, String priority) {
+  Widget _buildProductCard(
+    String title,
+    String desc,
+    String codeOrId,
+    String location,
+    String imageUrl,
+  ) {
+    final normalizedImage = _normalizeImageSource(imageUrl);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -315,7 +712,17 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
             width: 60,
             height: 60,
             decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.desktop_windows, color: Colors.grey),
+            child: normalizedImage.isEmpty
+                ? _buildImageFallback(icon: Icons.desktop_windows, iconSize: 26)
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      normalizedImage,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _buildImageFallback(icon: Icons.desktop_windows, iconSize: 26),
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -332,7 +739,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(serviceId, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              Text(codeOrId, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
               Text(location, style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ],
           ),
@@ -342,23 +749,49 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   }
 
   Widget _buildImageThumb(String url) {
+    final normalized = _normalizeImageSource(url);
+    if (normalized.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: 100,
+            height: 100,
+            child: _buildImageFallback(iconSize: 28),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
-          url,
+          normalized,
           width: 100,
           height: 100,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+          errorBuilder: (_, __, ___) => SizedBox(
             width: 100,
             height: 100,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image_not_supported, color: Colors.grey),
+            child: _buildImageFallback(iconSize: 28),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeroImage() {
+    if (_heroImageUrl.isEmpty) {
+      return _buildImageFallback();
+    }
+
+    return Image.network(
+      _heroImageUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => _buildImageFallback(),
     );
   }
 
@@ -374,11 +807,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.jobType == 'repairs'
-              ? 'Repair service details'
-              : widget.jobType == 'amc'
-                  ? 'AMC service details'
-                  : 'Installation service details',
+          _serviceType.isEmpty ? 'Service details' : _serviceType,
           style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
@@ -432,24 +861,19 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade200),
                     ),
-                    child: Image.network(
-                      _imageUrl.isEmpty
-                          ? 'https://via.placeholder.com/300x200'
-                          : _imageUrl,
-                      fit: BoxFit.contain,
-                    ),
+                    child: _buildHeroImage(),
                   ),
                 ),
                 const SizedBox(height: 20),
 
                 // Title and Description
                 Text(
-                  _title,
+                  _serviceType.isEmpty ? _title : _serviceType,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _description,
+                  'Request ID: $_requestId',
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
@@ -457,7 +881,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
 
                 // Customer Details
                 _buildDetailRow('Customer Name', _customerName),
-                _buildDetailRow('Customer Number', _customerNumber),
+                _buildDetailRow('Customer Number', _customerNumberForDisplay),
                 _buildDetailRow(
                   'Schedule',
                   selectedDate == null
@@ -476,61 +900,64 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                       'Product',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    TextButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.FieldExecutiveAllProductsScreen,
-                          arguments: fieldexecutiveallproductsArguments(
-                            roleId: widget.roleId,
-                            roleName: widget.roleName,
-                            controller: FieldExecutiveProductServicesController.withDefaults(),
-                          ),
-                        );
-                      },
-                      label: const Text('View all product', style: TextStyle(color: primaryGreen)),
-                      icon: const Icon(Icons.arrow_forward, color: primaryGreen, size: 16),
-                      iconAlignment: IconAlignment.end,
-                    ),
+                    if (_hasMultipleProducts)
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.FieldExecutiveAllProductsScreen,
+                            arguments: fieldexecutiveallproductsArguments(
+                              roleId: widget.roleId,
+                              roleName: widget.roleName,
+                              controller: FieldExecutiveProductServicesController.withDefaults(),
+                            ),
+                          );
+                        },
+                        label: const Text('View all product', style: TextStyle(color: primaryGreen)),
+                        icon: const Icon(Icons.arrow_forward, color: primaryGreen, size: 16),
+                        iconAlignment: IconAlignment.end,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 _buildProductCard(
-                  _title,
-                  _description,
-                  _serviceId,
-                  _location,
-                  _priority,
+                  _productTitle,
+                  _productDetailText,
+                  _productCode.isEmpty ? _serviceId : _productCode,
+                  _productLocation,
+                  _productImage,
                 ),
                 const SizedBox(height: 16),
                 const Divider(),
 
                 // Photo's & Video
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Photo\'s & Video',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    TextButton.icon(
-                      onPressed: () {},
-                      label: const Text('View All', style: TextStyle(color: primaryGreen)),
-                      icon: const Icon(Icons.arrow_forward, color: primaryGreen, size: 16),
-                      iconAlignment: IconAlignment.end,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 100,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: _mediaUrls.map(_buildImageThumb).toList(),
+                if (_showMediaSection) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Photo\'s & Video',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {},
+                        label: const Text('View All', style: TextStyle(color: primaryGreen)),
+                        icon: const Icon(Icons.arrow_forward, color: primaryGreen, size: 16),
+                        iconAlignment: IconAlignment.end,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 100,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _mediaUrls.map(_buildImageThumb).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                ],
 
                 // Location
                 const Text(
@@ -538,14 +965,25 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
+                if (_location.trim().isNotEmpty && _location.trim() != '-')
+                  Text(
+                    _location,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                const SizedBox(height: 4),
                 Text(
-                  _fullAddress,
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                  _formattedCustomerAddress,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // Go to location button (same for all job types)
-                if (isAccepted) ...[
+                if (_isRequestAccepted) ...[
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pushNamed(
@@ -554,7 +992,14 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                         arguments: fieldexecutivemaptrackingArguments(
                           roleId: widget.roleId,
                           roleName: widget.roleName,
-                          serviceId: _serviceId,
+                          serviceId: _serviceRequestDbIdForApi(),
+                          customerName: _customerName == '-' ? '' : _customerName,
+                          customerAddress:
+                              _formattedCustomerAddress == 'Address Not Available'
+                                  ? ''
+                                  : _formattedCustomerAddress,
+                          customerPhone: _customerNumber == '-' ? '' : _customerNumber,
+                          displayServiceId: _serviceId,
                         ),
                       );
                     },
@@ -568,23 +1013,6 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                   ),
                   const SizedBox(height: 16),
                 ],
-
-                // Map Placeholder
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/map_placeholder.jpg', // Placeholder for map
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 32),
               ],
             ),
@@ -605,7 +1033,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
             ],
           ),
           // same accept / reschedule / case-transfer actions for all job types
-          child: isAccepted
+          child: _isRequestAccepted
               ? (
                   // If pending, show only the pending container (no buttons)
                   caseTransferStatus == CaseTransferStatus.pending
@@ -698,20 +1126,25 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                         )
                 )
               : ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      isAccepted = true;
-                    });
-                  },
+                  onPressed: _isAccepting ? null : _acceptServiceRequest,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryGreen,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text(
-                    'Accept',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isAccepting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Accept',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                 ),
                 ),
               ),

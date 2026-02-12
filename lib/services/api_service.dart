@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
 import '../model/api_response.dart';
+import '../model/field executive/field_executive_service_request_detail.dart';
 import '../core/secure_storage_service.dart';
 import '../core/navigation_service.dart';
 
@@ -392,6 +393,16 @@ class ApiService {
     required String pan,
     required File aadharFile,
     required File panFile,
+    String? firstName,
+    String? lastName,
+    String? addressLine1,
+    String? addressLine2,
+    String? country,
+    String? state,
+    String? city,
+    String? pincode,
+    File? aadharBackFile,
+    File? panBackFile,
     String? drivingLicenceNumber,
     File? licenceFrontFile,
     File? licenceBackFile,
@@ -408,6 +419,31 @@ class ApiService {
         "pan_no": pan,
       };
 
+      if (firstName != null && firstName.trim().isNotEmpty) {
+        fields["first_name"] = firstName.trim();
+      }
+      if (lastName != null && lastName.trim().isNotEmpty) {
+        fields["last_name"] = lastName.trim();
+      }
+      if (addressLine1 != null && addressLine1.trim().isNotEmpty) {
+        fields["address_line_1"] = addressLine1.trim();
+      }
+      if (addressLine2 != null && addressLine2.trim().isNotEmpty) {
+        fields["address_line_2"] = addressLine2.trim();
+      }
+      if (country != null && country.trim().isNotEmpty) {
+        fields["country"] = country.trim();
+      }
+      if (state != null && state.trim().isNotEmpty) {
+        fields["state"] = state.trim();
+      }
+      if (city != null && city.trim().isNotEmpty) {
+        fields["city"] = city.trim();
+      }
+      if (pincode != null && pincode.trim().isNotEmpty) {
+        fields["pincode"] = pincode.trim();
+      }
+
       if (drivingLicenceNumber != null && drivingLicenceNumber.isNotEmpty) {
         fields["driving_licence_no"] = drivingLicenceNumber;
       }
@@ -420,6 +456,24 @@ class ApiService {
         ..files.add(
           await http.MultipartFile.fromPath("pan_document", panFile.path),
         );
+
+      if (aadharBackFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            "aadhar_back_document",
+            aadharBackFile.path,
+          ),
+        );
+      }
+
+      if (panBackFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            "pan_back_document",
+            panBackFile.path,
+          ),
+        );
+      }
 
       if (licenceFrontFile != null) {
         request.files.add(
@@ -794,6 +848,43 @@ class ApiService {
     }
   }
 
+  static Future<http.Response> _performAuthenticatedPost(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    int retryCount = 0;
+    while (true) {
+      final accessToken = await SecureStorageService.getAccessToken();
+      final mergedHeaders = <String, String>{
+        'Accept': 'application/json',
+        if (headers != null) ...headers,
+        if (accessToken != null && accessToken.isNotEmpty)
+          'Authorization': 'Bearer $accessToken',
+      };
+
+      final response = await http
+          .post(url, headers: mergedHeaders, body: body)
+          .timeout(ApiConstants.requestTimeout);
+
+      if (!_isUnauthorizedResponse(response)) {
+        return response;
+      }
+
+      if (retryCount >= _maxAuthRetries) {
+        await _handleAuthFailure();
+        return response;
+      }
+
+      retryCount++;
+      final refreshed = await _attemptTokenRefresh();
+      if (!refreshed) {
+        await _handleAuthFailure();
+        return response;
+      }
+    }
+  }
+
   /// Fetch dashboard data for a specific user
   /// GET /dashboard?user_id={userId}&role_id={roleId}
   static Future<Map<String, dynamic>> fetchDashboard(String userId) async {
@@ -1072,7 +1163,7 @@ class ApiService {
         );
       }
 
-      final dynamic decoded;
+      dynamic decoded;
       try {
         decoded = jsonDecode(response.body);
       } catch (_) {
@@ -1109,13 +1200,120 @@ class ApiService {
     }
   }
 
+  /// Accept a service request for field executive.
+  /// POST /service-request/{id}/accept?user_id={userId}&role_id={roleId}
+  static Future<ApiResponse> acceptServiceRequest(
+    String serviceRequestId, {
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling acceptServiceRequest',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedId = serviceRequestId
+        .trim()
+        .replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+    if (numericId == null) {
+      return ApiResponse(
+        success: false,
+        message:
+            'Invalid service request id "$serviceRequestId". Expected numeric id.',
+      );
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+
+    String baseEndpoint = ApiConstants.ServiceRequestAccept
+        .replaceFirst('{service-request_id}', numericId.toString())
+        .replaceFirst('{service_request_id}', numericId.toString());
+    if (baseEndpoint.contains('{service-request_id}') ||
+        baseEndpoint.contains('{service_request_id}')) {
+      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId';
+    }
+    if (!baseEndpoint.endsWith('/accept')) {
+      baseEndpoint = '$baseEndpoint/accept';
+    }
+
+    final url = Uri.parse(baseEndpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('API Request: POST $url');
+      final response = await _performAuthenticatedPost(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final bool success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success ? 'Service request accepted' : 'Failed to accept request'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to accept request: $e',
+      );
+    }
+  }
+
   /// Fetch a single service request detail for field executive.
   ///
-  /// Tries multiple common backend shapes/endpoints:
-  /// 1) GET /service-request?user_id=&role_id=&service_id=
-  /// 2) GET /service-request?user_id=&role_id=&request_id=
-  /// 3) GET /service-request/{id}?user_id=&role_id=
-  /// If all fail, falls back to searching in /service-requests list.
+  /// Uses numeric database id:
+  /// GET /service-request/{id}
+  /// (with and without auth query params for backend compatibility).
+  /// If detail endpoint fails, falls back to list endpoint lookup by id.
   static Future<Map<String, dynamic>> fetchServiceRequestDetail(
     String serviceId, {
     int roleId = 1,
@@ -1132,28 +1330,34 @@ class ApiService {
     }
 
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
-    final rawId = serviceId.trim();
-    final normalizedId = rawId.replaceFirst(RegExp(r'^#'), '');
+    final rawId = serviceId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(rawId);
 
-    bool matchesId(Map<String, dynamic> item) {
-      String normalize(dynamic value) {
-        final s = value?.toString().trim() ?? '';
-        if (s.isEmpty) return '';
-        return s.replaceFirst(RegExp(r'^#'), '').toLowerCase();
+    if (numericId == null) {
+      throw Exception(
+        'Invalid service request id "$serviceId". Expected numeric database id.',
+      );
+    }
+
+    bool matchesNumericId(Map<String, dynamic> item) {
+      int? parseInt(dynamic value) {
+        if (value == null) return null;
+        if (value is int) return value;
+        if (value is num) return value.toInt();
+        return int.tryParse(value.toString().trim());
       }
 
-      final expected = normalizedId.toLowerCase();
-      final candidates = <dynamic>[
-        item['service_id'],
-        item['serviceId'],
-        item['request_id'],
-        item['ticket_no'],
-        item['id'],
-      ];
-      for (final c in candidates) {
-        if (normalize(c) == expected) return true;
+      final candidates = <dynamic>[item['id'], item['service_request_id']];
+      for (final candidate in candidates) {
+        final parsed = parseInt(candidate);
+        if (parsed != null && parsed == numericId) return true;
       }
       return false;
+    }
+
+    Map<String, dynamic> normalizeDetailMap(Map<String, dynamic> source) {
+      final model = FieldExecutiveServiceRequestDetail.fromJson(source);
+      return model.toJson();
     }
 
     Map<String, dynamic>? parseSingle(dynamic decoded) {
@@ -1161,16 +1365,24 @@ class ApiService {
 
       if (decoded is Map<String, dynamic>) {
         if (decoded['data'] is Map<String, dynamic>) {
-          return Map<String, dynamic>.from(decoded['data'] as Map);
+          return normalizeDetailMap(
+            Map<String, dynamic>.from(decoded['data'] as Map),
+          );
         }
         if (decoded['serviceRequest'] is Map<String, dynamic>) {
-          return Map<String, dynamic>.from(decoded['serviceRequest'] as Map);
+          return normalizeDetailMap(
+            Map<String, dynamic>.from(decoded['serviceRequest'] as Map),
+          );
         }
         if (decoded['service_request'] is Map<String, dynamic>) {
-          return Map<String, dynamic>.from(decoded['service_request'] as Map);
+          return normalizeDetailMap(
+            Map<String, dynamic>.from(decoded['service_request'] as Map),
+          );
         }
         if (decoded['request'] is Map<String, dynamic>) {
-          return Map<String, dynamic>.from(decoded['request'] as Map);
+          return normalizeDetailMap(
+            Map<String, dynamic>.from(decoded['request'] as Map),
+          );
         }
         if (decoded['serviceRequest'] is List) {
           listCandidate = decoded['serviceRequest'] as List;
@@ -1191,13 +1403,13 @@ class ApiService {
           .toList();
 
       for (final item in mapped) {
-        if (matchesId(item)) {
-          return item;
+        if (matchesNumericId(item)) {
+          return normalizeDetailMap(item);
         }
       }
 
       if (mapped.isNotEmpty) {
-        return mapped.first;
+        return normalizeDetailMap(mapped.first);
       }
 
       return null;
@@ -1225,7 +1437,14 @@ class ApiService {
         return null;
       }
 
-      return parseSingle(decoded);
+      final parsed = parseSingle(decoded);
+      if (parsed != null) {
+        debugPrint(
+          'Service detail customer_address_id=${parsed['customer_address_id']} '
+          'customer_address=${parsed['customer_address']}',
+        );
+      }
+      return parsed;
     }
 
     try {
@@ -1235,15 +1454,10 @@ class ApiService {
       };
 
       final attempts = <Uri>[
-        Uri.parse(ApiConstants.serviceRequest).replace(
-          queryParameters: {...base, 'service_id': normalizedId},
-        ),
-        Uri.parse(ApiConstants.serviceRequest).replace(
-          queryParameters: {...base, 'request_id': normalizedId},
-        ),
-        Uri.parse('${ApiConstants.serviceRequest}/$normalizedId').replace(
+        Uri.parse('${ApiConstants.serviceRequest}/$numericId').replace(
           queryParameters: base,
         ),
+        Uri.parse('${ApiConstants.serviceRequest}/$numericId'),
       ];
 
       for (final uri in attempts) {
@@ -1256,8 +1470,8 @@ class ApiService {
       // Fallback to list endpoint in case detail endpoint is unavailable.
       final list = await fetchServiceRequests(roleId: roleId);
       for (final item in list) {
-        if (matchesId(item)) {
-          return item;
+        if (matchesNumericId(item)) {
+          return normalizeDetailMap(item);
         }
       }
 

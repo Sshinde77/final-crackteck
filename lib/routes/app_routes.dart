@@ -218,8 +218,13 @@ class fieldexecutiveinstallationdetailArguments {
 class fieldexecutiveotpverificationArguments {
   final int roleId;
   final String roleName;
+  final String serviceId;
 
-  fieldexecutiveotpverificationArguments({required this.roleId, required this.roleName});
+  fieldexecutiveotpverificationArguments({
+    required this.roleId,
+    required this.roleName,
+    this.serviceId = '',
+  });
 }
 
 class fieldexecutiveallproductsArguments {
@@ -260,12 +265,21 @@ class fieldexecutiveproductitemdetailArguments {
 
 class fieldexecutivemaptrackingArguments {
   final int roleId;
-  final String roleName;    final String serviceId;
+  final String roleName;
+  final String serviceId;
+  final String customerName;
+  final String customerAddress;
+  final String customerPhone;
+  final String displayServiceId;
 
   fieldexecutivemaptrackingArguments({
     required this.roleId,
     required this.roleName,
     required this.serviceId,
+    this.customerName = '',
+    this.customerAddress = '',
+    this.customerPhone = '',
+    this.displayServiceId = '',
   });
 }
 

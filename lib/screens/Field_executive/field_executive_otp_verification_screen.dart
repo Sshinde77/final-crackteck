@@ -6,11 +6,13 @@ import '../../routes/app_routes.dart';
 class FieldExecutiveOtpVerificationScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
+  final String serviceId;
 
   const FieldExecutiveOtpVerificationScreen({
     super.key,
     required this.roleId,
     required this.roleName,
+    this.serviceId = '',
   });
 
   @override

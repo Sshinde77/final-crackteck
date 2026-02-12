@@ -370,7 +370,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                             roleId: widget.roleId,
                             roleName: widget.roleName,
                             title: job.title,
-                            serviceId: job.serviceId,
+                            serviceId: job.detailServiceId,
                             location: job.location,
                             priority: job.priority,
                             jobType: jobTypeStr,
@@ -633,6 +633,8 @@ class _JobCard extends StatelessWidget {
 enum JobTab { installations, repairs, amc, quickService }
 
 class JobItem {
+  final int? id;
+  final String requestId;
   final String title;
   final String description;
   final String serviceId;
@@ -642,6 +644,8 @@ class JobItem {
   final String imageUrl;
 
   JobItem({
+    required this.id,
+    required this.requestId,
     required this.title,
     required this.description,
     required this.serviceId,
@@ -650,6 +654,12 @@ class JobItem {
     required this.tab,
     required this.imageUrl,
   });
+
+  String get detailServiceId {
+    if (id != null) return id!.toString();
+    final normalized = requestId.trim().replaceFirst(RegExp(r'^#'), '');
+    return normalized.isEmpty ? serviceId.replaceFirst(RegExp(r'^#'), '') : normalized;
+  }
 
   factory JobItem.fromApi(Map<String, dynamic> json) {
     String readStr(List<String> keys, {String fallback = ''}) {
@@ -660,6 +670,18 @@ class JobItem {
         if (str.isNotEmpty) return str;
       }
       return fallback;
+    }
+
+    int? readInt(List<String> keys) {
+      for (final key in keys) {
+        final value = json[key];
+        if (value == null) continue;
+        if (value is int) return value;
+        if (value is num) return value.toInt();
+        final parsed = int.tryParse(value.toString().trim());
+        if (parsed != null) return parsed;
+      }
+      return null;
     }
 
     final title = readStr(
@@ -677,13 +699,16 @@ class JobItem {
       fallback: '-',
     );
 
-    final rawServiceId = readStr(
-      const ['service_id', 'serviceId', 'request_id', 'id', 'ticket_no'],
-      fallback: '-',
+    final id = readInt(const ['id', 'service_request_id']);
+
+    final requestId = readStr(
+      const ['request_id', 'requestId', 'service_id', 'serviceId', 'ticket_no'],
+      fallback: '',
     );
-    final serviceId = rawServiceId == '-' || rawServiceId.isEmpty
+    final serviceIdSource = requestId.isNotEmpty ? requestId : (id?.toString() ?? '-');
+    final serviceId = serviceIdSource == '-' || serviceIdSource.isEmpty
         ? '-'
-        : (rawServiceId.startsWith('#') ? rawServiceId : '#$rawServiceId');
+        : (serviceIdSource.startsWith('#') ? serviceIdSource : '#$serviceIdSource');
 
     final priority = readStr(
       const ['priority', 'priority_level', 'urgency'],
@@ -698,6 +723,8 @@ class JobItem {
     );
 
     return JobItem(
+      id: id,
+      requestId: requestId,
       title: title,
       description: description,
       serviceId: serviceId,

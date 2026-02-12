@@ -60,6 +60,7 @@ class ApiConstants {
   //field executive 
     static const String serviceRequests = "$baseUrl/service-requests";
     static const String serviceRequest = "$baseUrl/service-request";
+    static const String ServiceRequestAccept = "$baseUrl/service-request/{service-request_id}";
 
 
   // Country Code

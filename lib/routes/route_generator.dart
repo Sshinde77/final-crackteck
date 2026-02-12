@@ -431,6 +431,7 @@ class RouteGenerator {
               FieldExecutiveOtpVerificationScreen(
                 roleId: args.roleId,
                 roleName: args.roleName,
+                serviceId: args.serviceId,
               ),
           settings: settings,
         );
@@ -482,6 +483,10 @@ class RouteGenerator {
                 roleId: args.roleId,
                 roleName: args.roleName,
                 serviceId: args.serviceId,
+                customerName: args.customerName,
+                customerAddress: args.customerAddress,
+                customerPhone: args.customerPhone,
+                displayServiceId: args.displayServiceId,
               ),
           settings: settings,
         );
