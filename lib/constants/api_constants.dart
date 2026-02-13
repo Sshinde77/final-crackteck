@@ -62,6 +62,7 @@ class ApiConstants {
     static const String serviceRequest = "$baseUrl/service-request";
     static const String ServiceRequestAccept = "$baseUrl/service-request/{service-request_id}";
     static const String ServiceRequestsendotp = "$baseUrl/service-request/{service-request_id}/send-otp";
+    static const String ServiceRequestverifyotp = "$baseUrl/service-request/{service-request_id}/verify-otp";
 
 
   // Country Code

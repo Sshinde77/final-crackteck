@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 
 class FieldExecutiveOtpVerificationScreen extends StatefulWidget {
   final int roleId;
@@ -25,6 +26,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
 
   Timer? _timer;
   int _secondsRemaining = 80; // 1:20 = 80 seconds
+  bool _isVerifyingOtp = false;
   static const Color primaryGreen = Color(0xFF1E7C10);
 
   @override
@@ -51,7 +53,9 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
     return "$minutes:${remainingSeconds.toString().padLeft(2, '0')}";
   }
 
-  void _verifyOtp() {
+  Future<void> _verifyOtp() async {
+    if (_isVerifyingOtp) return;
+
     String otp = _controllers.map((e) => e.text).join();
     
     if (otp.length < 4) {
@@ -64,33 +68,61 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       return;
     }
 
-    if (otp == "1234") {
+    final serviceRequestId = widget.serviceId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (int.tryParse(serviceRequestId) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('OTP Verified Successfully!'),
-          backgroundColor: primaryGreen,
-        ),
-      );
-      
-      // Navigate to the next screen
-      Navigator.pushNamed(
-        context,
-        AppRoutes.FieldExecutiveAllProductsScreen,
-        arguments: fieldexecutiveallproductsArguments(
-          roleId: widget.roleId,
-          roleName: widget.roleName,
-          flow: FieldExecutiveProductItemDetailFlow.afterOtpVerification,
-          controller: FieldExecutiveProductServicesController.withDefaults(),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid OTP. Please try again.'),
+          content: Text('Invalid service request id'),
           backgroundColor: Colors.red,
         ),
       );
+      return;
     }
+
+    setState(() {
+      _isVerifyingOtp = true;
+    });
+
+    final response = await ApiService.verifyServiceRequestOtp(
+      serviceRequestId,
+      otp: otp,
+      roleId: widget.roleId,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isVerifyingOtp = false;
+    });
+
+    if (!response.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message ?? 'Invalid OTP. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(response.message ?? 'OTP Verified Successfully!'),
+        backgroundColor: primaryGreen,
+      ),
+    );
+
+    // Navigate to the next screen
+    Navigator.pushNamed(
+      context,
+      AppRoutes.FieldExecutiveAllProductsScreen,
+      arguments: fieldexecutiveallproductsArguments(
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        flow: FieldExecutiveProductItemDetailFlow.afterOtpVerification,
+        controller: FieldExecutiveProductServicesController.withDefaults(),
+      ),
+    );
   }
 
   @override
@@ -194,21 +226,30 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: _verifyOtp,
+                onPressed: _isVerifyingOtp ? null : _verifyOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  "Verify",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isVerifyingOtp
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        "Verify",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 20),
