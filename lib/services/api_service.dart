@@ -1543,6 +1543,130 @@ class ApiService {
     }
   }
 
+  /// Raise case transfer request for a field-executive service request.
+  /// POST /service-request/{id}/case-transfer?user_id={userId}&role_id={roleId}&engineer_reason={reason}
+  static Future<ApiResponse> transferServiceRequestCase(
+    String serviceRequestId, {
+    required String engineerReason,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling transferServiceRequestCase',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedId = serviceRequestId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+    if (numericId == null) {
+      return ApiResponse(
+        success: false,
+        message:
+            'Invalid service request id "$serviceRequestId". Expected numeric id.',
+      );
+    }
+
+    final normalizedReason = engineerReason.trim();
+    if (normalizedReason.isEmpty) {
+      return ApiResponse(
+        success: false,
+        message: 'Engineer reason is required.',
+      );
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+
+    String baseEndpoint = ApiConstants.ServiceRequestcasetransfer
+        .replaceFirst('{service-request_id}', numericId.toString())
+        .replaceFirst('{service_request_id}', numericId.toString());
+    if (baseEndpoint.contains('{service-request_id}') ||
+        baseEndpoint.contains('{service_request_id}')) {
+      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId/case-transfer';
+    }
+    if (!baseEndpoint.endsWith('/case-transfer')) {
+      baseEndpoint = '$baseEndpoint/case-transfer';
+    }
+
+    final url = Uri.parse(baseEndpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+        'engineer_reason': normalizedReason,
+      },
+    );
+    final body = <String, String>{
+      'user_id': storedUserId.toString(),
+      'role_id': effectiveRoleId,
+      'engineer_reason': normalizedReason,
+    };
+
+    try {
+      debugPrint('API Request: POST $url');
+      debugPrint('API Request Body: $body');
+      final response = await _performAuthenticatedPost(url, body: body);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final bool success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success
+                ? 'Case transfer request created successfully.'
+                : 'Failed to create case transfer request'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to create case transfer request: $e',
+      );
+    }
+  }
+
   /// Fetch a single service request detail for field executive.
   ///
   /// Uses numeric database id:

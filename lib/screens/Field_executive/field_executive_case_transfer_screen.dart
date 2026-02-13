@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 
 class FieldExecutiveCaseTransferScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
+  final String serviceId;
 
   const FieldExecutiveCaseTransferScreen({
     super.key,
     required this.roleId,
     required this.roleName,
+    required this.serviceId,
   });
 
   @override
@@ -17,6 +20,52 @@ class FieldExecutiveCaseTransferScreen extends StatefulWidget {
 class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTransferScreen> {
   final TextEditingController _reasonController = TextEditingController();
   static const primaryGreen = Color(0xFF1E7C10);
+  bool _isSubmitting = false;
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _submitCaseTransfer() async {
+    if (_isSubmitting) return;
+
+    final reason = _reasonController.text.trim();
+    if (reason.isEmpty) {
+      _snack('Please enter a reason');
+      return;
+    }
+
+    final serviceRequestId = widget.serviceId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (int.tryParse(serviceRequestId) == null) {
+      _snack('Invalid service request id');
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final response = await ApiService.transferServiceRequestCase(
+      serviceRequestId,
+      engineerReason: reason,
+      roleId: widget.roleId,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (!response.success) {
+      _snack(response.message ?? 'Failed to submit case transfer');
+      return;
+    }
+
+    _snack(response.message ?? 'Case transfer submitted successfully');
+    Navigator.pop(context, true);
+  }
 
   @override
   void dispose() {
@@ -76,20 +125,7 @@ class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTra
               ),
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () {
-                  // Handle submission
-                  if (_reasonController.text.trim().isNotEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Case transfer submitted successfully')),
-                    );
-                    // Return a boolean true to indicate submission success
-                    Navigator.pop(context, true);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter a reason')),
-                    );
-                  }
-                },
+                onPressed: _isSubmitting ? null : _submitCaseTransfer,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   minimumSize: const Size(double.infinity, 50),
@@ -97,14 +133,23 @@ class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTra
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Submit',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ],
           ),

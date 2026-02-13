@@ -1063,6 +1063,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                                         arguments: fieldexecutivecasetransferArguments(
                                           roleId: widget.roleId,
                                           roleName: widget.roleName,
+                                          serviceId: _serviceRequestDbIdForApi(),
                                         ),
                                       );
 

@@ -554,6 +554,7 @@ class RouteGenerator {
           builder: (_) => FieldExecutiveCaseTransferScreen(
             roleId: args.roleId,
             roleName: args.roleName,
+            serviceId: args.serviceId,
           ),
           settings: settings,
         );

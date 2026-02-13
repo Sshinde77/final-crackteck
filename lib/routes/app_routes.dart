@@ -318,8 +318,13 @@ class fieldexecutivewritereportArguments {
 class fieldexecutivecasetransferArguments {
   final int roleId;
   final String roleName;
+  final String serviceId;
 
-  fieldexecutivecasetransferArguments({required this.roleId, required this.roleName});
+  fieldexecutivecasetransferArguments({
+    required this.roleId,
+    required this.roleName,
+    required this.serviceId,
+  });
 }
 
 
