@@ -1251,10 +1251,15 @@ class ApiService {
         'role_id': effectiveRoleId,
       },
     );
+    final body = <String, String>{
+      'user_id': storedUserId.toString(),
+      'role_id': effectiveRoleId,
+    };
 
     try {
       debugPrint('API Request: POST $url');
-      final response = await _performAuthenticatedPost(url);
+      debugPrint('API Request Body: $body');
+      final response = await _performAuthenticatedPost(url, body: body);
       debugPrint('API Response Status: ${response.statusCode}');
       debugPrint('API Response Body: ${response.body}');
 
@@ -1304,6 +1309,114 @@ class ApiService {
       return ApiResponse(
         success: false,
         message: 'Failed to accept request: $e',
+      );
+    }
+  }
+
+  /// Send OTP for a field-executive service request start flow.
+  /// POST /service-request/{id}/send-otp?user_id={userId}&role_id={roleId}
+  static Future<ApiResponse> sendServiceRequestOtp(
+    String serviceRequestId, {
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling sendServiceRequestOtp',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedId = serviceRequestId
+        .trim()
+        .replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+    if (numericId == null) {
+      return ApiResponse(
+        success: false,
+        message:
+            'Invalid service request id "$serviceRequestId". Expected numeric id.',
+      );
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+
+    String baseEndpoint = ApiConstants.ServiceRequestsendotp
+        .replaceFirst('{service-request_id}', numericId.toString())
+        .replaceFirst('{service_request_id}', numericId.toString());
+    if (baseEndpoint.contains('{service-request_id}') ||
+        baseEndpoint.contains('{service_request_id}')) {
+      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId/send-otp';
+    }
+    if (!baseEndpoint.endsWith('/send-otp')) {
+      baseEndpoint = '$baseEndpoint/send-otp';
+    }
+
+    final url = Uri.parse(baseEndpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('API Request: POST $url');
+      final response = await _performAuthenticatedPost(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final bool success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success ? 'OTP sent successfully' : 'Failed to send OTP'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to send OTP: $e',
       );
     }
   }
