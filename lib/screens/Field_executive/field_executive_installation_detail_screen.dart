@@ -34,6 +34,7 @@ class FieldExecutiveInstallationDetailScreen extends StatefulWidget {
 class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveInstallationDetailScreen> {
   bool isAccepted = false;
   bool _isAccepting = false;
+  bool _isRescheduling = false;
   String _serviceRequestStatus = '';
   DateTime? selectedDate;
   CaseTransferStatus caseTransferStatus = CaseTransferStatus.none;
@@ -600,6 +601,8 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   bool get _showMediaSection => _mediaUrls.isNotEmpty;
 
   Future<void> _selectDate(BuildContext context) async {
+    if (_isRescheduling) return;
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
@@ -623,10 +626,52 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
         );
       },
     );
+
     if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
+      await _submitRescheduleDate(picked);
+    }
+  }
+
+  Future<void> _submitRescheduleDate(DateTime pickedDate) async {
+    final serviceRequestId = _serviceRequestDbIdForApi();
+    if (int.tryParse(serviceRequestId) == null) {
+      _snack('Service request id is invalid for reschedule API');
+      return;
+    }
+
+    final formattedDate =
+        '${pickedDate.year.toString().padLeft(4, '0')}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}';
+
+    setState(() {
+      _isRescheduling = true;
+    });
+
+    final response = await ApiService.rescheduleServiceRequest(
+      serviceRequestId,
+      roleId: widget.roleId,
+      engineerReason: 'Not available',
+      rescheduleDate: formattedDate,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isRescheduling = false;
+      if (response.success) {
+        selectedDate = pickedDate;
+      }
+    });
+
+    _snack(
+      response.message ??
+          (response.success
+              ? 'Service request rescheduled successfully.'
+              : 'Failed to reschedule request'),
+    );
+
+    if (response.success) {
+      // Refresh detail so status/timeline stays in sync after reschedule.
+      _loadDetail();
     }
   }
 
@@ -1035,21 +1080,30 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                               children: [
                                 Expanded(
                                   child: ElevatedButton(
-                                    onPressed: () => _selectDate(context),
+                                    onPressed: _isRescheduling ? null : () => _selectDate(context),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: selectedDate == null ? Colors.grey.shade100 : primaryGreen,
                                       minimumSize: const Size(double.infinity, 50),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                       elevation: 0,
                                     ),
-                                    child: Text(
-                                      'Rescheduled',
-                                      style: TextStyle(
-                                        color: selectedDate == null ? primaryGreen : Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                    child: _isRescheduling
+                                        ? SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              color: selectedDate == null ? primaryGreen : Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Rescheduled',
+                                            style: TextStyle(
+                                              color: selectedDate == null ? primaryGreen : Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),

@@ -58,12 +58,20 @@ class ApiConstants {
   static const String deliveryPersonDashboard = "$baseUrl/delivery-person-dashboard";
   
   //field executive 
-    static const String serviceRequests = "$baseUrl/service-requests";
-    static const String serviceRequest = "$baseUrl/service-request";
-    static const String ServiceRequestAccept = "$baseUrl/service-request/{service-request_id}";
-    static const String ServiceRequestsendotp = "$baseUrl/service-request/{service-request_id}/send-otp";
-    static const String ServiceRequestverifyotp = "$baseUrl/service-request/{service-request_id}/verify-otp";
-    static const String ServiceRequestcasetransfer = "$baseUrl/service-request/{service-request_id}/case-transfer";
+  static const String serviceRequests = "$baseUrl/service-requests";
+  static const String serviceRequest = "$baseUrl/service-request";
+  static const String serviceRequestdetail =
+      "$baseUrl/service-request/{service-request_id}";
+  static const String ServiceRequestAccept =
+      "$baseUrl/service-request/{service-request_id}";
+  static const String ServiceRequestsendotp =
+      "$baseUrl/service-request/{service-request_id}/send-otp";
+  static const String ServiceRequestverifyotp =
+      "$baseUrl/service-request/{service-request_id}/verify-otp";
+  static const String ServiceRequestcasetransfer =
+      "$baseUrl/service-request/{service-request_id}/case-transfer";
+  static const String ServiceRequestreschedule =
+      "$baseUrl/service-request/{service-request_id}/reschedule";
 
 
 
