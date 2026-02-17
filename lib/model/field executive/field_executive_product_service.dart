@@ -10,6 +10,9 @@ class FieldExecutiveProductService {
   final String serviceId;
   final String location;
   final String priority;
+  final String description;
+  final String imageUrl;
+  final String requestId;
   FieldExecutiveProductServiceStatus status;
 
   FieldExecutiveProductService({
@@ -17,6 +20,9 @@ class FieldExecutiveProductService {
     required this.serviceId,
     required this.location,
     required this.priority,
+    this.description = '',
+    this.imageUrl = '',
+    this.requestId = '',
     this.status = FieldExecutiveProductServiceStatus.incomplete,
   });
 
@@ -60,6 +66,32 @@ class FieldExecutiveProductServicesController extends ChangeNotifier {
 
   List<FieldExecutiveProductService> get items =>
       List.unmodifiable(_items);
+
+  void replaceItems(
+    List<FieldExecutiveProductService> nextItems, {
+    bool preserveExistingStatus = true,
+  }) {
+    final existingStatus = <String, FieldExecutiveProductServiceStatus>{};
+    if (preserveExistingStatus) {
+      for (final item in _items) {
+        existingStatus[item.serviceId] = item.status;
+      }
+    }
+
+    _items
+      ..clear()
+      ..addAll(
+        nextItems.map((item) {
+          final previous = existingStatus[item.serviceId];
+          if (previous != null) {
+            item.status = previous;
+          }
+          return item;
+        }),
+      );
+
+    notifyListeners();
+  }
 
   FieldExecutiveProductService? findByServiceId(String serviceId) {
     try {

@@ -232,11 +232,13 @@ class fieldexecutiveallproductsArguments {
   final String roleName;
   final FieldExecutiveProductItemDetailFlow flow;
   final FieldExecutiveProductServicesController controller;
+  final String serviceRequestId;
 
   fieldexecutiveallproductsArguments({
     required this.roleId,
     required this.roleName,
     this.flow = FieldExecutiveProductItemDetailFlow.normalBrowsing,
+    this.serviceRequestId = '',
     FieldExecutiveProductServicesController? controller,
   }) : controller = controller ?? FieldExecutiveProductServicesController.withDefaults();
 }
@@ -246,6 +248,8 @@ class fieldexecutiveproductitemdetailArguments {
   final String roleName;
   final String title;
   final String serviceId;
+  final String serviceRequestId;
+  final String displayServiceId;
   final String location;
   final String priority;
   final FieldExecutiveProductItemDetailFlow flow;
@@ -256,6 +260,8 @@ class fieldexecutiveproductitemdetailArguments {
     required this.roleName,
     required this.title,
     required this.serviceId,
+    this.serviceRequestId = '',
+    this.displayServiceId = '',
     required this.location,
     required this.priority,
     this.flow = FieldExecutiveProductItemDetailFlow.normalBrowsing,

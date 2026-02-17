@@ -918,6 +918,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                             arguments: fieldexecutiveallproductsArguments(
                               roleId: widget.roleId,
                               roleName: widget.roleName,
+                              serviceRequestId: _serviceRequestDbIdForApi(),
                               controller: FieldExecutiveProductServicesController.withDefaults(),
                             ),
                           );

@@ -119,6 +119,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       arguments: fieldexecutiveallproductsArguments(
         roleId: widget.roleId,
         roleName: widget.roleName,
+        serviceRequestId: serviceRequestId,
         flow: FieldExecutiveProductItemDetailFlow.afterOtpVerification,
         controller: FieldExecutiveProductServicesController.withDefaults(),
       ),

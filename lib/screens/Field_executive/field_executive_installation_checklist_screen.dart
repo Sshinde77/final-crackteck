@@ -1,14 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import 'field_executive_add_product.dart';
-import 'field_executive_upload_after_images_screen.dart';
 
 class FieldExecutiveInstallationChecklistScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
   final String serviceId;
+  final String serviceRequestId;
+  final String serviceRequestDbId;
+  final String productDbId;
+  final Map<String, dynamic>? selectedProduct;
   final FieldExecutiveProductItemDetailFlow flow;
   final FieldExecutiveProductServicesController controller;
 
@@ -17,6 +23,10 @@ class FieldExecutiveInstallationChecklistScreen extends StatefulWidget {
     required this.roleId,
     required this.roleName,
     required this.serviceId,
+    this.serviceRequestId = '',
+    this.serviceRequestDbId = '',
+    this.productDbId = '',
+    this.selectedProduct,
     required this.flow,
     required this.controller,
   });
@@ -30,12 +40,275 @@ class _FieldExecutiveInstallationChecklistScreenState
     extends State<FieldExecutiveInstallationChecklistScreen> {
   static const primaryGreen = Color(0xFF1E7C10);
   final ImagePicker _picker = ImagePicker();
+  File? _beforeImage;
+  bool _isPickingBeforeImage = false;
+  File? _afterImage;
+  bool _isPickingAfterImage = false;
+  bool _isLoadingDiagnosis = false;
+  String? _diagnosisError;
+  List<String> _diagnosisItems = const <String>[];
 
   // Track which items are expanded
   final Map<String, bool> _expandedItems = {};
 
   // Track status of each item (Working / Not Working)
   final Map<String, String?> _itemStatus = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDiagnosisList();
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant FieldExecutiveInstallationChecklistScreen oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.serviceRequestId != widget.serviceRequestId ||
+        oldWidget.serviceRequestDbId != widget.serviceRequestDbId ||
+        oldWidget.productDbId != widget.productDbId ||
+        oldWidget.serviceId != widget.serviceId ||
+        oldWidget.selectedProduct != widget.selectedProduct) {
+      _loadDiagnosisList();
+    }
+  }
+
+  String _normalizeId(String raw) {
+    return raw.trim().replaceFirst(RegExp(r'^#'), '');
+  }
+
+  String _readFromMap(Map<String, dynamic>? source, List<String> keys) {
+    if (source == null) return '';
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null || value is Map || value is List) {
+        continue;
+      }
+      final text = _normalizeId(value.toString());
+      if (text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return '';
+  }
+
+  String _firstResolvedId(List<String> candidates) {
+    for (final candidate in candidates) {
+      final normalized = _normalizeId(candidate);
+      if (normalized.isNotEmpty && int.tryParse(normalized) != null) {
+        return normalized;
+      }
+    }
+    for (final candidate in candidates) {
+      final normalized = _normalizeId(candidate);
+      if (normalized.isNotEmpty) {
+        return normalized;
+      }
+    }
+    return '';
+  }
+
+  String _serviceRequestIdForApi() {
+    return _firstResolvedId([
+      widget.serviceRequestDbId,
+      _readFromMap(
+        widget.selectedProduct,
+        const [
+          'service_requests_id',
+          'service_request_id',
+          'serviceRequestId',
+          'request_service_id',
+        ],
+      ),
+      widget.serviceRequestId,
+    ]);
+  }
+
+  String _productIdForApi() {
+    return _firstResolvedId([
+      widget.productDbId,
+      _readFromMap(
+        widget.selectedProduct,
+        const ['id', 'product_id', 'productId', 'item_code_id', 'itemCodeId'],
+      ),
+      widget.serviceId,
+    ]);
+  }
+
+  void _syncChecklistStateForDiagnosis(List<String> diagnosisItems) {
+    final keys = diagnosisItems.toSet();
+    _expandedItems.removeWhere((key, _) => !keys.contains(key));
+    _itemStatus.removeWhere((key, _) => !keys.contains(key));
+  }
+
+  Future<void> _loadDiagnosisList() async {
+    final serviceRequestId = _serviceRequestIdForApi();
+    final productId = _productIdForApi();
+
+    if (serviceRequestId.isEmpty || productId.isEmpty) {
+      setState(() {
+        _diagnosisItems = const <String>[];
+        _diagnosisError =
+            'Diagnosis API parameters are missing. Please open this screen from product detail.';
+        _isLoadingDiagnosis = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingDiagnosis = true;
+      _diagnosisError = null;
+    });
+
+    try {
+      final list = await ApiService.fetchServiceRequestDiagnosisList(
+        serviceRequestId: serviceRequestId,
+        productId: productId,
+        roleId: widget.roleId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _syncChecklistStateForDiagnosis(list);
+        _diagnosisItems = list;
+        _isLoadingDiagnosis = false;
+        _diagnosisError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingDiagnosis = false;
+        _diagnosisError = e
+            .toString()
+            .replaceFirst(RegExp(r'^Exception:\s*'), '')
+            .trim();
+      });
+    }
+  }
+
+  Future<void> _pickBeforeImage(ImageSource source) async {
+    if (_isPickingBeforeImage) return;
+
+    setState(() {
+      _isPickingBeforeImage = true;
+    });
+
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
+      if (picked != null && mounted) {
+        setState(() {
+          _beforeImage = File(picked.path);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking before image: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingBeforeImage = false;
+        });
+      }
+    }
+  }
+
+  void _showBeforeImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.upload_file, color: primaryGreen),
+                title: const Text('Upload file'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickBeforeImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: primaryGreen),
+                title: const Text('Open camera'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickBeforeImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAfterImage(ImageSource source) async {
+    if (_isPickingAfterImage) return;
+
+    setState(() {
+      _isPickingAfterImage = true;
+    });
+
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
+      if (picked != null && mounted) {
+        setState(() {
+          _afterImage = File(picked.path);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking after image: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingAfterImage = false;
+        });
+      }
+    }
+  }
+
+  void _showAfterImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.upload_file, color: primaryGreen),
+                title: const Text('Upload file'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickAfterImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: primaryGreen),
+                title: const Text('Open camera'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickAfterImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -77,34 +350,64 @@ class _FieldExecutiveInstallationChecklistScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Pre-Installation'),
-              _buildChecklistItem('Site Readiness check'),
-              _buildChecklistItem('Power and network availability check'),
+              _buildBeforeImageUploadSection(),
               const SizedBox(height: 16),
-              _buildSectionHeader('Installation'),
-              _buildChecklistItem('Unpack and inspect'),
-              _buildChecklistItem('Connect power, monitor, keyboard, mouse'),
-              _buildChecklistItem('Install Os and drivers'),
-              const SizedBox(height: 16),
-              _buildSectionHeader('Final Steps'),
-              _buildChecklistItem('Test device boot and shutdown'),
-              _buildChecklistItem('Customer demo and feedback'),
-              const SizedBox(height: 24),
-              _buildLargeButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FieldExecutiveUploadAfterImagesScreen(
-                        roleId: widget.roleId,
-                        roleName: widget.roleName,
-                      ),
+              _buildSectionHeader('Diagnosis List'),
+              ..._effectiveDiagnosisItems.map(_buildChecklistItem),
+              if (!_isLoadingDiagnosis &&
+                  _diagnosisError == null &&
+                  _diagnosisItems.isEmpty)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: const Text(
+                    'No diagnosis list found for this product.',
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ),
+              if (_isLoadingDiagnosis)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: LinearProgressIndicator(color: primaryGreen),
+                ),
+              if (_diagnosisError != null && _diagnosisError!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
                     ),
-                  );
-                },
-                icon: Icons.cloud_upload,
-                label: 'Upload after photos',
-              ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _diagnosisError!,
+                            style: TextStyle(
+                              color: Colors.orange.shade900,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadDiagnosisList,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              _buildAfterImageUploadSection(),
               const SizedBox(height: 12),
               _buildLargeButton(
                 onPressed: () {
@@ -127,6 +430,127 @@ class _FieldExecutiveInstallationChecklistScreenState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildBeforeImageUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLargeButton(
+          onPressed: _showBeforeImagePickerOptions,
+          icon: Icons.add_a_photo_outlined,
+          label:
+              _beforeImage == null ? 'Upload before image' : 'Re-upload before image',
+        ),
+        if (_beforeImage != null) ...[
+          const SizedBox(height: 10),
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 170,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  image: DecorationImage(
+                    image: FileImage(_beforeImage!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: ElevatedButton(
+                  onPressed: _showBeforeImagePickerOptions,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: primaryGreen,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text(
+                    'Re-upload',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (_isPickingBeforeImage)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(color: primaryGreen),
+          ),
+      ],
+    );
+  }
+
+  List<String> get _effectiveDiagnosisItems {
+    return _diagnosisItems;
+  }
+
+  Widget _buildAfterImageUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLargeButton(
+          onPressed: _showAfterImagePickerOptions,
+          icon: Icons.cloud_upload,
+          label: _afterImage == null ? 'Upload after photos' : 'Re-upload after photos',
+        ),
+        if (_afterImage != null) ...[
+          const SizedBox(height: 10),
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 170,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  image: DecorationImage(
+                    image: FileImage(_afterImage!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: ElevatedButton(
+                  onPressed: _showAfterImagePickerOptions,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: primaryGreen,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text(
+                    'Re-upload',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (_isPickingAfterImage)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(color: primaryGreen),
+          ),
+      ],
     );
   }
 

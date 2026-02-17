@@ -59,7 +59,7 @@ class ApiConstants {
   
   //field executive 
   static const String serviceRequests = "$baseUrl/service-requests";
-  static const String serviceRequest = "$baseUrl/service-request";
+  static const String serviceRequestdetails = "$baseUrl/service-request/{service-request_id}";
   static const String serviceRequestdetail =
       "$baseUrl/service-request/{service-request_id}";
   static const String ServiceRequestAccept =
@@ -72,6 +72,8 @@ class ApiConstants {
       "$baseUrl/service-request/{service-request_id}/case-transfer";
   static const String ServiceRequestreschedule =
       "$baseUrl/service-request/{service-request_id}/reschedule";
+  static const String ServiceRequestdiagnosis =
+      "$baseUrl/service-request/{service-request_id}/{product_id}/diagnosis-list";
 
 
 

@@ -448,6 +448,7 @@ class RouteGenerator {
                 roleName: args.roleName,
                 flow: args.flow,
                 controller: args.controller,
+                serviceRequestId: args.serviceRequestId,
               ),
           settings: settings,
         );
@@ -464,6 +465,8 @@ class RouteGenerator {
                 roleName: args.roleName,
                 title: args.title,
                 serviceId: args.serviceId,
+                serviceRequestId: args.serviceRequestId,
+                displayServiceId: args.displayServiceId,
                 location: args.location,
                 priority: args.priority,
                 flow: args.flow,

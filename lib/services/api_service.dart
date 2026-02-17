@@ -1239,7 +1239,7 @@ class ApiService {
         .replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId';
+      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId';
     }
     if (!baseEndpoint.endsWith('/accept')) {
       baseEndpoint = '$baseEndpoint/accept';
@@ -1352,7 +1352,7 @@ class ApiService {
         .replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId/send-otp';
+      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/send-otp';
     }
     if (!baseEndpoint.endsWith('/send-otp')) {
       baseEndpoint = '$baseEndpoint/send-otp';
@@ -1467,7 +1467,7 @@ class ApiService {
         .replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId/verify-otp';
+      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/verify-otp';
     }
     if (!baseEndpoint.endsWith('/verify-otp')) {
       baseEndpoint = '$baseEndpoint/verify-otp';
@@ -1589,7 +1589,7 @@ class ApiService {
         .replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId/case-transfer';
+      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/case-transfer';
     }
     if (!baseEndpoint.endsWith('/case-transfer')) {
       baseEndpoint = '$baseEndpoint/case-transfer';
@@ -1722,7 +1722,7 @@ class ApiService {
         .replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequest}/$numericId/reschedule';
+      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/reschedule';
     }
     if (!baseEndpoint.endsWith('/reschedule')) {
       baseEndpoint = '$baseEndpoint/reschedule';
@@ -1947,11 +1947,19 @@ class ApiService {
         'role_id': effectiveRoleId,
       };
 
+      String detailEndpoint = ApiConstants.serviceRequestdetails
+          .replaceFirst('{service-request_id}', numericId.toString())
+          .replaceFirst('{service_request_id}', numericId.toString());
+      if (detailEndpoint.contains('{service-request_id}') ||
+          detailEndpoint.contains('{service_request_id}')) {
+        detailEndpoint = '${ApiConstants.baseUrl}/service-request/$numericId';
+      }
+
       final attempts = <Uri>[
-        Uri.parse('${ApiConstants.serviceRequest}/$numericId').replace(
+        Uri.parse(detailEndpoint).replace(
           queryParameters: base,
         ),
-        Uri.parse('${ApiConstants.serviceRequest}/$numericId'),
+        Uri.parse(detailEndpoint),
       ];
 
       for (final uri in attempts) {
@@ -1978,6 +1986,233 @@ class ApiService {
       throw Exception('No internet connection. Please check your network.');
     } catch (e) {
       debugPrint('Error fetching service request detail: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetch diagnosis list for a product under a service request.
+  ///
+  /// GET /service-request/{service-request_id}/{product_id}/diagnosis-list
+  static Future<List<String>> fetchServiceRequestDiagnosisList({
+    required String serviceRequestId,
+    required String productId,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchServiceRequestDiagnosisList',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final normalizedServiceRequestId = serviceRequestId
+        .trim()
+        .replaceFirst(RegExp(r'^#'), '');
+    final normalizedProductId = productId.trim().replaceFirst(RegExp(r'^#'), '');
+
+    if (int.tryParse(normalizedServiceRequestId) == null) {
+      throw Exception(
+        'Invalid service request id "$serviceRequestId". Expected numeric id.',
+      );
+    }
+    if (int.tryParse(normalizedProductId) == null) {
+      throw Exception('Invalid product id "$productId". Expected numeric id.');
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+
+    String endpoint = ApiConstants.ServiceRequestdiagnosis
+        .replaceFirst('{service-request_id}', normalizedServiceRequestId)
+        .replaceFirst('{service_request_id}', normalizedServiceRequestId)
+        .replaceFirst('{product_id}', normalizedProductId)
+        .replaceFirst('{product-id}', normalizedProductId);
+    if (endpoint.contains('{service-request_id}') ||
+        endpoint.contains('{service_request_id}') ||
+        endpoint.contains('{product_id}') ||
+        endpoint.contains('{product-id}')) {
+      endpoint =
+          '${ApiConstants.baseUrl}/service-request/$normalizedServiceRequestId/$normalizedProductId/diagnosis-list';
+    }
+
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'role_id': effectiveRoleId,
+        'user_id': storedUserId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load diagnosis list: ${response.statusCode}',
+        );
+      }
+
+      final dynamic decoded = jsonDecode(response.body);
+
+      List<dynamic> rawList = const <dynamic>[];
+
+      if (decoded is Map<String, dynamic>) {
+        dynamic source =
+            decoded['diagnosis'] ??
+            decoded['diagnosisList'] ??
+            decoded['diagnosis_list'];
+
+        if (source == null) {
+          final data = decoded['data'];
+          if (data is List) {
+            source = data;
+          } else if (data is Map<String, dynamic>) {
+            source =
+                data['diagnosis'] ??
+                data['diagnosisList'] ??
+                data['diagnosis_list'];
+          }
+        }
+
+        if (source is List) {
+          rawList = source;
+        } else if (source != null) {
+          rawList = <dynamic>[source];
+        }
+      } else if (decoded is List) {
+        rawList = decoded;
+      }
+
+      String normalizeComparableId(dynamic value) {
+        if (value == null) return '';
+        final text = value.toString().trim();
+        if (text.isEmpty || text.toLowerCase() == 'null') return '';
+        return text.replaceFirst(RegExp(r'^#'), '');
+      }
+
+      const serviceRequestIdKeys = <String>[
+        'service_request_id',
+        'serviceRequestId',
+        'service_requests_id',
+        'serviceRequestsId',
+        'request_id',
+        'requestId',
+      ];
+      const productIdKeys = <String>[
+        'product_id',
+        'productId',
+        'item_code_id',
+        'itemCodeId',
+        'service_product_id',
+        'serviceProductId',
+      ];
+
+      String readIdFromMap(Map<String, dynamic> source, List<String> keys) {
+        for (final key in keys) {
+          if (!source.containsKey(key)) continue;
+          final value = normalizeComparableId(source[key]);
+          if (value.isNotEmpty) return value;
+        }
+        return '';
+      }
+
+      bool containsAnyScopeKey(Map<String, dynamic> source, List<String> keys) {
+        for (final key in keys) {
+          if (source.containsKey(key)) return true;
+        }
+        return false;
+      }
+
+      final scopedRawList = <dynamic>[];
+      var scopedItemsInResponse = 0;
+      var scopedMatches = 0;
+
+      for (final item in rawList) {
+        if (item is! Map) {
+          scopedRawList.add(item);
+          continue;
+        }
+
+        final itemMap = Map<String, dynamic>.from(item as Map);
+        final hasServiceScope = containsAnyScopeKey(itemMap, serviceRequestIdKeys);
+        final hasProductScope = containsAnyScopeKey(itemMap, productIdKeys);
+
+        if (!hasServiceScope && !hasProductScope) {
+          scopedRawList.add(itemMap);
+          continue;
+        }
+
+        scopedItemsInResponse++;
+
+        final itemServiceRequestId = readIdFromMap(itemMap, serviceRequestIdKeys);
+        final itemProductId = readIdFromMap(itemMap, productIdKeys);
+
+        final serviceMatches = !hasServiceScope ||
+            itemServiceRequestId.isEmpty ||
+            itemServiceRequestId == normalizedServiceRequestId;
+        final productMatches = !hasProductScope ||
+            itemProductId.isEmpty ||
+            itemProductId == normalizedProductId;
+
+        if (serviceMatches && productMatches) {
+          scopedMatches++;
+          scopedRawList.add(itemMap);
+        }
+      }
+
+      if (scopedItemsInResponse > 0 &&
+          scopedMatches == 0 &&
+          rawList.isNotEmpty) {
+        throw Exception(
+          'Diagnosis list does not belong to this selected service request/product.',
+        );
+      }
+
+      String normalizeDiagnosisItem(dynamic item) {
+        if (item == null) return '';
+        if (item is Map<String, dynamic>) {
+          for (final key in const [
+            'diagnosis',
+            'name',
+            'title',
+            'label',
+            'diagnosis_name',
+          ]) {
+            final value = item[key];
+            final text = value?.toString().trim() ?? '';
+            if (text.isNotEmpty && text.toLowerCase() != 'null') {
+              return text;
+            }
+          }
+        }
+        final text = item.toString().trim();
+        if (text.toLowerCase() == 'null') return '';
+        return text;
+      }
+
+      return scopedRawList
+          .map(normalizeDiagnosisItem)
+          .where((item) => item.isNotEmpty)
+          .toSet()
+          .toList();
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching diagnosis list: $e');
       rethrow;
     }
   }
