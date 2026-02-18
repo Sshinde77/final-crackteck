@@ -104,29 +104,49 @@ class _FieldExecutiveMapTrackingScreenState
 
   Future<void> _startInstallation() async {
     if (_isSendingOtp) return;
+    debugPrint('Start Installation clicked');
 
     final serviceRequestId = widget.serviceId
         .trim()
         .replaceFirst(RegExp(r'^#'), '');
-    if (int.tryParse(serviceRequestId) == null) {
-      _snack('Invalid service request id for send OTP API');
-      return;
+
+    if (mounted) {
+      setState(() {
+        _isSendingOtp = true;
+      });
+    } else {
+      _isSendingOtp = true;
     }
 
-    setState(() {
-      _isSendingOtp = true;
-    });
-
-    final response = await ApiService.sendServiceRequestOtp(
-      serviceRequestId,
-      roleId: widget.roleId,
-    );
+    late final response;
+    try {
+      debugPrint(
+        'Calling sendServiceRequestOtp for ID: $serviceRequestId with roleId: ${widget.roleId}',
+      );
+      response = await ApiService.sendServiceRequestOtp(
+        serviceRequestId,
+        roleId: widget.roleId,
+      );
+      debugPrint(
+        'sendServiceRequestOtp response: success=${response.success}, message=${response.message}',
+      );
+    } catch (e) {
+      debugPrint('sendServiceRequestOtp exception: $e');
+      if (mounted) {
+        _snack('Failed to send OTP');
+      }
+      return;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSendingOtp = false;
+        });
+      } else {
+        _isSendingOtp = false;
+      }
+    }
 
     if (!mounted) return;
-
-    setState(() {
-      _isSendingOtp = false;
-    });
 
     if (!response.success) {
       _snack(response.message ?? 'Failed to send OTP');
@@ -396,7 +416,12 @@ class _FieldExecutiveMapTrackingScreenState
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isSendingOtp ? null : _startInstallation,
+                      onPressed: _isSendingOtp
+                          ? null
+                          : () {
+                              debugPrint('Start Installation button tapped');
+                              _startInstallation();
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryGreen,
                         minimumSize: const Size(double.infinity, 52),

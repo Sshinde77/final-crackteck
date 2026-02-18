@@ -2,10 +2,22 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../model/field executive/diagnosis_item.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
-import 'field_executive_add_product.dart';
+
+class _NotWorkingDialogResult {
+  final String selectedOption;
+  final String notes;
+  final File? selectedImage;
+
+  const _NotWorkingDialogResult({
+    required this.selectedOption,
+    required this.notes,
+    required this.selectedImage,
+  });
+}
 
 class FieldExecutiveInstallationChecklistScreen extends StatefulWidget {
   final int roleId;
@@ -39,6 +51,13 @@ class FieldExecutiveInstallationChecklistScreen extends StatefulWidget {
 class _FieldExecutiveInstallationChecklistScreenState
     extends State<FieldExecutiveInstallationChecklistScreen> {
   static const primaryGreen = Color(0xFF1E7C10);
+  static const List<String> _notWorkingOptions = <String>[
+    'Not Working',
+    'Add to Pickup',
+    'Use Stock in Hand',
+    'Request a Part',
+  ];
+
   final ImagePicker _picker = ImagePicker();
   File? _beforeImage;
   bool _isPickingBeforeImage = false;
@@ -46,13 +65,18 @@ class _FieldExecutiveInstallationChecklistScreenState
   bool _isPickingAfterImage = false;
   bool _isLoadingDiagnosis = false;
   String? _diagnosisError;
-  List<String> _diagnosisItems = const <String>[];
+  List<DiagnosisItem> _diagnosisItems = const <DiagnosisItem>[];
 
   // Track which items are expanded
   final Map<String, bool> _expandedItems = {};
 
-  // Track status of each item (Working / Not Working)
+  // Track status of each item (Working or selected non-working action)
   final Map<String, String?> _itemStatus = {};
+  final Map<String, String> _itemSelectedAction = {};
+  final Map<String, String> _itemProblemSolution = {};
+  final Map<String, File> _itemIssueImage = {};
+  String _writtenReportText = '';
+  bool _isSubmittingDiagnosis = false;
 
   @override
   void initState() {
@@ -136,10 +160,13 @@ class _FieldExecutiveInstallationChecklistScreenState
     ]);
   }
 
-  void _syncChecklistStateForDiagnosis(List<String> diagnosisItems) {
-    final keys = diagnosisItems.toSet();
+  void _syncChecklistStateForDiagnosis(List<DiagnosisItem> diagnosisItems) {
+    final keys = diagnosisItems.map((item) => item.name).toSet();
     _expandedItems.removeWhere((key, _) => !keys.contains(key));
     _itemStatus.removeWhere((key, _) => !keys.contains(key));
+    _itemSelectedAction.removeWhere((key, _) => !keys.contains(key));
+    _itemProblemSolution.removeWhere((key, _) => !keys.contains(key));
+    _itemIssueImage.removeWhere((key, _) => !keys.contains(key));
   }
 
   Future<void> _loadDiagnosisList() async {
@@ -148,7 +175,7 @@ class _FieldExecutiveInstallationChecklistScreenState
 
     if (serviceRequestId.isEmpty || productId.isEmpty) {
       setState(() {
-        _diagnosisItems = const <String>[];
+        _diagnosisItems = const <DiagnosisItem>[];
         _diagnosisError =
             'Diagnosis API parameters are missing. Please open this screen from product detail.';
         _isLoadingDiagnosis = false;
@@ -310,18 +337,92 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 50,
-      );
-      if (photo != null) {
-        debugPrint("Photo picked: ${photo.path}");
-      }
-    } catch (e) {
-      debugPrint("Error picking image: $e");
+  String _normalizeStatusLabel(String? status) {
+    final normalized = (status ?? '')
+        .trim()
+        .toLowerCase()
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ');
+
+    switch (normalized) {
+      case 'working':
+        return 'Working';
+      case 'not working':
+        return 'Not Working';
+      case 'add to pickup':
+        return 'Add to Pickup';
+      case 'use stock in hand':
+        return 'Use Stock in Hand';
+      case 'request a part':
+        return 'Request a Part';
+      default:
+        return '';
     }
+  }
+
+  bool _isWorkingStatus(String? status) {
+    return _normalizeStatusLabel(status) == 'Working';
+  }
+
+  bool _isNonWorkingStatus(String? status) {
+    final normalized = _normalizeStatusLabel(status);
+    return normalized.isNotEmpty && normalized != 'Working';
+  }
+
+  DiagnosisItem? _findDiagnosisByName(String name) {
+    for (final item in _effectiveDiagnosisItems) {
+      if (item.name == name) return item;
+    }
+    return null;
+  }
+
+  String _resolvedStatusLabel(DiagnosisItem diagnosis) {
+    final localStatus = _normalizeStatusLabel(_itemStatus[diagnosis.name]);
+    if (localStatus.isNotEmpty) return localStatus;
+    return _normalizeStatusLabel(diagnosis.statusLabel);
+  }
+
+  String? _resolvedReportText(DiagnosisItem diagnosis) {
+    final localText = (_itemProblemSolution[diagnosis.name] ?? '').trim();
+    if (localText.isNotEmpty) return localText;
+    final apiText = (diagnosis.report ?? '').trim();
+    if (apiText.isEmpty) return null;
+    return apiText;
+  }
+
+  Future<ImageSource?> _showImageSourcePickerBottomSheet(
+    BuildContext context,
+  ) async {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.upload_file, color: primaryGreen),
+                title: const Text('Upload file'),
+                onTap: () {
+                  Navigator.pop(sheetContext, ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: primaryGreen),
+                title: const Text('Open camera'),
+                onTap: () {
+                  Navigator.pop(sheetContext, ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -409,22 +510,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               const SizedBox(height: 24),
               _buildAfterImageUploadSection(),
               const SizedBox(height: 12),
-              _buildLargeButton(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.FieldExecutiveWriteReportScreen,
-                    arguments: fieldexecutivewritereportArguments(
-                      roleId: widget.roleId,
-                      roleName: widget.roleName,
-                      serviceId: widget.serviceId,
-                      flow: widget.flow,
-                      controller: widget.controller,
-                    ),
-                  );
-                },
-                label: 'Write Report',
-              ),
+              _buildReportSection(),
               const SizedBox(height: 24),
             ],
           ),
@@ -492,7 +578,7 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 
-  List<String> get _effectiveDiagnosisItems {
+  List<DiagnosisItem> get _effectiveDiagnosisItems {
     return _diagnosisItems;
   }
 
@@ -568,162 +654,567 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 
-  void _showStatusDetailsDialog(String title, String status) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+  Widget _buildReportSection() {
+    final bool hasReport = _writtenReportText.trim().isNotEmpty;
+    if (!hasReport) {
+      return _buildLargeButton(
+        onPressed: _showWriteReportDialog,
+        label: 'Write Report',
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Write problems and solutions',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Report',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: primaryGreen,
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _writtenReportText,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
                 ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.camera_alt, color: primaryGreen),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Photo',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildLargeButton(
+          onPressed: _isSubmittingDiagnosis ? null : _onFinalSubmitPressed,
+          label: _isSubmittingDiagnosis ? 'Submitting...' : 'Submit',
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showWriteReportDialog() async {
+    String reportText = _writtenReportText;
+
+    final String? submittedReport = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final bool canSubmit = reportText.trim().isNotEmpty;
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      initialValue: reportText,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          reportText = value;
+                        });
+                      },
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText: 'Write report',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
-                        Icon(Icons.arrow_forward, color: primaryGreen),
-                      ],
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: canSubmit
+                          ? () {
+                              Navigator.of(
+                                dialogContext,
+                              ).pop(reportText.trim());
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        disabledForegroundColor: Colors.grey.shade600,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Submit',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                if (status == 'Not Working') ...[
-                  const SizedBox(height: 16),
-                  Row(
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted || submittedReport == null) return;
+    final normalizedReport = submittedReport.trim();
+    if (normalizedReport.isEmpty) return;
+
+    setState(() {
+      _writtenReportText = normalizedReport;
+    });
+  }
+
+  void _onFinalSubmitPressed() {
+    _submitDiagnosisReport();
+  }
+
+  String _statusToApiValue(String? status) {
+    final normalized = _normalizeStatusLabel(status).toLowerCase();
+    switch (normalized) {
+      case 'working':
+        return 'working';
+      case 'not working':
+        return 'not_working';
+      case 'add to pickup':
+        return 'add_to_pickup';
+      case 'use stock in hand':
+        return 'use_stock_in_hand';
+      case 'request a part':
+        return 'request_a_part';
+      default:
+        return 'working';
+    }
+  }
+
+  List<Map<String, dynamic>> _buildDiagnosisSubmitPayload() {
+    final Map<String, DiagnosisItem> diagnosisByName = {
+      for (final item in _effectiveDiagnosisItems) item.name: item,
+    };
+    final List<String> items = _effectiveDiagnosisItems.isNotEmpty
+        ? _effectiveDiagnosisItems.map((item) => item.name).toList()
+        : _itemStatus.keys.toList();
+
+    return List<Map<String, dynamic>>.generate(items.length, (index) {
+      final String name = items[index];
+      final DiagnosisItem? diagnosis = diagnosisByName[name];
+      final String selectedStatus = _normalizeStatusLabel(
+        _itemStatus[name] ?? diagnosis?.statusLabel,
+      );
+      final String report =
+          (_itemProblemSolution[name] ?? diagnosis?.report ?? '').trim();
+      final File? issueImage = _itemIssueImage[name];
+
+      return <String, dynamic>{
+        'name': name,
+        'status': _statusToApiValue(
+          selectedStatus.isEmpty ? 'Working' : selectedStatus,
+        ),
+        if (report.isNotEmpty) 'report': report,
+        if (issueImage != null) 'images': <File>[issueImage],
+      };
+    });
+  }
+
+  Future<void> _submitDiagnosisReport() async {
+    if (_isSubmittingDiagnosis) return;
+
+    final serviceRequestId = _serviceRequestIdForApi();
+    final productId = _productIdForApi();
+    final report = _writtenReportText.trim();
+
+    if (serviceRequestId.isEmpty || productId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Missing service request/product id. Please reopen from product detail.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (report.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please write report before submitting.')),
+      );
+      return;
+    }
+
+    final diagnosisPayload = _buildDiagnosisSubmitPayload();
+    if (diagnosisPayload.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No diagnosis items to submit.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmittingDiagnosis = true;
+    });
+
+    try {
+      final response = await ApiService.submitServiceRequestDiagnosis(
+        serviceRequestId: serviceRequestId,
+        productId: productId,
+        roleId: widget.roleId,
+        diagnosisList: diagnosisPayload,
+        defaultReport: report,
+        beforePhoto: _beforeImage,
+        afterPhoto: _afterImage,
+      );
+
+      if (!mounted) return;
+
+      final String message =
+          response.message?.trim().isNotEmpty == true
+          ? response.message!.trim()
+          : (response.success
+                ? 'Diagnosis submitted successfully.'
+                : 'Failed to submit diagnosis.');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: response.success ? primaryGreen : Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit diagnosis: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingDiagnosis = false;
+        });
+      } else {
+        _isSubmittingDiagnosis = false;
+      }
+    }
+  }
+
+  Future<void> _showNotWorkingDialog(String title) async {
+    final DiagnosisItem? diagnosis = _findDiagnosisByName(title);
+    String notes = _itemProblemSolution[title] ?? diagnosis?.report ?? '';
+    final String initialStatus = _normalizeStatusLabel(
+      _itemSelectedAction[title] ?? _itemStatus[title] ?? diagnosis?.statusLabel,
+    );
+    String? selectedOption = _isNonWorkingStatus(initialStatus)
+        ? initialStatus
+        : null;
+    File? selectedImage = _itemIssueImage[title];
+    bool isPickingImage = false;
+
+    final _NotWorkingDialogResult? result =
+        await showDialog<_NotWorkingDialogResult>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> pickIssueImage(ImageSource source) async {
+              if (isPickingImage) return;
+              setDialogState(() {
+                isPickingImage = true;
+              });
+              try {
+                final XFile? picked = await _picker.pickImage(
+                  source: source,
+                  imageQuality: 70,
+                );
+                if (picked != null && dialogContext.mounted) {
+                  setDialogState(() {
+                    selectedImage = File(picked.path);
+                  });
+                }
+              } catch (e) {
+                debugPrint('Error picking issue image: $e');
+              } finally {
+                if (dialogContext.mounted) {
+                  setDialogState(() {
+                    isPickingImage = false;
+                  });
+                }
+              }
+            }
+
+            Future<void> showIssueImagePicker() async {
+              final ImageSource? source = await _showImageSourcePickerBottomSheet(
+                dialogContext,
+              );
+              if (source != null) {
+                await pickIssueImage(source);
+              }
+            }
+
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                      const Text(
+                        'Write problem and solution',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        initialValue: notes,
+                        onChanged: (value) {
+                          notes = value;
+                        },
+                        maxLines: 5,
+                        decoration: InputDecoration(
+                          hintText: 'Write problem and solution',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
-                          child: const Text(
-                            'Add To Pick-Up',
-                            style: TextStyle(color: Colors.black87),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AddProductScreen(
-                                  roleId: widget.roleId,
-                                  roleName: widget.roleName,
+                      const SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: showIssueImagePicker,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.camera_alt, color: primaryGreen),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Photo',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                              Icon(Icons.arrow_forward, color: primaryGreen),
+                            ],
                           ),
-                          child: const Text(
-                            'Request Part',
-                            style: TextStyle(color: primaryGreen),
+                        ),
+                      ),
+                      if (selectedImage != null) ...[
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(
+                            selectedImage!,
+                            width: 110,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
+                      if (isPickingImage)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: LinearProgressIndicator(color: primaryGreen),
+                        ),
+                      const SizedBox(height: 16),
+                      ..._notWorkingOptions.map(
+                        (option) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _buildActionOptionTile(
+                            label: option,
+                            isSelected: selectedOption == option,
+                            onTap: () {
+                              setDialogState(() {
+                                selectedOption = option;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: selectedOption == null
+                            ? null
+                            : () {
+                                Navigator.pop(
+                                  dialogContext,
+                                  _NotWorkingDialogResult(
+                                    selectedOption: selectedOption!,
+                                    notes: notes.trim(),
+                                    selectedImage: selectedImage,
+                                  ),
+                                );
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryGreen,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          disabledForegroundColor: Colors.grey.shade600,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Continue',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ],
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _itemStatus[title] = status;
-                    });
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryGreen,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
+
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _itemStatus[title] = result.selectedOption;
+      _itemSelectedAction[title] = result.selectedOption;
+      if (result.notes.isEmpty) {
+        _itemProblemSolution.remove(title);
+      } else {
+        _itemProblemSolution[title] = result.notes;
+      }
+      if (result.selectedImage == null) {
+        _itemIssueImage.remove(title);
+      } else {
+        _itemIssueImage[title] = result.selectedImage!;
+      }
+      _expandedItems[title] = false;
+    });
   }
 
-  Widget _buildChecklistItem(String title) {
-    bool isExpanded = _expandedItems[title] ?? false;
-    String? status = _itemStatus[title];
+  Widget _buildActionOptionTile({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    const Color activeColor = Colors.red;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.red.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? activeColor : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? activeColor : Colors.grey.shade500,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? activeColor : Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String statusLabel, {required bool isWorking}) {
+    final Color color = isWorking ? primaryGreen : Colors.red;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Text(
+        statusLabel,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChecklistItem(DiagnosisItem diagnosis) {
+    final String title = diagnosis.name;
+    final bool isExpanded = _expandedItems[title] ?? false;
+    final String statusLabel = _resolvedStatusLabel(diagnosis);
+    final bool hasStatus = statusLabel.isNotEmpty;
+    final bool isWorking = _isWorkingStatus(statusLabel);
+    final bool isNonWorking = _isNonWorkingStatus(statusLabel);
+    final String? reportText = _resolvedReportText(diagnosis);
+    final File? issueImage = _itemIssueImage[title];
 
     Color circleColor = Colors.grey.shade200;
     Widget? circleIcon;
 
-    if (status == 'Working') {
+    if (isWorking) {
       circleColor = primaryGreen;
       circleIcon = const Icon(Icons.check, size: 16, color: Colors.white);
-    } else if (status == 'Not Working') {
+    } else if (isNonWorking) {
       circleColor = Colors.red;
       circleIcon = const Icon(Icons.close, size: 16, color: Colors.white);
     }
@@ -752,6 +1243,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 24,
@@ -764,15 +1256,41 @@ class _FieldExecutiveInstallationChecklistScreenState
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (reportText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            reportText,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (hasStatus) ...[
+                  _buildStatusBadge(
+                    statusLabel,
+                    isWorking: isWorking,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Icon(
                   isExpanded
                       ? Icons.keyboard_arrow_up
@@ -790,25 +1308,25 @@ class _FieldExecutiveInstallationChecklistScreenState
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _showStatusDetailsDialog(title, 'Not Working'),
+                    onTap: () => _showNotWorkingDialog(title),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: status == 'Not Working'
+                        color: isNonWorking
                             ? Colors.red.shade50
                             : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: status == 'Not Working'
+                          color: isNonWorking
                               ? Colors.red
                               : Colors.grey.shade200,
                         ),
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        'Not Working',
+                        isNonWorking ? statusLabel : 'Not Working',
                         style: TextStyle(
-                          color: status == 'Not Working'
+                          color: isNonWorking
                               ? Colors.red
                               : Colors.grey.shade500,
                           fontWeight: FontWeight.w500,
@@ -820,16 +1338,24 @@ class _FieldExecutiveInstallationChecklistScreenState
                 const SizedBox(width: 12),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _showStatusDetailsDialog(title, 'Working'),
+                    onTap: () {
+                      setState(() {
+                        _itemStatus[title] = 'Working';
+                        _itemSelectedAction.remove(title);
+                        _itemProblemSolution.remove(title);
+                        _itemIssueImage.remove(title);
+                        _expandedItems[title] = false;
+                      });
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: status == 'Working'
+                        color: isWorking
                             ? Colors.green.shade50
                             : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: status == 'Working'
+                          color: isWorking
                               ? primaryGreen
                               : Colors.grey.shade200,
                         ),
@@ -838,7 +1364,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                       child: Text(
                         'Working',
                         style: TextStyle(
-                          color: status == 'Working'
+                          color: isWorking
                               ? primaryGreen
                               : Colors.grey.shade500,
                           fontWeight: FontWeight.w500,
@@ -850,12 +1376,25 @@ class _FieldExecutiveInstallationChecklistScreenState
               ],
             ),
           ),
+        if (issueImage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, left: 4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.file(
+                issueImage,
+                width: 110,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
       ],
     );
   }
 
   Widget _buildLargeButton({
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     required String label,
     IconData? icon,
   }) {
@@ -864,6 +1403,8 @@ class _FieldExecutiveInstallationChecklistScreenState
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
+        disabledBackgroundColor: Colors.grey.shade300,
+        disabledForegroundColor: Colors.grey.shade600,
         minimumSize: const Size(double.infinity, 54),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

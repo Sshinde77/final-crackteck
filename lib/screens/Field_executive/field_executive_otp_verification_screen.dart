@@ -68,6 +68,31 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       return;
     }
 
+    final authValidation = await ApiService.validateServiceRequestOtpAuthState(
+      flow: 'FieldExecutiveOtpVerificationScreen.verifyOtp',
+      redirectOnFailure: false,
+    );
+    if (!mounted) return;
+    if (!authValidation.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authValidation.message ??
+                'Authentication session is incomplete. Please login again.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.roleSelection,
+        (route) => false,
+      );
+      return;
+    }
+
     final serviceRequestId = widget.serviceId.trim().replaceFirst(RegExp(r'^#'), '');
     if (int.tryParse(serviceRequestId) == null) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -74,6 +74,8 @@ class ApiConstants {
       "$baseUrl/service-request/{service-request_id}/reschedule";
   static const String ServiceRequestdiagnosis =
       "$baseUrl/service-request/{service-request_id}/{product_id}/diagnosis-list";
+  static const String ServiceRequestsubmitdiagnosis =
+      "$baseUrl/service-request/{service-request_id}/{product_id}/submit-diagnosis";
 
 
 

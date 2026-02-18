@@ -7,9 +7,34 @@ import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
 import '../model/api_response.dart';
+import '../model/field executive/diagnosis_item.dart';
 import '../model/field executive/field_executive_service_request_detail.dart';
 import '../core/secure_storage_service.dart';
 import '../core/navigation_service.dart';
+
+class _ServiceRequestAuthState {
+  final int? userId;
+  final int? roleId;
+  final String? accessToken;
+
+  const _ServiceRequestAuthState({
+    required this.userId,
+    required this.roleId,
+    required this.accessToken,
+  });
+
+  bool get hasAccessToken => accessToken?.trim().isNotEmpty == true;
+
+  List<String> get missingFields {
+    return [
+      if (userId == null) 'user_id',
+      if (roleId == null) 'role_id',
+      if (!hasAccessToken) 'access_token',
+    ];
+  }
+
+  bool get isValid => missingFields.isEmpty;
+}
 
 /// API Service for handling HTTP requests
 class ApiService {
@@ -59,12 +84,12 @@ class ApiService {
   // ---------------------------
   // Helper: token persistence
   // ---------------------------
-  Future<void> _persistTokensFromData(
+  Future<int?> _persistTokensFromData(
     dynamic data, {
     required int roleId,
   }) async {
     if (data == null) {
-      return;
+      return null;
     }
 
     String? accessToken;
@@ -72,26 +97,17 @@ class ApiService {
     int? userId;
 
     if (data is Map<String, dynamic>) {
-      accessToken = _extractStringField(data, const [
+      accessToken = _extractStringFieldDeep(data, const [
         'access_token',
         'token',
         'accessToken',
       ]);
-      refreshToken = _extractStringField(data, const [
+      refreshToken = _extractStringFieldDeep(data, const [
         'refresh_token',
         'refreshToken',
       ]);
 
-      // Try to capture the authenticated user's id from common shapes:
-      // - { user_id: 1, ... }
-      // - { id: 1, ... }
-      // - { user: { id: 1 } }
-      dynamic rawUserId = data['user_id'] ?? data['id'];
-      if (rawUserId == null && data['user'] is Map<String, dynamic>) {
-        final user = data['user'] as Map<String, dynamic>;
-        rawUserId = user['user_id'] ?? user['id'];
-      }
-      userId = _tryParseInt(rawUserId);
+      userId = _extractUserIdFromMap(data);
     } else if (data is String) {
       // Some APIs may return the token directly as a string.
       accessToken = data;
@@ -111,6 +127,7 @@ class ApiService {
     if (userId != null) {
       await SecureStorageService.saveUserId(userId);
     }
+    return userId;
   }
 
   String? _extractStringField(Map<String, dynamic> source, List<String> keys) {
@@ -123,6 +140,34 @@ class ApiService {
     return null;
   }
 
+  String? _extractStringFieldDeep(
+    dynamic source,
+    List<String> keys, {
+    int depth = 0,
+  }) {
+    if (depth > 4 || source == null) return null;
+
+    if (source is Map<String, dynamic>) {
+      final direct = _extractStringField(source, keys);
+      if (direct != null) return direct;
+
+      for (final value in source.values) {
+        final nested = _extractStringFieldDeep(value, keys, depth: depth + 1);
+        if (nested != null) return nested;
+      }
+      return null;
+    }
+
+    if (source is List) {
+      for (final item in source) {
+        final nested = _extractStringFieldDeep(item, keys, depth: depth + 1);
+        if (nested != null) return nested;
+      }
+    }
+
+    return null;
+  }
+
   int? _tryParseInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;
@@ -131,6 +176,23 @@ class ApiService {
       return int.tryParse(value);
     }
     return null;
+  }
+
+  int? _extractUserIdFromMap(Map<String, dynamic> data) {
+    dynamic rawUserId = data['user_id'] ?? data['id'];
+    if (rawUserId == null && data['user'] is Map<String, dynamic>) {
+      final user = data['user'] as Map<String, dynamic>;
+      rawUserId = user['user_id'] ?? user['id'];
+    }
+    if (rawUserId == null && data['data'] is Map<String, dynamic>) {
+      final nested = data['data'] as Map<String, dynamic>;
+      rawUserId = nested['user_id'] ?? nested['id'];
+      if (rawUserId == null && nested['user'] is Map<String, dynamic>) {
+        final nestedUser = nested['user'] as Map<String, dynamic>;
+        rawUserId = nestedUser['user_id'] ?? nestedUser['id'];
+      }
+    }
+    return _tryParseInt(rawUserId);
   }
 
   /// Login - Send OTP
@@ -248,15 +310,46 @@ class ApiService {
 
       if (!isHtml &&
           (response.statusCode == 200 || response.statusCode == 201)) {
-        // Persist tokens (if present) for this role.
-        await _persistTokensFromData(
-          jsonResponse['data'] ?? jsonResponse,
+        // Always persist role_id for authenticated flows.
+        await SecureStorageService.saveRoleId(roleId);
+        final authPayload = jsonResponse['data'] ?? jsonResponse;
+
+        // Persist tokens/user details from both common payload shapes.
+        int? persistedUserId = await _persistTokensFromData(
+          authPayload,
           roleId: roleId,
         );
+        persistedUserId ??=
+            await _persistTokensFromData(jsonResponse, roleId: roleId);
+
+        if (persistedUserId == null) {
+          // Prevent stale user_id from previous sessions from being reused.
+          await SecureStorageService.clearUserId();
+          debugPrint(
+            'WARNING: verifyOtp response did not contain user_id for role_id=$roleId. '
+            'Blocking authenticated flows.',
+          );
+          return ApiResponse(
+            success: false,
+            message:
+                'Login verified, but account session is incomplete. Please login again.',
+            data: authPayload,
+            errors: jsonResponse['errors'],
+          );
+        }
+
+        final persistedAuthState = await _readServiceRequestAuthState(
+          forceReload: true,
+        );
+        _logServiceRequestOtpAuthState(
+          'verifyOtp.postPersist',
+          persistedAuthState,
+        );
+
         return ApiResponse(
           success: jsonResponse['success'] ?? true,
           message: jsonResponse['message'] ?? 'OTP verified',
-          data: jsonResponse['data'] ?? jsonResponse,
+          data: authPayload,
           errors: jsonResponse['errors'],
         );
       }
@@ -780,6 +873,69 @@ class ApiService {
   static Future<void> _handleAuthFailure() async {
     await SecureStorageService.clearTokens();
     await NavigationService.navigateToAuthRoot();
+  }
+
+  static Future<_ServiceRequestAuthState> _readServiceRequestAuthState({
+    bool forceReload = false,
+  }) async {
+    return _ServiceRequestAuthState(
+      userId: await SecureStorageService.getUserId(forceReload: forceReload),
+      roleId: await SecureStorageService.getRoleId(forceReload: forceReload),
+      accessToken: await SecureStorageService.getAccessToken(
+        forceReload: forceReload,
+      ),
+    );
+  }
+
+  static void _logServiceRequestOtpAuthState(
+    String flow,
+    _ServiceRequestAuthState state,
+  ) {
+    debugPrint(
+      '[ServiceRequestOtp][$flow] auth state: '
+      'user_id=${state.userId ?? 'missing'}, '
+      'role_id=${state.roleId ?? 'missing'}, '
+      'has_access_token=${state.hasAccessToken}',
+    );
+  }
+
+  static String _buildMissingServiceRequestAuthMessage(
+    List<String> missingFields,
+  ) {
+    return 'Authentication session is incomplete (missing: ${missingFields.join(', ')}). '
+        'Please login again.';
+  }
+
+  static Future<ApiResponse?> _ensureServiceRequestOtpAuthState({
+    required String flow,
+    bool redirectOnFailure = true,
+  }) async {
+    final state = await _readServiceRequestAuthState(forceReload: true);
+    _logServiceRequestOtpAuthState(flow, state);
+
+    if (state.isValid) {
+      return null;
+    }
+
+    final message = _buildMissingServiceRequestAuthMessage(state.missingFields);
+    debugPrint('[ServiceRequestOtp][$flow] $message');
+
+    if (redirectOnFailure) {
+      await NavigationService.navigateToAuthRoot();
+    }
+
+    return ApiResponse(success: false, message: message);
+  }
+
+  static Future<ApiResponse> validateServiceRequestOtpAuthState({
+    String flow = 'service-request-otp',
+    bool redirectOnFailure = false,
+  }) async {
+    final validation = await _ensureServiceRequestOtpAuthState(
+      flow: flow,
+      redirectOnFailure: redirectOnFailure,
+    );
+    return validation ?? ApiResponse(success: true, message: 'Authentication validated.');
   }
 
   static Future<http.Response> _performAuthenticatedGet(Uri url) async {
@@ -1319,17 +1475,36 @@ class ApiService {
     String serviceRequestId, {
     int? roleId,
   }) async {
-    final storedUserId = await SecureStorageService.getUserId();
-    final storedRoleId = await SecureStorageService.getRoleId();
+    final authValidation = await _ensureServiceRequestOtpAuthState(
+      flow: 'sendServiceRequestOtp',
+      redirectOnFailure: false,
+    );
+    if (authValidation != null) {
+      return authValidation;
+    }
 
-    if (storedUserId == null) {
-      debugPrint(
-        'Missing userId in secure storage when calling sendServiceRequestOtp',
-      );
-      await _handleAuthFailure();
+    final storedUserId = await SecureStorageService.getUserId(forceReload: true);
+    final storedRoleId = await SecureStorageService.getRoleId(forceReload: true);
+    final storedAccessToken = await SecureStorageService.getAccessToken(
+      forceReload: true,
+    );
+    final missingFields = <String>[
+      if (storedUserId == null) 'user_id',
+      if (storedRoleId == null) 'role_id',
+      if (storedAccessToken == null || storedAccessToken.trim().isEmpty)
+        'access_token',
+    ];
+    if (missingFields.isNotEmpty) {
+      final message = _buildMissingServiceRequestAuthMessage(missingFields);
+      debugPrint('[ServiceRequestOtp][sendServiceRequestOtp] $message');
       return ApiResponse(
         success: false,
-        message: 'Authentication error. Please log in again.',
+        message: message,
+      );
+    }
+    if (roleId != null && roleId != storedRoleId) {
+      debugPrint(
+        '[ServiceRequestOtp][sendServiceRequestOtp] route role_id=$roleId does not match stored role_id=$storedRoleId. Using stored role_id.',
       );
     }
 
@@ -1345,7 +1520,7 @@ class ApiService {
       );
     }
 
-    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+    final effectiveRoleId = storedRoleId.toString();
 
     String baseEndpoint = ApiConstants.ServiceRequestsendotp
         .replaceFirst('{service-request_id}', numericId.toString())
@@ -1372,7 +1547,7 @@ class ApiService {
       debugPrint('API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
-        await _handleAuthFailure();
+        await NavigationService.navigateToAuthRoot();
         return ApiResponse(
           success: false,
           message: 'Authentication error. Please log in again.',
@@ -1428,17 +1603,36 @@ class ApiService {
     required String otp,
     int? roleId,
   }) async {
-    final storedUserId = await SecureStorageService.getUserId();
-    final storedRoleId = await SecureStorageService.getRoleId();
+    final authValidation = await _ensureServiceRequestOtpAuthState(
+      flow: 'verifyServiceRequestOtp',
+      redirectOnFailure: false,
+    );
+    if (authValidation != null) {
+      return authValidation;
+    }
 
-    if (storedUserId == null) {
-      debugPrint(
-        'Missing userId in secure storage when calling verifyServiceRequestOtp',
-      );
-      await _handleAuthFailure();
+    final storedUserId = await SecureStorageService.getUserId(forceReload: true);
+    final storedRoleId = await SecureStorageService.getRoleId(forceReload: true);
+    final storedAccessToken = await SecureStorageService.getAccessToken(
+      forceReload: true,
+    );
+    final missingFields = <String>[
+      if (storedUserId == null) 'user_id',
+      if (storedRoleId == null) 'role_id',
+      if (storedAccessToken == null || storedAccessToken.trim().isEmpty)
+        'access_token',
+    ];
+    if (missingFields.isNotEmpty) {
+      final message = _buildMissingServiceRequestAuthMessage(missingFields);
+      debugPrint('[ServiceRequestOtp][verifyServiceRequestOtp] $message');
       return ApiResponse(
         success: false,
-        message: 'Authentication error. Please log in again.',
+        message: message,
+      );
+    }
+    if (roleId != null && roleId != storedRoleId) {
+      debugPrint(
+        '[ServiceRequestOtp][verifyServiceRequestOtp] route role_id=$roleId does not match stored role_id=$storedRoleId. Using stored role_id.',
       );
     }
 
@@ -1460,7 +1654,7 @@ class ApiService {
       );
     }
 
-    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+    final effectiveRoleId = storedRoleId.toString();
 
     String baseEndpoint = ApiConstants.ServiceRequestverifyotp
         .replaceFirst('{service-request_id}', numericId.toString())
@@ -1494,7 +1688,7 @@ class ApiService {
       debugPrint('API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
-        await _handleAuthFailure();
+        await NavigationService.navigateToAuthRoot();
         return ApiResponse(
           success: false,
           message: 'Authentication error. Please log in again.',
@@ -1993,7 +2187,7 @@ class ApiService {
   /// Fetch diagnosis list for a product under a service request.
   ///
   /// GET /service-request/{service-request_id}/{product_id}/diagnosis-list
-  static Future<List<String>> fetchServiceRequestDiagnosisList({
+  static Future<List<DiagnosisItem>> fetchServiceRequestDiagnosisList({
     required String serviceRequestId,
     required String productId,
     int? roleId,
@@ -2178,33 +2372,113 @@ class ApiService {
         );
       }
 
-      String normalizeDiagnosisItem(dynamic item) {
-        if (item == null) return '';
-        if (item is Map<String, dynamic>) {
-          for (final key in const [
-            'diagnosis',
-            'name',
-            'title',
-            'label',
-            'diagnosis_name',
-          ]) {
-            final value = item[key];
-            final text = value?.toString().trim() ?? '';
-            if (text.isNotEmpty && text.toLowerCase() != 'null') {
-              return text;
-            }
-          }
+      bool hasDiagnosisNameKey(Map<String, dynamic> source) {
+        for (final key in const [
+          'name',
+          'diagnosis_name',
+          'diagnosisName',
+          'diagnosis',
+          'title',
+          'label',
+        ]) {
+          if (source.containsKey(key)) return true;
         }
-        final text = item.toString().trim();
-        if (text.toLowerCase() == 'null') return '';
-        return text;
+        return false;
       }
 
-      return scopedRawList
-          .map(normalizeDiagnosisItem)
-          .where((item) => item.isNotEmpty)
-          .toSet()
-          .toList();
+      List<dynamic> normalizeToList(dynamic source) {
+        if (source == null) return const <dynamic>[];
+        if (source is List) return source;
+        return <dynamic>[source];
+      }
+
+      Iterable<dynamic> extractDiagnosisNodes(dynamic raw) sync* {
+        if (raw == null) return;
+
+        if (raw is List) {
+          for (final entry in raw) {
+            yield* extractDiagnosisNodes(entry);
+          }
+          return;
+        }
+
+        if (raw is Map) {
+          final map = Map<String, dynamic>.from(raw as Map);
+          final hasNameKey = hasDiagnosisNameKey(map);
+
+          final nestedDiagnosisList =
+              map['diagnosis_list'] ?? map['diagnosisList'];
+          if (!hasNameKey && nestedDiagnosisList != null) {
+            for (final nested in normalizeToList(nestedDiagnosisList)) {
+              yield* extractDiagnosisNodes(nested);
+            }
+            return;
+          }
+
+          final nestedDiagnosis = map['diagnosis'];
+          if (!hasNameKey && (nestedDiagnosis is List || nestedDiagnosis is Map)) {
+            for (final nested in normalizeToList(nestedDiagnosis)) {
+              yield* extractDiagnosisNodes(nested);
+            }
+            return;
+          }
+
+          yield map;
+          return;
+        }
+
+        yield raw;
+      }
+
+      DiagnosisItem? parseDiagnosisItem(dynamic raw) {
+        if (raw == null) return null;
+
+        if (raw is Map) {
+          final item = DiagnosisItem.fromJson(Map<String, dynamic>.from(raw as Map));
+          if (item.name.trim().isEmpty) return null;
+          return item;
+        }
+
+        final text = raw.toString().trim();
+        if (text.isEmpty || text.toLowerCase() == 'null') {
+          return null;
+        }
+        return DiagnosisItem(name: text);
+      }
+
+      final parsedItems = <DiagnosisItem>[];
+      for (final raw in scopedRawList) {
+        for (final node in extractDiagnosisNodes(raw)) {
+          final parsed = parseDiagnosisItem(node);
+          if (parsed != null) {
+            parsedItems.add(parsed);
+          }
+        }
+      }
+
+      final uniqueByName = <String, DiagnosisItem>{};
+      for (final item in parsedItems) {
+        final key = item.name.trim();
+        if (key.isEmpty) continue;
+
+        if (!uniqueByName.containsKey(key)) {
+          uniqueByName[key] = item;
+          continue;
+        }
+
+        final existing = uniqueByName[key]!;
+        uniqueByName[key] = DiagnosisItem(
+          name: existing.name,
+          statusLabel: existing.statusLabel.isNotEmpty
+              ? existing.statusLabel
+              : item.statusLabel,
+          report: (existing.report?.trim().isNotEmpty ?? false)
+              ? existing.report
+              : item.report,
+        );
+      }
+
+      return uniqueByName.values.toList();
     } on TimeoutException catch (e) {
       debugPrint('Timeout: $e');
       throw Exception('Request timeout. Please try again.');
@@ -2214,6 +2488,228 @@ class ApiService {
     } catch (e) {
       debugPrint('Error fetching diagnosis list: $e');
       rethrow;
+    }
+  }
+
+  /// Submit diagnosis report for a product under a service request.
+  ///
+  /// POST /service-request/{service-request_id}/{product_id}/submit-diagnosis
+  /// multipart/form-data
+  static Future<ApiResponse> submitServiceRequestDiagnosis({
+    required String serviceRequestId,
+    required String productId,
+    required int roleId,
+    required List<Map<String, dynamic>> diagnosisList,
+    String defaultReport = '',
+    File? beforePhoto,
+    File? afterPhoto,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling submitServiceRequestDiagnosis',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedServiceRequestId = serviceRequestId
+        .trim()
+        .replaceFirst(RegExp(r'^#'), '');
+    final normalizedProductId = productId.trim().replaceFirst(RegExp(r'^#'), '');
+
+    if (int.tryParse(normalizedServiceRequestId) == null) {
+      return ApiResponse(
+        success: false,
+        message:
+            'Invalid service request id "$serviceRequestId". Expected numeric id.',
+      );
+    }
+    if (int.tryParse(normalizedProductId) == null) {
+      return ApiResponse(
+        success: false,
+        message: 'Invalid product id "$productId". Expected numeric id.',
+      );
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+
+    String endpoint = ApiConstants.ServiceRequestsubmitdiagnosis
+        .replaceFirst('{service-request_id}', normalizedServiceRequestId)
+        .replaceFirst('{service_request_id}', normalizedServiceRequestId)
+        .replaceFirst('{product_id}', normalizedProductId)
+        .replaceFirst('{product-id}', normalizedProductId);
+    if (endpoint.contains('{service-request_id}') ||
+        endpoint.contains('{service_request_id}') ||
+        endpoint.contains('{product_id}') ||
+        endpoint.contains('{product-id}')) {
+      endpoint =
+          '${ApiConstants.baseUrl}/service-request/$normalizedServiceRequestId/$normalizedProductId/submit-diagnosis';
+    }
+
+    final uri = Uri.parse(endpoint);
+
+    Future<http.Response> sendOnce() async {
+      final accessToken = await SecureStorageService.getAccessToken();
+      final request = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          'Accept': 'application/json',
+          if (accessToken != null && accessToken.isNotEmpty)
+            'Authorization': 'Bearer $accessToken',
+        })
+        ..fields['user_id'] = storedUserId.toString()
+        ..fields['role_id'] = effectiveRoleId;
+
+      const photoAngles = <String>[
+        'top',
+        'bottom',
+        'left',
+        'right',
+        'screen',
+        'keyboard',
+      ];
+
+      if (beforePhoto != null) {
+        for (final angle in photoAngles) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'before_photos[$angle]',
+              beforePhoto.path,
+            ),
+          );
+        }
+      }
+      if (afterPhoto != null) {
+        for (final angle in photoAngles) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'after_photos[$angle]',
+              afterPhoto.path,
+            ),
+          );
+        }
+      }
+
+      for (var index = 0; index < diagnosisList.length; index++) {
+        final item = diagnosisList[index];
+        final name = (item['name'] ?? '').toString().trim();
+        final status = (item['status'] ?? '').toString().trim();
+        final report = (item['report'] ?? '').toString().trim();
+        final reportToSend = report.isNotEmpty ? report : defaultReport.trim();
+
+        if (name.isNotEmpty) {
+          request.fields['diagnosis_list[$index][name]'] = name;
+        }
+        if (status.isNotEmpty) {
+          request.fields['diagnosis_list[$index][status]'] = status;
+        }
+        if (reportToSend.isNotEmpty) {
+          request.fields['diagnosis_list[$index][report]'] = reportToSend;
+        }
+
+        final images = item['images'];
+        if (images is List) {
+          for (final image in images.whereType<File>()) {
+            if (await image.exists()) {
+              request.files.add(
+                await http.MultipartFile.fromPath(
+                  'diagnosis_list[$index][images][]',
+                  image.path,
+                ),
+              );
+            }
+          }
+        } else if (images is File && await images.exists()) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'diagnosis_list[$index][images][]',
+              images.path,
+            ),
+          );
+        }
+      }
+
+      final streamed = await request.send().timeout(ApiConstants.requestTimeout);
+      return http.Response.fromStream(streamed);
+    }
+
+    try {
+      debugPrint('API Request: POST $uri');
+      debugPrint(
+        'API Request Fields: user_id=$storedUserId, role_id=$effectiveRoleId, '
+        'diagnosis_items=${diagnosisList.length}',
+      );
+
+      var response = await sendOnce();
+
+      if (_isUnauthorizedResponse(response)) {
+        final refreshed = await _attemptTokenRefresh();
+        if (!refreshed) {
+          await _handleAuthFailure();
+          return ApiResponse(
+            success: false,
+            message: 'Authentication error. Please log in again.',
+          );
+        }
+        response = await sendOnce();
+      }
+
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_isUnauthorizedResponse(response) || _looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success
+                ? 'Diagnosis submitted successfully'
+                : 'Failed to submit diagnosis'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to submit diagnosis: $e',
+      );
     }
   }
 
