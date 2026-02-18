@@ -137,8 +137,13 @@ class fieldexecutivestockinhandArguments {
 class fieldexecutiveproductdetailArguments {
   final int roleId;
   final String roleName;
+  final String productId;
 
-  fieldexecutiveproductdetailArguments({required this.roleId, required this.roleName});
+  fieldexecutiveproductdetailArguments({
+    required this.roleId,
+    required this.roleName,
+    this.productId = '',
+  });
 }
 class fieldexecutiveaddproductArguments {
   final int roleId;

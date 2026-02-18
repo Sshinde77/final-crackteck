@@ -304,6 +304,7 @@ class RouteGenerator {
               product_detail.ProductDetailScreen(
                 roleId: args.roleId,
                 roleName: args.roleName,
+                productId: args.productId,
               ),
           settings: settings,
         );

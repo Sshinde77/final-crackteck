@@ -72,6 +72,20 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
     return '';
   }
 
+  String _readId(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null || value is Map || value is List) {
+        continue;
+      }
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text.replaceFirst(RegExp(r'^#'), '');
+      }
+    }
+    return '';
+  }
+
   String _readImage(dynamic value) {
     if (value == null) return '';
 
@@ -166,12 +180,21 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
       item,
       const ['total_requested_quantity', 'requested_quantity', 'quantity', 'qty'],
     );
+    final productId = _readId(
+      products,
+      const ['product_id', 'productId', 'id'],
+    );
+    final stockInHandId = _readId(
+      item,
+      const ['stock_in_hand_id', 'stockInHandId', 'id'],
+    );
 
     return _StockItemData(
       imageUrl: image,
       productName: name.isEmpty ? '-' : name,
       finalPrice: _formatPrice(price),
       quantity: quantity.isEmpty ? '0' : quantity,
+      productId: productId.isNotEmpty ? productId : stockInHandId,
     );
   }
 
@@ -244,6 +267,7 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
                                 arguments: fieldexecutiveproductdetailArguments(
                                   roleId: widget.roleId,
                                   roleName: widget.roleName,
+                                  productId: item.productId,
                                 ),
                               );
                             },
@@ -297,12 +321,14 @@ class _StockItemData {
   final String productName;
   final String finalPrice;
   final String quantity;
+  final String productId;
 
   const _StockItemData({
     required this.imageUrl,
     required this.productName,
     required this.finalPrice,
     required this.quantity,
+    this.productId = '',
   });
 }
 

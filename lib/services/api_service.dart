@@ -1452,6 +1452,154 @@ class ApiService {
     }
   }
 
+  /// Fetch one stock-in-hand item by product id (or stock item id as fallback).
+  static Future<Map<String, dynamic>> fetchStockInHandProductById(
+    String productId, {
+    int roleId = 1,
+  }) async {
+    final normalizedTarget = productId.trim().replaceFirst(RegExp(r'^#'), '');
+    final items = await fetchStockInHand(roleId: roleId);
+
+    if (items.isEmpty) {
+      throw Exception('No stock in hand data available.');
+    }
+
+    if (normalizedTarget.isEmpty) {
+      return items.first;
+    }
+
+    String normalize(dynamic value) {
+      if (value == null) return '';
+      return value.toString().trim().replaceFirst(RegExp(r'^#'), '');
+    }
+
+    bool matchesItem(Map<String, dynamic> item) {
+      final productMap = item['products'] is Map
+          ? Map<String, dynamic>.from(item['products'] as Map)
+          : <String, dynamic>{};
+
+      final candidates = <dynamic>[
+        productMap['product_id'],
+        productMap['productId'],
+        productMap['id'],
+        item['product_id'],
+        item['productId'],
+        item['stock_in_hand_id'],
+        item['stockInHandId'],
+        item['id'],
+      ];
+
+      for (final candidate in candidates) {
+        if (normalize(candidate) == normalizedTarget) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    for (final item in items) {
+      if (matchesItem(item)) {
+        return item;
+      }
+    }
+
+    throw Exception('Product not found for id: $normalizedTarget');
+  }
+
+  /// Fetch products list for field executive add-product flow.
+  /// GET /products?user_id={userId}&role_id={roleId}
+  static Future<List<Map<String, dynamic>>> fetchFieldExecutiveProducts({
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchFieldExecutiveProducts',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+    final url = Uri.parse(ApiConstants.productlistFE).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load field executive products: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Server returned non-JSON products response');
+      }
+
+      List<dynamic> rawList = const [];
+
+      if (decoded is List) {
+        rawList = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['products'] is List) {
+          rawList = decoded['products'] as List;
+        } else if (decoded['product_list'] is List) {
+          rawList = decoded['product_list'] as List;
+        } else if (decoded['items'] is List) {
+          rawList = decoded['items'] as List;
+        } else if (decoded['data'] is List) {
+          rawList = decoded['data'] as List;
+        } else if (decoded['data'] is Map<String, dynamic>) {
+          final nested = decoded['data'] as Map<String, dynamic>;
+          if (nested['products'] is List) {
+            rawList = nested['products'] as List;
+          } else if (nested['product_list'] is List) {
+            rawList = nested['product_list'] as List;
+          } else if (nested['items'] is List) {
+            rawList = nested['items'] as List;
+          }
+        }
+      }
+
+      return rawList
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching field executive products: $e');
+      rethrow;
+    }
+  }
+
   /// Accept a service request for field executive.
   /// POST /service-request/{id}/accept?user_id={userId}&role_id={roleId}
   static Future<ApiResponse> acceptServiceRequest(

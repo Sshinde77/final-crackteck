@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../routes/app_routes.dart';
 
-class AddProductScreen extends StatelessWidget {
+import '../../constants/api_constants.dart';
+import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
+
+class AddProductScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
 
@@ -14,13 +17,166 @@ class AddProductScreen extends StatelessWidget {
   static const Color primaryGreen = Color(0xFF1F8B00);
 
   @override
+  State<AddProductScreen> createState() => _AddProductScreenState();
+}
+
+class _AddProductScreenState extends State<AddProductScreen> {
+  bool _isLoading = true;
+  String? _error;
+  List<_Product> _products = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiService.fetchFieldExecutiveProducts(
+        roleId: widget.roleId,
+      );
+      final mapped = response.map(_mapProduct).toList();
+      if (!mounted) return;
+      setState(() {
+        _products = mapped;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  String _readText(Map<String, dynamic>? source, List<String> keys) {
+    if (source == null) return '';
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null || value is Map || value is List) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
+    }
+    return '';
+  }
+
+  String _normalizeImageSource(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty || value.toLowerCase() == 'null') return '';
+
+    final parsed = Uri.tryParse(value);
+    if (parsed != null && parsed.hasScheme) {
+      final scheme = parsed.scheme.toLowerCase();
+      if (scheme == 'http' || scheme == 'https') return parsed.toString();
+      return '';
+    }
+
+    final base = Uri.parse(ApiConstants.baseUrl);
+    final origin = Uri(
+      scheme: base.scheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+    );
+
+    final relative = value.startsWith('//')
+        ? Uri.parse('https:$value')
+        : value.startsWith('/')
+            ? Uri.parse(value)
+            : Uri.parse('/$value');
+
+    return origin.resolveUri(relative).toString();
+  }
+
+  String _readImage(dynamic value) {
+    if (value == null) return '';
+
+    if (value is String) {
+      return _normalizeImageSource(value);
+    }
+
+    if (value is List) {
+      for (final item in value) {
+        final image = _readImage(item);
+        if (image.isNotEmpty) return image;
+      }
+      return '';
+    }
+
+    final map = _asMap(value);
+    if (map != null) {
+      for (final key in const [
+        'main_product_image',
+        'product_image',
+        'image',
+        'image_url',
+        'path',
+        'url',
+        'src',
+        'thumbnail',
+        'thumb',
+      ]) {
+        final image = _readImage(map[key]);
+        if (image.isNotEmpty) return image;
+      }
+    }
+
+    return '';
+  }
+
+  String _formatPrice(String rawPrice) {
+    final price = rawPrice.trim();
+    if (price.isEmpty) return '-';
+    if (price.contains('\u20B9')) return price;
+    return '\u20B9 $price';
+  }
+
+  _Product _mapProduct(Map<String, dynamic> item) {
+    final nestedProduct = _asMap(item['product']) ?? _asMap(item['products']);
+    final name = _readText(
+      nestedProduct ?? item,
+      const ['product_name', 'name', 'title'],
+    );
+    final price = _readText(
+      nestedProduct ?? item,
+      const ['final_price', 'selling_price', 'price', 'amount'],
+    );
+    final image = _readImage(
+      nestedProduct?['main_product_image'] ??
+          nestedProduct?['product_image'] ??
+          nestedProduct?['image'] ??
+          nestedProduct?['image_url'] ??
+          item['main_product_image'] ??
+          item['product_image'] ??
+          item['image'] ??
+          item['image_url'],
+    );
+
+    return _Product(
+      name: name.isEmpty ? '-' : name,
+      price: _formatPrice(price),
+      imageUrl: image,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // ✅ AppBar
       appBar: AppBar(
-        backgroundColor: primaryGreen,
+        backgroundColor: AddProductScreen.primaryGreen,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -31,63 +187,92 @@ class AddProductScreen extends StatelessWidget {
           style: TextStyle(color: Colors.white),
         ),
       ),
-
       body: SafeArea(
         child: Column(
           children: [
-          const SizedBox(height: 12),
-
-          // 🔍 Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GestureDetector(
-              onTap: () {
-                // TODO: Search action
-              },
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.black12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search, color: Colors.black54),
-                    SizedBox(width: 8),
-                    Text(
-                      'Search',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 🛒 Product Grid
-          Expanded(
-            child: GridView.builder(
+            const SizedBox(height: 12),
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _products.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.68,
+              child: GestureDetector(
+                onTap: () {},
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black12),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.black54),
+                      SizedBox(width: 8),
+                      Text(
+                        'Search',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              itemBuilder: (context, index) {
-                final product = _products[index];
-                return _ProductCard(
-                  product: product,
-                  roleId: roleId,
-                  roleName: roleName,
-                );
-              },
             ),
-          ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: _loadProducts,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AddProductScreen.primaryGreen,
+                                  ),
+                                  child: const Text(
+                                    'Retry',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : _products.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No products available',
+                                style: TextStyle(color: Colors.black54),
+                              ),
+                            )
+                          : GridView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _products.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: 0.68,
+                              ),
+                              itemBuilder: (context, index) {
+                                final product = _products[index];
+                                return _ProductCard(
+                                  product: product,
+                                  roleId: widget.roleId,
+                                  roleName: widget.roleName,
+                                );
+                              },
+                            ),
+            ),
           ],
         ),
       ),
@@ -95,7 +280,6 @@ class AddProductScreen extends StatelessWidget {
   }
 }
 
-/// 🔹 Product Card Widget
 class _ProductCard extends StatelessWidget {
   final _Product product;
   final int roleId;
@@ -128,19 +312,24 @@ class _ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🖼 Image
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: Image.asset(
-                  product.image,
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                ),
+                child: product.imageUrl.isEmpty
+                    ? const Icon(Icons.image_not_supported, color: Colors.grey)
+                    : Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          );
+                        },
+                      ),
               ),
             ),
-
-            // 💰 Price
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
@@ -151,10 +340,7 @@ class _ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 4),
-
-            // 📦 Name
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
@@ -164,10 +350,7 @@ class _ProductCard extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
             ),
-
             const SizedBox(height: 8),
-
-            // 🟢 Request Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: SizedBox(
@@ -197,7 +380,6 @@ class _ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 8),
           ],
         ),
@@ -206,49 +388,14 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-/// 🔹 Product Model
 class _Product {
   final String name;
   final String price;
-  final String image;
+  final String imageUrl;
 
   const _Product({
     required this.name,
     required this.price,
-    required this.image,
+    required this.imageUrl,
   });
 }
-
-/// 🔹 Static Product Data (as shown in image)
-const List<_Product> _products = [
-  _Product(
-    name: 'Apple MacBook Air M1 chip',
-    price: '₹ 62,990',
-    image: 'assets/products/macbook.png',
-  ),
-  _Product(
-    name: 'ASUS ROG Strix G13CHR 2024',
-    price: '₹ 1,29,990',
-    image: 'assets/products/asus_cpu.png',
-  ),
-  _Product(
-    name: 'HP All-in-One PC, Windows 11 Home',
-    price: '₹ 31,490',
-    image: 'assets/products/hp_allinone.png',
-  ),
-  _Product(
-    name: 'Samsung Galaxy Book3 Pro Intel 13th',
-    price: '₹ 97,150',
-    image: 'assets/products/samsung_laptop.png',
-  ),
-  _Product(
-    name: 'Zebronics Security Camera',
-    price: '₹ 2,699',
-    image: 'assets/products/camera.png',
-  ),
-  _Product(
-    name: 'Mini PC',
-    price: '₹ 50,990',
-    image: 'assets/products/mini_pc.png',
-  ),
-];
