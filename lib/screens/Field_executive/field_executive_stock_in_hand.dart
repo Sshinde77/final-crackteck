@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../routes/app_routes.dart';
 
-class StockInHandScreen extends StatelessWidget {
+import '../../constants/api_constants.dart';
+import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
+
+class StockInHandScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
 
@@ -11,14 +14,171 @@ class StockInHandScreen extends StatelessWidget {
     required this.roleName,
   });
 
+  @override
+  State<StockInHandScreen> createState() => _StockInHandScreenState();
+}
+
+class _StockInHandScreenState extends State<StockInHandScreen> {
   static const Color primaryGreen = Color(0xFF2E7D32);
+
+  bool _isLoading = true;
+  String? _error;
+  List<_StockItemData> _items = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStockInHand();
+  }
+
+  Future<void> _loadStockInHand() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiService.fetchStockInHand(roleId: widget.roleId);
+      final items = response.map(_mapStockItem).toList();
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = _cleanError(e);
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _cleanError(Object error) {
+    return error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+  }
+
+  String _readText(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null || value is Map || value is List) {
+        continue;
+      }
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return '';
+  }
+
+  String _readImage(dynamic value) {
+    if (value == null) return '';
+
+    if (value is String) {
+      return _normalizeImageSource(value);
+    }
+
+    if (value is List) {
+      for (final item in value) {
+        final image = _readImage(item);
+        if (image.isNotEmpty) return image;
+      }
+      return '';
+    }
+
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(value);
+      for (final key in const [
+        'url',
+        'image',
+        'image_url',
+        'path',
+        'src',
+        'thumbnail',
+        'thumb',
+      ]) {
+        final image = _readImage(map[key]);
+        if (image.isNotEmpty) return image;
+      }
+    }
+
+    return '';
+  }
+
+  String _normalizeImageSource(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty || value.toLowerCase() == 'null') return '';
+
+    final parsed = Uri.tryParse(value);
+    if (parsed != null && parsed.hasScheme) {
+      final scheme = parsed.scheme.toLowerCase();
+      if (scheme == 'http' || scheme == 'https') return parsed.toString();
+      return '';
+    }
+
+    final base = Uri.parse(ApiConstants.baseUrl);
+    final origin = Uri(
+      scheme: base.scheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+    );
+
+    final relative = value.startsWith('//')
+        ? Uri.parse('https:$value')
+        : value.startsWith('/')
+            ? Uri.parse(value)
+            : Uri.parse('/$value');
+
+    return origin.resolveUri(relative).toString();
+  }
+
+  String _formatPrice(String rawPrice) {
+    final price = rawPrice.trim();
+    if (price.isEmpty) return '-';
+    if (price.contains('\u20B9')) return price;
+    return '\u20B9 $price';
+  }
+
+  _StockItemData _mapStockItem(Map<String, dynamic> item) {
+    final products = item['products'] is Map
+        ? Map<String, dynamic>.from(item['products'] as Map)
+        : <String, dynamic>{};
+
+    final image = _readImage(
+      products['main_product_image'] ??
+          products['product_image'] ??
+          products['image_url'] ??
+          products['image'] ??
+          products['images'] ??
+          item['image'] ??
+          item['product_image'] ??
+          item['image_url'] ??
+          item['images'] ??
+          item['product_images'],
+    );
+    final name = _readText(products, const ['product_name', 'name', 'title']);
+    final price = _readText(
+      products,
+      const ['final_price', 'selling_price', 'price', 'amount'],
+    );
+    final quantity = _readText(
+      item,
+      const ['total_requested_quantity', 'requested_quantity', 'quantity', 'qty'],
+    );
+
+    return _StockItemData(
+      imageUrl: image,
+      productName: name.isEmpty ? '-' : name,
+      finalPrice: _formatPrice(price),
+      quantity: quantity.isEmpty ? '0' : quantity,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // ✅ AppBar
       appBar: AppBar(
         backgroundColor: primaryGreen,
         elevation: 0,
@@ -34,101 +194,64 @@ class StockInHandScreen extends StatelessWidget {
           ),
         ),
       ),
-
-      // ✅ Body
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                children: [
-                InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveProductDetailScreen,
-                      arguments: fieldexecutiveproductdetailArguments(
-                        roleId: roleId,
-                        roleName: roleName,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _loadStockInHand,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryGreen,
+                            ),
+                            child: const Text(
+                              'Retry',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                  child: const StockItemCard(image: 'assets/products/cpu.png'),
-                ),
-                InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveProductDetailScreen,
-                      arguments: fieldexecutiveproductdetailArguments(
-                        roleId: roleId,
-                        roleName: roleName,
+                    ),
+                  )
+                : _items.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No stock in hand available',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) {
+                          final item = _items[index];
+                          return InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.FieldExecutiveProductDetailScreen,
+                                arguments: fieldexecutiveproductdetailArguments(
+                                  roleId: widget.roleId,
+                                  roleName: widget.roleName,
+                                ),
+                              );
+                            },
+                            child: StockItemCard(item: item),
+                          );
+                        },
                       ),
-                    );
-                  },
-                  child: const StockItemCard(image: 'assets/products/motherboard.png'),
-                ),
-                InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveProductDetailScreen,
-                      arguments: fieldexecutiveproductdetailArguments(
-                        roleId: roleId,
-                        roleName: roleName,
-                      ),
-                    );
-                  },
-                  child: const StockItemCard(image: 'assets/products/psu.png'),
-                ),
-                InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveProductDetailScreen,
-                      arguments: fieldexecutiveproductdetailArguments(
-                        roleId: roleId,
-                        roleName: roleName,
-                      ),
-                    );
-                  },
-                  child: const StockItemCard(image: 'assets/products/gpu.png'),
-                ),
-                InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveProductDetailScreen,
-                      arguments: fieldexecutiveproductdetailArguments(
-                        roleId: roleId,
-                        roleName: roleName,
-                      ),
-                    );
-                  },
-                  child: const StockItemCard(image: 'assets/products/motherboard.png'),
-                ),
-                InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveProductDetailScreen,
-                      arguments: fieldexecutiveproductdetailArguments(
-                        roleId: roleId,
-                        roleName: roleName,
-                      ),
-                    );
-                  },
-                  child: const StockItemCard(image: 'assets/products/ram.png'),
-                ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
-
-      // ✅ Bottom Button
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
@@ -148,8 +271,8 @@ class StockInHandScreen extends StatelessWidget {
                   context,
                   AppRoutes.FieldExecutiveAddProductScreen,
                   arguments: fieldexecutiveaddproductArguments(
-                    roleId: roleId,
-                    roleName: roleName,
+                    roleId: widget.roleId,
+                    roleName: widget.roleName,
                   ),
                 );
               },
@@ -169,14 +292,39 @@ class StockInHandScreen extends StatelessWidget {
   }
 }
 
-/// 🧾 Stock Item Card
+class _StockItemData {
+  final String imageUrl;
+  final String productName;
+  final String finalPrice;
+  final String quantity;
+
+  const _StockItemData({
+    required this.imageUrl,
+    required this.productName,
+    required this.finalPrice,
+    required this.quantity,
+  });
+}
+
 class StockItemCard extends StatelessWidget {
-  final String image;
+  final _StockItemData item;
 
   const StockItemCard({
     super.key,
-    required this.image,
+    required this.item,
   });
+
+  Widget _buildImage() {
+    if (item.imageUrl.isEmpty) {
+      return const Icon(Icons.image_not_supported, color: Colors.grey);
+    }
+    return Image.network(
+      item.imageUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.image_not_supported, color: Colors.grey),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +339,6 @@ class StockItemCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product Image
           Container(
             width: 60,
             height: 60,
@@ -200,32 +347,25 @@ class StockItemCard extends StatelessWidget {
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Image.asset(
-              image,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
-            ),
+            child: _buildImage(),
           ),
-
           const SizedBox(width: 12),
-
-          // Product Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Intel Core i3 12100F 12th\nGen Desktop PC Processor',
-                  style: TextStyle(
+                  item.productName,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     height: 1.3,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  '₹ 62,990',
-                  style: TextStyle(
+                  item.finalPrice,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -233,22 +373,20 @@ class StockItemCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // Quantity
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 'Qty',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.red,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                '2',
-                style: TextStyle(
+                item.quantity,
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.red,

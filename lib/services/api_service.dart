@@ -1356,6 +1356,102 @@ class ApiService {
     }
   }
 
+  /// Fetch stock in hand list for field executive.
+  /// GET /stock-in-hand/list?user_id={userId}&role_id={roleId}
+  static Future<List<Map<String, dynamic>>> fetchStockInHand({
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchStockInHand',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+    final url = Uri.parse(ApiConstants.stockinhand).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load stock in hand: ${response.statusCode}');
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Server returned non-JSON stock response');
+      }
+
+      List<dynamic> rawList = const [];
+
+      if (decoded is List) {
+        rawList = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['stock_in_hand_items'] is List) {
+          rawList = decoded['stock_in_hand_items'] as List;
+        } else if (decoded['stock_in_hand'] is List) {
+          rawList = decoded['stock_in_hand'] as List;
+        } else if (decoded['stockInHand'] is List) {
+          rawList = decoded['stockInHand'] as List;
+        } else if (decoded['items'] is List) {
+          rawList = decoded['items'] as List;
+        } else if (decoded['data'] is List) {
+          rawList = decoded['data'] as List;
+        } else if (decoded['data'] is Map<String, dynamic>) {
+          final nested = decoded['data'] as Map<String, dynamic>;
+          if (nested['stock_in_hand_items'] is List) {
+            rawList = nested['stock_in_hand_items'] as List;
+          } else if (nested['stock_in_hand'] is List) {
+            rawList = nested['stock_in_hand'] as List;
+          } else if (nested['stockInHand'] is List) {
+            rawList = nested['stockInHand'] as List;
+          } else if (nested['items'] is List) {
+            rawList = nested['items'] as List;
+          }
+        }
+      }
+
+      return rawList
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching stock in hand: $e');
+      rethrow;
+    }
+  }
+
   /// Accept a service request for field executive.
   /// POST /service-request/{id}/accept?user_id={userId}&role_id={roleId}
   static Future<ApiResponse> acceptServiceRequest(

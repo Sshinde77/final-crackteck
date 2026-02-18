@@ -35,6 +35,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   bool isAccepted = false;
   bool _isAccepting = false;
   bool _isRescheduling = false;
+  bool _hasRedirectedToAllProducts = false;
   String _serviceRequestStatus = '';
   DateTime? selectedDate;
   CaseTransferStatus caseTransferStatus = CaseTransferStatus.none;
@@ -68,6 +69,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
         isAccepted = isAccepted || _isEngineerApprovedStatus(status);
         _isLoadingDetail = false;
       });
+      _redirectToAllProductsIfInProgress(status);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -132,17 +134,47 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   String _extractServiceRequestStatus(Map<String, dynamic>? raw) {
     if (raw == null) return '';
 
-    final rootStatus = _readFromMap(raw, const ['status']);
+    final rootStatus = _readFromMap(raw, const ['service_status', 'status']);
     if (rootStatus.isNotEmpty) return rootStatus;
 
     final requestMap = _asMap(raw['service_request']) ??
         _asMap(raw['request']) ??
         _asMap(raw['service']);
-    return _readFromMap(requestMap, const ['status']);
+    return _readFromMap(requestMap, const ['service_status', 'status']);
+  }
+
+  String _normalizeStatus(String status) {
+    return status.trim().toLowerCase();
   }
 
   bool _isEngineerApprovedStatus(String status) {
-    return status.trim().toLowerCase() == 'engineer_approved';
+    return _normalizeStatus(status) == 'engineer_approved';
+  }
+
+  bool _isInProgressStatus(String status) {
+    final normalized = _normalizeStatus(status);
+    return normalized == 'in_progress' || normalized == 'in progress';
+  }
+
+  void _redirectToAllProductsIfInProgress(String status) {
+    if (_hasRedirectedToAllProducts || !_isInProgressStatus(status)) {
+      return;
+    }
+
+    _hasRedirectedToAllProducts = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.FieldExecutiveAllProductsScreen,
+        arguments: fieldexecutiveallproductsArguments(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          serviceRequestId: _serviceRequestDbIdForApi(),
+          controller: FieldExecutiveProductServicesController.withDefaults(),
+        ),
+      );
+    });
   }
 
   bool get _isRequestAccepted =>
