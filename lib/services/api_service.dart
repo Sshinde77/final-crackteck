@@ -3100,6 +3100,10 @@ class ApiService {
         }
       }
 
+      debugPrint(
+        'Sending multipart request to $uri with fields: ${request.fields} and ${request.files.length} files',
+      );
+
       final streamed = await request.send().timeout(ApiConstants.requestTimeout);
       return http.Response.fromStream(streamed);
     }

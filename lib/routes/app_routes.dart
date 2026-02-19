@@ -1,4 +1,5 @@
 import '../model/field executive/field_executive_product_service.dart';
+import '../model/field executive/selected_stock_item.dart';
 
 /// App-wide route name constants
 class AppRoutes {
@@ -131,8 +132,17 @@ class fieldexecutivenotificationArguments {
 class fieldexecutivestockinhandArguments {
   final int roleId;
   final String roleName;
+  final bool selectionMode;
+  final String diagnosisName;
+  final List<SelectedStockItem> initialSelectedItems;
 
-  fieldexecutivestockinhandArguments({required this.roleId, required this.roleName});
+  fieldexecutivestockinhandArguments({
+    required this.roleId,
+    required this.roleName,
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedItems = const <SelectedStockItem>[],
+  });
 }
 class fieldexecutiveproductdetailArguments {
   final int roleId;

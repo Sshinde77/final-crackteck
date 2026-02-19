@@ -290,6 +290,9 @@ class RouteGenerator {
               StockInHandScreen(
                 roleId: args.roleId,
                 roleName: args.roleName,
+                selectionMode: args.selectionMode,
+                diagnosisName: args.diagnosisName,
+                initialSelectedItems: args.initialSelectedItems,
               ),
           settings: settings,
         );

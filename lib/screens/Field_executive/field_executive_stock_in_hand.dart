@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
+import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
 class StockInHandScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
+  final bool selectionMode;
+  final String diagnosisName;
+  final List<SelectedStockItem> initialSelectedItems;
 
   const StockInHandScreen({
     super.key,
     required this.roleId,
     required this.roleName,
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedItems = const <SelectedStockItem>[],
   });
 
   @override
@@ -24,10 +31,17 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
   bool _isLoading = true;
   String? _error;
   List<_StockItemData> _items = const [];
+  final Map<String, int> _selectedQuantities = <String, int>{};
 
   @override
   void initState() {
     super.initState();
+    for (final item in widget.initialSelectedItems) {
+      final key = _normalizeKey(item.productId);
+      if (key.isNotEmpty && item.quantity > 0) {
+        _selectedQuantities[key] = item.quantity;
+      }
+    }
     _loadStockInHand();
   }
 
@@ -84,6 +98,16 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
       }
     }
     return '';
+  }
+
+  String _normalizeKey(String raw) {
+    return raw.trim().replaceFirst(RegExp(r'^#'), '');
+  }
+
+  String _itemKey(_StockItemData item, int index) {
+    final normalized = _normalizeKey(item.productId);
+    if (normalized.isNotEmpty) return normalized;
+    return 'idx_$index';
   }
 
   String _readImage(dynamic value) {
@@ -198,6 +222,74 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
     );
   }
 
+  void _increaseSelectedQty(_StockItemData item, int index) {
+    final key = _itemKey(item, index);
+    final current = _selectedQuantities[key] ?? 0;
+    _addOrUpdateSelectedQty(key, current + 1);
+  }
+
+  void _decreaseSelectedQty(_StockItemData item, int index) {
+    final key = _itemKey(item, index);
+    final current = _selectedQuantities[key] ?? 0;
+    if (current <= 0) return;
+    final next = current - 1;
+    if (next <= 0) {
+      _removeSelectedItem(key);
+      return;
+    }
+    _addOrUpdateSelectedQty(key, next);
+  }
+
+  void _addOrUpdateSelectedQty(String key, int quantity) {
+    final safeQty = quantity < 1 ? 1 : quantity;
+    setState(() {
+      _selectedQuantities[key] = safeQty;
+    });
+  }
+
+  void _removeSelectedItem(String key) {
+    setState(() {
+      _selectedQuantities.remove(key);
+    });
+  }
+
+  void _clearSelectedQty(_StockItemData item, int index) {
+    _removeSelectedItem(_itemKey(item, index));
+  }
+
+  List<SelectedStockItem> _buildSelectedStockResult() {
+    final result = <SelectedStockItem>[];
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i];
+      final key = _itemKey(item, i);
+      final qty = _selectedQuantities[key] ?? 0;
+      if (qty <= 0) continue;
+      result.add(
+        SelectedStockItem(
+          productId: item.productId.isEmpty ? key : item.productId,
+          productName: item.productName,
+          quantity: qty,
+        ),
+      );
+    }
+    return result;
+  }
+
+  bool _validateAndReturnSelection() {
+    final selected = _buildSelectedStockResult();
+    if (selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least 1 stock item.'),
+        ),
+      );
+      return false;
+    }
+
+    Navigator.pop(context, selected);
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -209,9 +301,11 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Stock in hand',
-          style: TextStyle(
+        title: Text(
+          widget.selectionMode && widget.diagnosisName.trim().isNotEmpty
+              ? 'Stock in hand - ${widget.diagnosisName}'
+              : 'Stock in hand',
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
@@ -259,19 +353,36 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
                         itemCount: _items.length,
                         itemBuilder: (context, index) {
                           final item = _items[index];
+                          final selectedQty =
+                              _selectedQuantities[_itemKey(item, index)] ?? 0;
                           return InkWell(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.FieldExecutiveProductDetailScreen,
-                                arguments: fieldexecutiveproductdetailArguments(
-                                  roleId: widget.roleId,
-                                  roleName: widget.roleName,
-                                  productId: item.productId,
-                                ),
-                              );
-                            },
-                            child: StockItemCard(item: item),
+                            onTap: widget.selectionMode
+                                ? null
+                                : () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.FieldExecutiveProductDetailScreen,
+                                      arguments: fieldexecutiveproductdetailArguments(
+                                        roleId: widget.roleId,
+                                        roleName: widget.roleName,
+                                        productId: item.productId,
+                                      ),
+                                    );
+                                  },
+                            child: StockItemCard(
+                              item: item,
+                              selectionMode: widget.selectionMode,
+                              selectedQty: selectedQty,
+                              onIncrease: widget.selectionMode
+                                  ? () => _increaseSelectedQty(item, index)
+                                  : null,
+                              onDecrease: widget.selectionMode
+                                  ? () => _decreaseSelectedQty(item, index)
+                                  : null,
+                              onClear: widget.selectionMode
+                                  ? () => _clearSelectedQty(item, index)
+                                  : null,
+                            ),
                           );
                         },
                       ),
@@ -290,18 +401,22 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoutes.FieldExecutiveAddProductScreen,
-                  arguments: fieldexecutiveaddproductArguments(
-                    roleId: widget.roleId,
-                    roleName: widget.roleName,
-                  ),
-                );
-              },
-              child: const Text(
-                'Request more product',
+              onPressed: widget.selectionMode
+                  ? () {
+                      _validateAndReturnSelection();
+                    }
+                  : () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.FieldExecutiveAddProductScreen,
+                        arguments: fieldexecutiveaddproductArguments(
+                          roleId: widget.roleId,
+                          roleName: widget.roleName,
+                        ),
+                      );
+                    },
+              child: Text(
+                widget.selectionMode ? 'Use Selected Stock' : 'Request more product',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -334,10 +449,20 @@ class _StockItemData {
 
 class StockItemCard extends StatelessWidget {
   final _StockItemData item;
+  final bool selectionMode;
+  final int selectedQty;
+  final VoidCallback? onIncrease;
+  final VoidCallback? onDecrease;
+  final VoidCallback? onClear;
 
   const StockItemCard({
     super.key,
     required this.item,
+    this.selectionMode = false,
+    this.selectedQty = 0,
+    this.onIncrease,
+    this.onDecrease,
+    this.onClear,
   });
 
   Widget _buildImage() {
@@ -354,6 +479,75 @@ class StockItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget qtyView;
+    if (selectionMode) {
+      qtyView = Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const Text(
+            'Selected',
+            style: TextStyle(fontSize: 12, color: Colors.red),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _qtyButton(icon: Icons.remove, onTap: onDecrease),
+              SizedBox(
+                width: 28,
+                child: Text(
+                  selectedQty.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+              _qtyButton(icon: Icons.add, onTap: onIncrease),
+            ],
+          ),
+          if (selectedQty > 0) ...[
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: onClear,
+              child: const Text(
+                'Remove',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    } else {
+      qtyView = Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const Text(
+            'Qty',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            item.quantity,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(12),
@@ -399,28 +593,24 @@ class StockItemCard extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text(
-                'Qty',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item.quantity,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-            ],
-          ),
+          qtyView,
         ],
+      ),
+    );
+  }
+
+  Widget _qtyButton({required IconData icon, required VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2E7D32),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(icon, size: 14, color: Colors.white),
       ),
     );
   }

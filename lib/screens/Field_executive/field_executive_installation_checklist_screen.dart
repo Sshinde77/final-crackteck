@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../model/field executive/diagnosis_item.dart';
 import '../../model/field executive/field_executive_product_service.dart';
+import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
@@ -75,6 +76,7 @@ class _FieldExecutiveInstallationChecklistScreenState
   final Map<String, String> _itemSelectedAction = {};
   final Map<String, String> _itemProblemSolution = {};
   final Map<String, File> _itemIssueImage = {};
+  final Map<String, List<SelectedStockItem>> _itemSelectedStockItems = {};
   String _writtenReportText = '';
   bool _isSubmittingDiagnosis = false;
 
@@ -167,6 +169,8 @@ class _FieldExecutiveInstallationChecklistScreenState
     _itemSelectedAction.removeWhere((key, _) => !keys.contains(key));
     _itemProblemSolution.removeWhere((key, _) => !keys.contains(key));
     _itemIssueImage.removeWhere((key, _) => !keys.contains(key));
+    _itemSelectedStockItems.removeWhere((key, _) => !keys.contains(key));
+    _clearSelectedStockForNonUseStatuses(diagnosisItems);
   }
 
   Future<void> _loadDiagnosisList() async {
@@ -370,10 +374,198 @@ class _FieldExecutiveInstallationChecklistScreenState
     return normalized.isNotEmpty && normalized != 'Working';
   }
 
+  bool _isUseStockInHandStatus(String? status) {
+    return _normalizeStatusLabel(status) == 'Use Stock in Hand';
+  }
+
   DiagnosisItem? _findDiagnosisByName(String name) {
     for (final item in _effectiveDiagnosisItems) {
       if (item.name == name) return item;
     }
+    return null;
+  }
+
+  void _clearSelectedStockForNonUseStatuses(
+    List<DiagnosisItem> diagnosisItems,
+  ) {
+    final Map<String, DiagnosisItem> diagnosisByName = {
+      for (final item in diagnosisItems) item.name: item,
+    };
+
+    for (final key in _itemSelectedStockItems.keys.toList()) {
+      final List<SelectedStockItem> sanitizedItems = _sanitizeSelectedStockItems(
+        _itemSelectedStockItems[key] ?? const <SelectedStockItem>[],
+      );
+      if (sanitizedItems.isEmpty) {
+        _itemSelectedStockItems.remove(key);
+        continue;
+      }
+      _itemSelectedStockItems[key] = sanitizedItems;
+
+      final localStatus = _normalizeStatusLabel(_itemStatus[key]);
+      if (localStatus.isNotEmpty) {
+        if (!_isUseStockInHandStatus(localStatus)) {
+          _itemSelectedStockItems.remove(key);
+        }
+        continue;
+      }
+
+      final apiStatus = _normalizeStatusLabel(diagnosisByName[key]?.statusLabel);
+      if (apiStatus.isNotEmpty && !_isUseStockInHandStatus(apiStatus)) {
+        _itemSelectedStockItems.remove(key);
+      }
+    }
+  }
+
+  void _showMessageSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  String _stockItemKey(SelectedStockItem item) {
+    final String normalizedProductId = _normalizeId(item.productId);
+    if (normalizedProductId.isNotEmpty) {
+      return 'id:$normalizedProductId';
+    }
+    final String normalizedName = item.productName.trim().toLowerCase();
+    if (normalizedName.isNotEmpty) {
+      return 'name:$normalizedName';
+    }
+    return '';
+  }
+
+  List<SelectedStockItem> _sanitizeSelectedStockItems(
+    List<SelectedStockItem> items,
+  ) {
+    final Map<String, SelectedStockItem> uniqueItems =
+        <String, SelectedStockItem>{};
+
+    for (final item in items) {
+      final String key = _stockItemKey(item);
+      if (key.isEmpty || item.quantity <= 0) {
+        continue;
+      }
+      uniqueItems[key] = item.copyWith(quantity: item.quantity);
+    }
+
+    return uniqueItems.values.toList(growable: false);
+  }
+
+  List<SelectedStockItem> _mergeSelectedStockItems({
+    required List<SelectedStockItem> existingItems,
+    required List<SelectedStockItem> incomingItems,
+  }) {
+    final Map<String, SelectedStockItem> merged = <String, SelectedStockItem>{};
+
+    for (final item in _sanitizeSelectedStockItems(existingItems)) {
+      merged[_stockItemKey(item)] = item;
+    }
+
+    for (final item in _sanitizeSelectedStockItems(incomingItems)) {
+      merged[_stockItemKey(item)] = item;
+    }
+
+    return merged.values.toList(growable: false);
+  }
+
+  bool _hasSelectedStockItems(String diagnosisName) {
+    final List<SelectedStockItem> items = _sanitizeSelectedStockItems(
+      _itemSelectedStockItems[diagnosisName] ?? const <SelectedStockItem>[],
+    );
+    return items.isNotEmpty;
+  }
+
+  void _changeInlineStockQuantity({
+    required String diagnosisName,
+    required SelectedStockItem item,
+    required int delta,
+  }) {
+    if (delta == 0) return;
+
+    final List<SelectedStockItem> currentItems = List<SelectedStockItem>.from(
+      _itemSelectedStockItems[diagnosisName] ?? const <SelectedStockItem>[],
+    );
+    final String targetKey = _stockItemKey(item);
+    final int index = currentItems.indexWhere(
+      (element) => _stockItemKey(element) == targetKey,
+    );
+    if (index < 0) return;
+
+    final SelectedStockItem targetItem = currentItems[index];
+    final int nextQuantity = targetItem.quantity + delta;
+
+    setState(() {
+      if (nextQuantity <= 0) {
+        currentItems.removeAt(index);
+      } else {
+        currentItems[index] = targetItem.copyWith(quantity: nextQuantity);
+      }
+
+      if (currentItems.isEmpty) {
+        _itemSelectedStockItems.remove(diagnosisName);
+      } else {
+        _itemSelectedStockItems[diagnosisName] = currentItems;
+      }
+    });
+  }
+
+  Future<void> _onAddMoreProductsPressed(String diagnosisName) async {
+    final List<SelectedStockItem>? selectedFromStockScreen =
+        await _openStockInHandSelection(diagnosisName);
+    if (!mounted || selectedFromStockScreen == null) {
+      return;
+    }
+
+    final List<SelectedStockItem> mergedItems = _mergeSelectedStockItems(
+      existingItems: _itemSelectedStockItems[diagnosisName] ??
+          const <SelectedStockItem>[],
+      incomingItems: selectedFromStockScreen,
+    );
+
+    if (mergedItems.isEmpty) {
+      _showMessageSnackBar('At least one stock item is required');
+      return;
+    }
+
+    setState(() {
+      _itemSelectedStockItems[diagnosisName] = mergedItems;
+    });
+  }
+
+  String? _firstDiagnosisWithoutStockItems() {
+    final Set<String> diagnosisNames = _effectiveDiagnosisItems
+        .map((item) => item.name)
+        .toSet();
+
+    for (final diagnosis in _effectiveDiagnosisItems) {
+      if (!_isUseStockInHandStatus(_resolvedStatusLabel(diagnosis))) {
+        continue;
+      }
+      final items = _sanitizeSelectedStockItems(
+        _itemSelectedStockItems[diagnosis.name] ?? const <SelectedStockItem>[],
+      );
+      if (items.isEmpty) {
+        return diagnosis.name;
+      }
+    }
+
+    for (final entry in _itemStatus.entries) {
+      if (!_isUseStockInHandStatus(entry.value)) {
+        continue;
+      }
+      if (diagnosisNames.contains(entry.key)) {
+        continue;
+      }
+      final items = _sanitizeSelectedStockItems(
+        _itemSelectedStockItems[entry.key] ?? const <SelectedStockItem>[],
+      );
+      if (items.isEmpty) {
+        return entry.key;
+      }
+    }
+
     return null;
   }
 
@@ -423,6 +615,47 @@ class _FieldExecutiveInstallationChecklistScreenState
         );
       },
     );
+  }
+
+  List<SelectedStockItem> _parseSelectedStockItems(dynamic raw) {
+    if (raw is List<SelectedStockItem>) {
+      return raw;
+    }
+    if (raw is! List) {
+      return const <SelectedStockItem>[];
+    }
+    final List<SelectedStockItem> parsed = <SelectedStockItem>[];
+    for (final dynamic item in raw) {
+      if (item is SelectedStockItem) {
+        parsed.add(item);
+      } else if (item is Map<String, dynamic>) {
+        parsed.add(SelectedStockItem.fromMap(item));
+      } else if (item is Map) {
+        parsed.add(SelectedStockItem.fromMap(Map<String, dynamic>.from(item)));
+      }
+    }
+    return parsed;
+  }
+
+  Future<List<SelectedStockItem>?> _openStockInHandSelection(
+    String diagnosisName,
+  ) async {
+    final dynamic result = await Navigator.pushNamed(
+      context,
+      AppRoutes.FieldExecutiveStockInHandScreen,
+      arguments: fieldexecutivestockinhandArguments(
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        selectionMode: true,
+        diagnosisName: diagnosisName,
+        initialSelectedItems: _sanitizeSelectedStockItems(
+          _itemSelectedStockItems[diagnosisName] ??
+              const <SelectedStockItem>[],
+        ),
+      ),
+    );
+    if (result == null) return null;
+    return _parseSelectedStockItems(result);
   }
 
   @override
@@ -865,6 +1098,15 @@ class _FieldExecutiveInstallationChecklistScreenState
       return;
     }
 
+    final String? invalidDiagnosis = _firstDiagnosisWithoutStockItems();
+    if (invalidDiagnosis != null) {
+      setState(() {
+        _expandedItems[invalidDiagnosis] = true;
+      });
+      _showMessageSnackBar('At least one stock item is required');
+      return;
+    }
+
     final diagnosisPayload = _buildDiagnosisSubmitPayload();
     if (diagnosisPayload.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1119,6 +1361,30 @@ class _FieldExecutiveInstallationChecklistScreenState
 
     if (!mounted || result == null) return;
 
+    final bool hadExistingStock = _hasSelectedStockItems(title);
+    List<SelectedStockItem>? selectedStockItems;
+    if (result.selectedOption == 'Use Stock in Hand') {
+      selectedStockItems = await _openStockInHandSelection(title);
+      if (!mounted) return;
+      if (selectedStockItems == null) {
+        return;
+      }
+      final List<SelectedStockItem> mergedItems = _mergeSelectedStockItems(
+        existingItems: _itemSelectedStockItems[title] ??
+            const <SelectedStockItem>[],
+        incomingItems: selectedStockItems,
+      );
+      if (mergedItems.isEmpty) {
+        _showMessageSnackBar('At least one stock item is required');
+        return;
+      }
+      selectedStockItems = mergedItems;
+    }
+    final List<SelectedStockItem> selectedStockItemsValue =
+        selectedStockItems ?? const <SelectedStockItem>[];
+    final bool shouldAutoClearStock =
+        result.selectedOption != 'Use Stock in Hand' && hadExistingStock;
+
     setState(() {
       _itemStatus[title] = result.selectedOption;
       _itemSelectedAction[title] = result.selectedOption;
@@ -1132,8 +1398,21 @@ class _FieldExecutiveInstallationChecklistScreenState
       } else {
         _itemIssueImage[title] = result.selectedImage!;
       }
+      if (result.selectedOption == 'Use Stock in Hand') {
+        if (selectedStockItemsValue.isEmpty) {
+          _itemSelectedStockItems.remove(title);
+        } else {
+          _itemSelectedStockItems[title] = selectedStockItemsValue;
+        }
+      } else {
+        _itemSelectedStockItems.remove(title);
+      }
       _expandedItems[title] = false;
     });
+
+    if (shouldAutoClearStock) {
+      _showMessageSnackBar('Stock selection cleared due to status change');
+    }
   }
 
   Widget _buildActionOptionTile({
@@ -1178,6 +1457,154 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 
+  Widget _buildInlineQuantityButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: primaryGreen,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Icon(
+            icon,
+            size: 18,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInlineStockItemsEditor({
+    required String diagnosisName,
+    required List<SelectedStockItem> items,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Selected Stock Items',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: primaryGreen,
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (items.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'No stock items selected.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+              ),
+            )
+          else
+            ...items.map(
+              (item) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade100),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.productName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildInlineQuantityButton(
+                      icon: Icons.remove,
+                      onTap: () {
+                        _changeInlineStockQuantity(
+                          diagnosisName: diagnosisName,
+                          item: item,
+                          delta: -1,
+                        );
+                      },
+                    ),
+                    Container(
+                      width: 30,
+                      alignment: Alignment.center,
+                      child: Text(
+                        item.quantity.toString(),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    _buildInlineQuantityButton(
+                      icon: Icons.add,
+                      onTap: () {
+                        _changeInlineStockQuantity(
+                          diagnosisName: diagnosisName,
+                          item: item,
+                          delta: 1,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _onAddMoreProductsPressed(diagnosisName),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: primaryGreen,
+                side: BorderSide(color: Colors.green.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              icon: const Icon(Icons.add_shopping_cart_outlined, size: 18),
+              label: const Text(
+                'Add more products',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusBadge(String statusLabel, {required bool isWorking}) {
     final Color color = isWorking ? primaryGreen : Colors.red;
     return Container(
@@ -1205,8 +1632,13 @@ class _FieldExecutiveInstallationChecklistScreenState
     final bool hasStatus = statusLabel.isNotEmpty;
     final bool isWorking = _isWorkingStatus(statusLabel);
     final bool isNonWorking = _isNonWorkingStatus(statusLabel);
+    final bool isUseStockInHand = _isUseStockInHandStatus(statusLabel);
     final String? reportText = _resolvedReportText(diagnosis);
     final File? issueImage = _itemIssueImage[title];
+    final List<SelectedStockItem> selectedStockItems =
+        _sanitizeSelectedStockItems(
+      _itemSelectedStockItems[title] ?? const <SelectedStockItem>[],
+    );
 
     Color circleColor = Colors.grey.shade200;
     Widget? circleIcon;
@@ -1280,6 +1712,11 @@ class _FieldExecutiveInstallationChecklistScreenState
                             ),
                           ),
                         ),
+                      if (isUseStockInHand)
+                        _buildInlineStockItemsEditor(
+                          diagnosisName: title,
+                          items: selectedStockItems,
+                        ),
                     ],
                   ),
                 ),
@@ -1339,13 +1776,22 @@ class _FieldExecutiveInstallationChecklistScreenState
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      final bool hadStockSelection = _hasSelectedStockItems(
+                        title,
+                      );
                       setState(() {
                         _itemStatus[title] = 'Working';
                         _itemSelectedAction.remove(title);
                         _itemProblemSolution.remove(title);
                         _itemIssueImage.remove(title);
+                        _itemSelectedStockItems.remove(title);
                         _expandedItems[title] = false;
                       });
+                      if (hadStockSelection) {
+                        _showMessageSnackBar(
+                          'Stock selection cleared due to status change',
+                        );
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1430,3 +1876,4 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 }
+
