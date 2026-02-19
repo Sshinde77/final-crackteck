@@ -1717,6 +1717,111 @@ class ApiService {
     }
   }
 
+  /// Request a new product/part for field executive stock.
+  /// POST /stock-in-hand/request?role_id={roleId}&user_id={userId}&part_id={partId}&requested_quantity={qty}
+  static Future<ApiResponse> requestNewProduct({
+    required String partId,
+    required int requestedQuantity,
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling requestNewProduct',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedPartId = partId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (normalizedPartId.isEmpty || int.tryParse(normalizedPartId) == null) {
+      return ApiResponse(
+        success: false,
+        message: 'Invalid part id "$partId". Expected numeric product id.',
+      );
+    }
+
+    final safeQty = requestedQuantity < 1 ? 1 : requestedQuantity;
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+
+    final url = Uri.parse(ApiConstants.Requestnewproduct).replace(
+      queryParameters: {
+        'role_id': effectiveRoleId,
+        'user_id': storedUserId.toString(),
+        'part_id': normalizedPartId,
+        'requested_quantity': safeQty.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: POST $url');
+      final response = await _performAuthenticatedPost(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      Map<String, dynamic>? decoded;
+      try {
+        final dynamic json = jsonDecode(response.body);
+        if (json is Map<String, dynamic>) {
+          decoded = json;
+        } else if (json is Map) {
+          decoded = Map<String, dynamic>.from(json);
+        }
+      } catch (_) {
+        decoded = null;
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResponse(
+          success: decoded?['success'] ?? true,
+          message: decoded?['message'] ?? 'Product request submitted',
+          data: decoded?['data'],
+          errors: decoded?['errors'],
+        );
+      }
+
+      return ApiResponse(
+        success: false,
+        message:
+            decoded?['message'] ??
+            'Failed to request product: ${response.statusCode}',
+        data: decoded?['data'],
+        errors: decoded?['errors'],
+      );
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('Error requesting new product: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to request product: $e',
+      );
+    }
+  }
+
   /// Accept a service request for field executive.
   /// POST /service-request/{id}/accept?user_id={userId}&role_id={roleId}
   static Future<ApiResponse> acceptServiceRequest(

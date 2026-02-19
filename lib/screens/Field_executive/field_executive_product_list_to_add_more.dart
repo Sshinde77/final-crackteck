@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../model/field executive/requested_product.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../services/requested_products_store.dart';
 
 class ProductListScreen extends StatefulWidget {
@@ -257,6 +258,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   void _submit() async {
+    final items = _store.getAllProducts();
+    if (items.isEmpty) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -293,10 +297,47 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
 
-    await Future.delayed(const Duration(seconds: 4));
+    final failures = <String>[];
+
+    for (final item in items) {
+      final response = await ApiService.requestNewProduct(
+        partId: item.id,
+        requestedQuantity: item.quantity,
+        roleId: widget.roleId,
+      );
+
+      if (!response.success) {
+        final message = response.message?.trim().isNotEmpty == true
+            ? response.message!.trim()
+            : 'Request failed';
+        failures.add('${item.productName}: $message');
+      }
+    }
 
     if (!mounted) return;
-    Navigator.pop(context);
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    if (failures.isNotEmpty) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Request Failed'),
+          content: Text(
+            failures.take(5).join('\n'),
+            style: const TextStyle(height: 1.35),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
@@ -332,7 +373,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
 
-    await Future.delayed(const Duration(seconds: 10));
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
 
     if (!mounted) return;
     _store.clear();
