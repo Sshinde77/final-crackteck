@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
 import '../../constants/app_strings.dart';
+import '../../model/field executive/requested_product.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
+import '../../services/requested_products_store.dart';
 
 class ProductRequestedDetailScreen extends StatefulWidget {
   final int roleId;
@@ -198,6 +200,30 @@ class _ProductRequestedDetailScreenState
     );
   }
 
+  String get _resolvedProductId {
+    final normalized = widget.productId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (normalized.isNotEmpty) return normalized;
+    return _product.productName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+  }
+
+  void _addRequestedProductToStore() {
+    final product = RequestedProduct(
+      id: _resolvedProductId,
+      image: _product.image,
+      productName: _product.productName,
+      modelNo: _product.modelNo,
+      shortDescription: _product.shortDescription,
+      finalPrice: _product.finalPrice,
+      fullDescription: _product.fullDescription,
+      technicalSpecification: _product.technicalSpecification,
+      brandWarranty: _product.brandWarranty,
+      companyWarranty: _product.companyWarranty,
+      quantity: qty < 1 ? 1 : qty,
+    );
+
+    RequestedProductsStore.instance.addOrUpdateProduct(product);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -319,6 +345,7 @@ class _ProductRequestedDetailScreenState
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
+                          _addRequestedProductToStore();
                           Navigator.pushNamed(
                             context,
                             AppRoutes.FieldExecutiveProductListToAddMoreScreen,

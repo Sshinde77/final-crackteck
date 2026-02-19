@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../../model/field executive/requested_product.dart';
 import '../../routes/app_routes.dart';
+import '../../services/requested_products_store.dart';
 
 class ProductListScreen extends StatefulWidget {
   final int roleId;
@@ -17,122 +20,116 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   static const Color primaryGreen = Color(0xFF1F8B00);
-
-  final List<_ProductItem> _items = [
-    _ProductItem(),
-    _ProductItem(),
-    _ProductItem(),
-    _ProductItem(),
-  ];
+  final RequestedProductsStore _store = RequestedProductsStore.instance;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-
-      // ✅ AppBar
-      appBar: AppBar(
-        backgroundColor: primaryGreen,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Product',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
-
-      body: SafeArea(
-        child: Column(
-          children: [
-          // 🧾 Product List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                return _productCard(index);
-              },
+    return AnimatedBuilder(
+      animation: _store,
+      builder: (context, _) {
+        final items = _store.getAllProducts();
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: primaryGreen,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              'Product',
+              style: TextStyle(color: Colors.white),
             ),
           ),
-
-          // 🟢 Bottom Buttons
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Row(
+          body: SafeArea(
+            child: Column(
               children: [
-                // ➕ Add More
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.FieldExecutiveAddProductScreen,
-                        arguments: fieldexecutiveaddproductArguments(
-                          roleId: widget.roleId,
-                          roleName: widget.roleName,
+                  child: items.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No products added yet',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            return _productCard(items[index]);
+                          },
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.add, color: primaryGreen),
-                    label: const Text(
-                      'Add More',
-                      style: TextStyle(color: primaryGreen),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: primaryGreen),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                  ),
                 ),
-
-                const SizedBox(width: 12),
-
-                // ✅ Submit
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, -2),
                       ),
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                    child: const Text(
-                      'Submit',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.FieldExecutiveAddProductScreen,
+                              arguments: fieldexecutiveaddproductArguments(
+                                roleId: widget.roleId,
+                                roleName: widget.roleName,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add, color: primaryGreen),
+                          label: const Text(
+                            'Add More',
+                            style: TextStyle(color: primaryGreen),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: primaryGreen),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: const Size.fromHeight(48),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: items.isEmpty ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: const Size.fromHeight(48),
+                          ),
+                          child: const Text(
+                            'Submit',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-  /// 🧩 Product Card
-  Widget _productCard(int index) {
-    final item = _items[index];
-
+  Widget _productCard(RequestedProduct item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -143,7 +140,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🖼 Image
           Container(
             width: 64,
             height: 64,
@@ -152,78 +148,58 @@ class _ProductListScreenState extends State<ProductListScreen> {
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Image.asset(
-              'assets/products/intel_core_i3.png',
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
-            ),
+            child: _productImage(item.image),
           ),
-
           const SizedBox(width: 12),
-
-          // 📦 Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Intel Core i3 12100F 12th Gen Desktop PC Processor',
+                Text(
+                  item.productName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
-                const Text(
-                  '₹ 62,990',
-                  style: TextStyle(
+                Text(
+                  item.finalPrice,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
-                // Qty Row
                 Row(
                   children: [
-                    const Text(
-                      'Qty',
-                      style: TextStyle(fontSize: 13),
-                    ),
+                    const Text('Qty', style: TextStyle(fontSize: 13)),
                     const SizedBox(width: 10),
-
                     _qtyButton(
                       icon: Icons.remove,
                       onTap: () {
-                        setState(() {
-                          if (item.qty > 1) item.qty--;
-                        });
+                        if (item.quantity > 1) {
+                          _store.updateQuantity(item.id, item.quantity - 1);
+                        }
                       },
                     ),
-
-                    Container(
+                    SizedBox(
                       width: 36,
-                      alignment: Alignment.center,
                       child: Text(
-                        item.qty.toString(),
+                        item.quantity.toString(),
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-
                     _qtyButton(
                       icon: Icons.add,
                       onTap: () {
-                        setState(() {
-                          item.qty++;
-                        });
+                        _store.updateQuantity(item.id, item.quantity + 1);
                       },
                     ),
                   ],
@@ -231,12 +207,37 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ],
             ),
           ),
+          IconButton(
+            onPressed: () => _store.removeProduct(item.id),
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            tooltip: 'Remove',
+          ),
         ],
       ),
     );
   }
 
-  /// ➕➖ Qty Button
+  Widget _productImage(String imagePathOrUrl) {
+    final isNetwork =
+        imagePathOrUrl.startsWith('http://') || imagePathOrUrl.startsWith('https://');
+
+    if (isNetwork) {
+      return Image.network(
+        imagePathOrUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.image_not_supported, color: Colors.grey),
+      );
+    }
+
+    return Image.asset(
+      imagePathOrUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) =>
+          const Icon(Icons.image_not_supported, color: Colors.grey),
+    );
+  }
+
   Widget _qtyButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -255,9 +256,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  /// 📤 Submit Action
   void _submit() async {
-    // 1. Show Full Screen Loading Overlay
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -294,13 +293,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
 
-    // 2. Wait for 4 seconds (3-5 sec range)
     await Future.delayed(const Duration(seconds: 4));
 
     if (!mounted) return;
-    Navigator.pop(context); // Close loading dialog
+    Navigator.pop(context);
 
-    // 3. Show Success Pop-up
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -335,11 +332,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
 
-    // 4. Wait for 10 seconds
     await Future.delayed(const Duration(seconds: 10));
 
-    // 5. Redirect to Home Tab (Field Executive Dashboard)
     if (!mounted) return;
+    _store.clear();
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.FieldExecutiveDashboard,
@@ -347,13 +343,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
       arguments: fieldexecutivedashboardArguments(
         roleId: widget.roleId,
         roleName: widget.roleName,
-        initialIndex: 0, // 0 usually corresponds to the Home Tab
+        initialIndex: 0,
       ),
     );
   }
-}
-
-/// 🔹 Product Model
-class _ProductItem {
-  int qty = 1;
 }
