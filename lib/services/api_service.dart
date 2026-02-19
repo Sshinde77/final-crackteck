@@ -1600,6 +1600,123 @@ class ApiService {
     }
   }
 
+  /// Fetch one product detail for field executive.
+  /// GET /products/{product_id}?user_id={userId}&role_id={roleId}
+  static Future<Map<String, dynamic>> fetchFieldExecutiveProductDetail(
+    String productId, {
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchFieldExecutiveProductDetail',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final normalizedId = productId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (normalizedId.isEmpty) {
+      throw Exception('Product id is required to load product detail.');
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+
+    String endpoint = ApiConstants.productlistdetailFE
+        .replaceFirst('{product_id}', normalizedId)
+        .replaceFirst('{product-id}', normalizedId);
+    if (endpoint.contains('{product_id}') || endpoint.contains('{product-id}')) {
+      endpoint = '${ApiConstants.productlistFE}/$normalizedId';
+    }
+
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load field executive product detail: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Server returned non-JSON product detail response');
+      }
+
+      Map<String, dynamic>? mapFromDynamic(dynamic value) {
+        if (value is Map<String, dynamic>) return value;
+        if (value is Map) return Map<String, dynamic>.from(value);
+        return null;
+      }
+
+      Map<String, dynamic>? detail;
+
+      if (decoded is Map<String, dynamic>) {
+        detail = mapFromDynamic(decoded['data']) ??
+            mapFromDynamic(decoded['product']) ??
+            mapFromDynamic(decoded['products']) ??
+            mapFromDynamic(decoded);
+
+        if (detail != null && detail == decoded) {
+          final hasLeafField =
+              detail.containsKey('product_name') ||
+              detail.containsKey('name') ||
+              detail.containsKey('final_price') ||
+              detail.containsKey('id');
+          if (!hasLeafField) {
+            detail = null;
+          }
+        }
+
+        final dataList = decoded['data'];
+        if (detail == null && dataList is List && dataList.isNotEmpty) {
+          detail = mapFromDynamic(dataList.first);
+        }
+      } else if (decoded is List && decoded.isNotEmpty) {
+        detail = mapFromDynamic(decoded.first);
+      }
+
+      if (detail == null) {
+        throw Exception('Product detail payload is empty or invalid.');
+      }
+
+      return detail;
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching field executive product detail: $e');
+      rethrow;
+    }
+  }
+
   /// Accept a service request for field executive.
   /// POST /service-request/{id}/accept?user_id={userId}&role_id={roleId}
   static Future<ApiResponse> acceptServiceRequest(

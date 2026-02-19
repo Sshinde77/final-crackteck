@@ -145,6 +145,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   _Product _mapProduct(Map<String, dynamic> item) {
     final nestedProduct = _asMap(item['product']) ?? _asMap(item['products']);
+    final id = _readText(
+      nestedProduct ?? item,
+      const ['product_id', 'productId', 'id'],
+    );
     final name = _readText(
       nestedProduct ?? item,
       const ['product_name', 'name', 'title'],
@@ -165,6 +169,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
 
     return _Product(
+      id: id.replaceFirst(RegExp(r'^#'), ''),
       name: name.isEmpty ? '-' : name,
       price: _formatPrice(price),
       imageUrl: image,
@@ -301,6 +306,7 @@ class _ProductCard extends StatelessWidget {
           arguments: fieldexecutiverequestedproductlistArguments(
             roleId: roleId,
             roleName: roleName,
+            productId: product.id,
           ),
         );
       },
@@ -364,6 +370,7 @@ class _ProductCard extends StatelessWidget {
                       arguments: fieldexecutiverequestedproductlistArguments(
                         roleId: roleId,
                         roleName: roleName,
+                        productId: product.id,
                       ),
                     );
                   },
@@ -389,11 +396,13 @@ class _ProductCard extends StatelessWidget {
 }
 
 class _Product {
+  final String id;
   final String name;
   final String price;
   final String imageUrl;
 
   const _Product({
+    this.id = '',
     required this.name,
     required this.price,
     required this.imageUrl,

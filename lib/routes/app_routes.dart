@@ -154,8 +154,13 @@ class fieldexecutiveaddproductArguments {
 class fieldexecutiverequestedproductlistArguments {
   final int roleId;
   final String roleName;
+  final String productId;
 
-  fieldexecutiverequestedproductlistArguments({required this.roleId, required this.roleName});
+  fieldexecutiverequestedproductlistArguments({
+    required this.roleId,
+    required this.roleName,
+    this.productId = '',
+  });
 }
 
 class fieldexecutiveproductlisttoaddmoreArguments {

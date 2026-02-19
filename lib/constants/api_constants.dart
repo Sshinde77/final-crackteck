@@ -80,6 +80,8 @@ class ApiConstants {
       "$baseUrl/stock-in-hand/list";
   static const String productlistFE =
       "$baseUrl/products";
+  static const String productlistdetailFE =
+      "$baseUrl/products/{product_id}";
 
 
 
