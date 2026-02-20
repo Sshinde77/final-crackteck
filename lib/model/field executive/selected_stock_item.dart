@@ -48,9 +48,9 @@ class UsedStockItem {
       return int.tryParse(value.toString().trim()) ?? 0;
     }
 
-    String read(List<String> keys) {
+    String readFromMap(Map<String, dynamic> source, List<String> keys) {
       for (final key in keys) {
-        final value = map[key];
+        final value = source[key];
         if (value == null || value is Map || value is List) continue;
         final text = value.toString().trim();
         if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
@@ -58,11 +58,40 @@ class UsedStockItem {
       return '';
     }
 
+    final Map<String, dynamic> products =
+        map['products'] is Map<String, dynamic>
+        ? Map<String, dynamic>.from(map['products'] as Map<String, dynamic>)
+        : (map['products'] is Map
+              ? Map<String, dynamic>.from(map['products'] as Map)
+              : <String, dynamic>{});
+
+    final String rootProductId = readFromMap(
+      map,
+      const ['product_id', 'productId', 'id', 'part_id'],
+    );
+    final String nestedProductId = readFromMap(
+      products,
+      const ['id', 'product_id', 'productId', 'part_id'],
+    );
+    final String resolvedProductId = rootProductId.isNotEmpty
+        ? rootProductId
+        : nestedProductId;
+    final String rootProductName = readFromMap(
+      map,
+      const ['product_name', 'name', 'title'],
+    );
+    final String resolvedProductName = rootProductName.isNotEmpty
+        ? rootProductName
+        : readFromMap(products, const ['product_name', 'name', 'title']);
+
     return UsedStockItem(
-      productId: read(const ['product_id', 'productId', 'id', 'part_id']),
-      productName: read(const ['product_name', 'name', 'title']),
+      productId: resolvedProductId,
+      productName: resolvedProductName,
       quantity: parseQuantity(
-        map['quantity'] ?? map['qty'] ?? map['requested_quantity'],
+        map['quantity'] ??
+            map['total_requested_quantity'] ??
+            map['qty'] ??
+            map['requested_quantity'],
       ),
     );
   }

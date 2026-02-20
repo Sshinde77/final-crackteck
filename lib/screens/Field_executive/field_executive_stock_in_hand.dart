@@ -264,11 +264,21 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
       final key = _itemKey(item, i);
       final qty = _selectedQuantities[key] ?? 0;
       if (qty <= 0) continue;
+      // Selection payload must always carry a concrete product id for part_id.
+      final String normalizedProductId = _normalizeKey(item.productId);
+      if (normalizedProductId.isEmpty) {
+        debugPrint(
+          '[StockInHand->Checklist] Dropping item with missing productId '
+          '(name="${item.productName}", key="$key", quantity=$qty)',
+        );
+        continue;
+      }
+      final int safeQty = qty < 1 ? 1 : qty;
       result.add(
         SelectedStockItem(
-          productId: item.productId.isEmpty ? key : item.productId,
+          productId: normalizedProductId,
           productName: item.productName,
-          quantity: qty,
+          quantity: safeQty,
         ),
       );
     }
@@ -286,6 +296,15 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
       return false;
     }
 
+    for (int i = 0; i < selected.length; i++) {
+      final item = selected[i];
+      debugPrint(
+        '[StockInHand->Checklist][POP][$i] '
+        'productId=${item.productId}, '
+        'productName=${item.productName}, '
+        'quantity=${item.quantity}',
+      );
+    }
     Navigator.pop(context, selected);
     return true;
   }

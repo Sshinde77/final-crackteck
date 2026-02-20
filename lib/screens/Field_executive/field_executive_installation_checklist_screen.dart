@@ -354,10 +354,13 @@ class _FieldExecutiveInstallationChecklistScreenState
         return 'Working';
       case 'not working':
         return 'Not Working';
+      case 'picking':
       case 'add to pickup':
         return 'Add to Pickup';
+      case 'stock in hand':
       case 'use stock in hand':
         return 'Use Stock in Hand';
+      case 'request part':
       case 'request a part':
         return 'Request a Part';
       default:
@@ -443,11 +446,32 @@ class _FieldExecutiveInstallationChecklistScreenState
         <String, SelectedStockItem>{};
 
     for (final item in items) {
-      final String key = _stockItemKey(item);
-      if (key.isEmpty || item.quantity <= 0) {
+      final String normalizedProductId = _normalizeId(item.productId);
+      final int? numericPartId = int.tryParse(normalizedProductId);
+      if (numericPartId == null) {
+        debugPrint(
+          '[Checklist] Dropping stock item due to invalid part_id '
+          '(productId=${item.productId}, name=${item.productName})',
+        );
         continue;
       }
-      uniqueItems[key] = item.copyWith(quantity: item.quantity);
+      final int safeQuantity = item.quantity <= 0 ? 1 : item.quantity;
+      if (item.quantity <= 0) {
+        debugPrint(
+          '[Checklist] quantity<=0 fallback applied '
+          '(part_id=$numericPartId, original=${item.quantity}, normalized=$safeQuantity)',
+        );
+      }
+
+      final SelectedStockItem normalizedItem = item.copyWith(
+        productId: numericPartId.toString(),
+        quantity: safeQuantity,
+      );
+      final String key = _stockItemKey(normalizedItem);
+      if (key.isEmpty) {
+        continue;
+      }
+      uniqueItems[key] = normalizedItem;
     }
 
     return uniqueItems.values.toList(growable: false);
@@ -618,21 +642,64 @@ class _FieldExecutiveInstallationChecklistScreenState
   }
 
   List<SelectedStockItem> _parseSelectedStockItems(dynamic raw) {
-    if (raw is List<SelectedStockItem>) {
-      return raw;
-    }
+    debugPrint(
+      '[Checklist] _parseSelectedStockItems rawType=${raw.runtimeType}',
+    );
     if (raw is! List) {
       return const <SelectedStockItem>[];
     }
+
     final List<SelectedStockItem> parsed = <SelectedStockItem>[];
-    for (final dynamic item in raw) {
+    for (int i = 0; i < raw.length; i++) {
+      final dynamic item = raw[i];
+      SelectedStockItem? candidate;
       if (item is SelectedStockItem) {
-        parsed.add(item);
+        candidate = item;
       } else if (item is Map<String, dynamic>) {
-        parsed.add(SelectedStockItem.fromMap(item));
+        candidate = SelectedStockItem.fromMap(item);
       } else if (item is Map) {
-        parsed.add(SelectedStockItem.fromMap(Map<String, dynamic>.from(item)));
+        candidate = SelectedStockItem.fromMap(Map<String, dynamic>.from(item));
       }
+
+      if (candidate == null) {
+        debugPrint(
+          '[Checklist][PARSE][$i] Unsupported item type=${item.runtimeType}',
+        );
+        continue;
+      }
+
+      // Keep checklist state valid for submit payload:
+      // productId is required for part_id, and quantity must be positive.
+      final String normalizedProductId = _normalizeId(candidate.productId);
+      if (normalizedProductId.isEmpty) {
+        debugPrint(
+          '[Checklist][PARSE][$i] Dropped item with missing productId '
+          '(name=${candidate.productName}, quantity=${candidate.quantity})',
+        );
+        continue;
+      }
+
+      final int normalizedQuantity = candidate.quantity <= 0
+          ? 1
+          : candidate.quantity;
+      if (candidate.quantity <= 0) {
+        debugPrint(
+          '[Checklist][PARSE][$i] quantity<=0 fallback applied '
+          '(productId=$normalizedProductId, original=${candidate.quantity}, normalized=1)',
+        );
+      }
+
+      final SelectedStockItem normalizedItem = candidate.copyWith(
+        productId: normalizedProductId,
+        quantity: normalizedQuantity,
+      );
+      parsed.add(normalizedItem);
+      debugPrint(
+        '[Checklist][PARSE][$i] '
+        'productId=${normalizedItem.productId}, '
+        'productName=${normalizedItem.productName}, '
+        'quantity=${normalizedItem.quantity}',
+      );
     }
     return parsed;
   }
@@ -655,7 +722,52 @@ class _FieldExecutiveInstallationChecklistScreenState
       ),
     );
     if (result == null) return null;
-    return _parseSelectedStockItems(result);
+    debugPrint(
+      '[Checklist] _openStockInHandSelection resultType=${result.runtimeType}',
+    );
+    if (result is List) {
+      for (int i = 0; i < result.length; i++) {
+        final dynamic item = result[i];
+        if (item is SelectedStockItem) {
+          debugPrint(
+            '[Checklist][NAV-RESULT][$i] '
+            'productId=${item.productId}, '
+            'productName=${item.productName}, '
+            'quantity=${item.quantity}',
+          );
+        } else if (item is Map<String, dynamic>) {
+          final SelectedStockItem parsed = SelectedStockItem.fromMap(item);
+          debugPrint(
+            '[Checklist][NAV-RESULT][$i] '
+            'productId=${parsed.productId}, '
+            'productName=${parsed.productName}, '
+            'quantity=${parsed.quantity}',
+          );
+        } else if (item is Map) {
+          final SelectedStockItem parsed = SelectedStockItem.fromMap(
+            Map<String, dynamic>.from(item),
+          );
+          debugPrint(
+            '[Checklist][NAV-RESULT][$i] '
+            'productId=${parsed.productId}, '
+            'productName=${parsed.productName}, '
+            'quantity=${parsed.quantity}',
+          );
+        } else {
+          debugPrint(
+            '[Checklist][NAV-RESULT][$i] unsupportedType=${item.runtimeType}',
+          );
+        }
+      }
+    }
+
+    final List<SelectedStockItem> parsedResult = _parseSelectedStockItems(
+      result,
+    );
+    debugPrint(
+      '[Checklist] _openStockInHandSelection parsedCount=${parsedResult.length}',
+    );
+    return parsedResult;
   }
 
   @override
@@ -1034,11 +1146,11 @@ class _FieldExecutiveInstallationChecklistScreenState
       case 'not working':
         return 'not_working';
       case 'add to pickup':
-        return 'add_to_pickup';
+        return 'picking';
       case 'use stock in hand':
-        return 'use_stock_in_hand';
+        return 'stock_in_hand';
       case 'request a part':
-        return 'request_a_part';
+        return 'request_part';
       default:
         return 'working';
     }
@@ -1058,18 +1170,33 @@ class _FieldExecutiveInstallationChecklistScreenState
       final String selectedStatus = _normalizeStatusLabel(
         _itemStatus[name] ?? diagnosis?.statusLabel,
       );
+      final String apiStatus = _statusToApiValue(
+        selectedStatus.isEmpty ? 'Working' : selectedStatus,
+      );
       final String report =
           (_itemProblemSolution[name] ?? diagnosis?.report ?? '').trim();
       final File? issueImage = _itemIssueImage[name];
+      final List<SelectedStockItem> selectedStockItems =
+          _sanitizeSelectedStockItems(
+        _itemSelectedStockItems[name] ?? const <SelectedStockItem>[],
+      );
 
-      return <String, dynamic>{
+      final Map<String, dynamic> payload = <String, dynamic>{
         'name': name,
-        'status': _statusToApiValue(
-          selectedStatus.isEmpty ? 'Working' : selectedStatus,
-        ),
+        'status': apiStatus,
         if (report.isNotEmpty) 'report': report,
         if (issueImage != null) 'images': <File>[issueImage],
       };
+
+      // Backend supports only one part per diagnosis for stock_in_hand.
+      // Use the first selected stock item and ignore the rest.
+      if (apiStatus == 'stock_in_hand' && selectedStockItems.isNotEmpty) {
+        final SelectedStockItem selectedStockItem = selectedStockItems.first;
+        payload['part_id'] = int.parse(selectedStockItem.productId);
+        payload['quantity'] = selectedStockItem.quantity;
+      }
+
+      return payload;
     });
   }
 

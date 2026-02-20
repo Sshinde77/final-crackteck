@@ -47,6 +47,7 @@ class _FieldExecutiveProductItemDetailScreenState
   String? _error;
   Map<String, dynamic>? _productMap;
   String _requestId = '';
+  String _serviceRequestStatus = '';
 
   @override
   void initState() {
@@ -98,6 +99,27 @@ class _FieldExecutiveProductItemDetailScreenState
       }
     }
     return '';
+  }
+
+  String _extractServiceRequestStatus(Map<String, dynamic>? raw) {
+    if (raw == null) return '';
+
+    final rootStatus = _readFromMap(raw, const ['service_status', 'status']);
+    if (rootStatus.isNotEmpty) return rootStatus;
+
+    final requestMap = _asMap(raw['service_request']) ??
+        _asMap(raw['request']) ??
+        _asMap(raw['service']);
+    return _readFromMap(requestMap, const ['service_status', 'status']);
+  }
+
+  String _normalizeStatus(String status) {
+    return status.trim().toLowerCase();
+  }
+
+  bool _isInProgressStatus(String status) {
+    final normalized = _normalizeStatus(status);
+    return normalized == 'in_progress' || normalized == 'in progress';
   }
 
   List<Map<String, dynamic>> _extractProductMaps(Map<String, dynamic> detail) {
@@ -350,6 +372,7 @@ class _FieldExecutiveProductItemDetailScreenState
       setState(() {
         _productMap = selected;
         _requestId = _extractRequestId(detail);
+        _serviceRequestStatus = _extractServiceRequestStatus(detail);
         _isLoading = false;
         _error = selected == null ? 'Product details not found in API response.' : null;
       });
@@ -441,6 +464,53 @@ class _FieldExecutiveProductItemDetailScreenState
     final value = _readFromMap(_productMap, const ['description']);
     if (value.isNotEmpty) return value;
     return 'No description available.';
+  }
+
+  String get _productStatus {
+    return _readFromMap(
+      _productMap,
+      const ['service_status', 'product_status', 'status'],
+    );
+  }
+
+  bool get _canStartInstallation {
+    return widget.flow == FieldExecutiveProductItemDetailFlow.afterOtpVerification ||
+        _isInProgressStatus(_serviceRequestStatus);
+  }
+
+  bool get _shouldContinueInstallation {
+    if (_isInProgressStatus(_productStatus)) {
+      return true;
+    }
+    if (_productStatus.trim().isNotEmpty) {
+      return false;
+    }
+    return _isInProgressStatus(_serviceRequestStatus);
+  }
+
+  String get _installationActionLabel {
+    return _shouldContinueInstallation
+        ? 'Continue Installation'
+        : 'Start Installation';
+  }
+
+  void _openInstallationChecklist() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FieldExecutiveInstallationChecklistScreen(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          serviceId: widget.serviceId,
+          serviceRequestId: widget.serviceRequestId,
+          serviceRequestDbId: _serviceRequestIdForDiagnosisApi,
+          productDbId: _productIdForDiagnosisApi,
+          selectedProduct: _productMap,
+          flow: widget.flow,
+          controller: widget.controller,
+        ),
+      ),
+    );
   }
 
   Widget _buildImageFallback({IconData icon = Icons.image_not_supported}) {
@@ -608,7 +678,7 @@ class _FieldExecutiveProductItemDetailScreenState
               ),
       ),
       bottomNavigationBar:
-          widget.flow == FieldExecutiveProductItemDetailFlow.afterOtpVerification
+          _canStartInstallation
               ? SafeArea(
                   top: false,
                   child: Padding(
@@ -616,25 +686,7 @@ class _FieldExecutiveProductItemDetailScreenState
                     child: SizedBox(
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  FieldExecutiveInstallationChecklistScreen(
-                               roleId: widget.roleId,
-                                roleName: widget.roleName,
-                                serviceId: widget.serviceId,
-                                serviceRequestId: widget.serviceRequestId,
-                                serviceRequestDbId: _serviceRequestIdForDiagnosisApi,
-                                productDbId: _productIdForDiagnosisApi,
-                                selectedProduct: _productMap,
-                                flow: widget.flow,
-                                controller: widget.controller,
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: _openInstallationChecklist,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               FieldExecutiveProductItemDetailScreen.primaryGreen,
@@ -642,8 +694,8 @@ class _FieldExecutiveProductItemDetailScreenState
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          'Start Service',
+                        child: Text(
+                          _installationActionLabel,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

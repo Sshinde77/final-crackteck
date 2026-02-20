@@ -3066,6 +3066,8 @@ class ApiService {
         final name = (item['name'] ?? '').toString().trim();
         final status = (item['status'] ?? '').toString().trim();
         final report = (item['report'] ?? '').toString().trim();
+        final partIdRaw = item['part_id'];
+        final quantityRaw = item['quantity'];
         final reportToSend = report.isNotEmpty ? report : defaultReport.trim();
 
         if (name.isNotEmpty) {
@@ -3076,6 +3078,31 @@ class ApiService {
         }
         if (reportToSend.isNotEmpty) {
           request.fields['diagnosis_list[$index][report]'] = reportToSend;
+        }
+
+        final int? normalizedPartId = int.tryParse(
+          (partIdRaw ?? '').toString().trim(),
+        );
+        final int? normalizedQuantity = int.tryParse(
+          (quantityRaw ?? '').toString().trim(),
+        );
+
+        if (normalizedPartId != null) {
+          request.fields['diagnosis_list[$index][part_id]'] =
+              normalizedPartId.toString();
+        }
+        if (normalizedQuantity != null && normalizedQuantity > 0) {
+          request.fields['diagnosis_list[$index][quantity]'] =
+              normalizedQuantity.toString();
+        }
+        if (status == 'stock_in_hand' &&
+            (normalizedPartId == null ||
+                normalizedQuantity == null ||
+                normalizedQuantity <= 0)) {
+          debugPrint(
+            'Skipping invalid stock_in_hand part payload at index=$index '
+            '(part_id=$partIdRaw, quantity=$quantityRaw)',
+          );
         }
 
         final images = item['images'];
