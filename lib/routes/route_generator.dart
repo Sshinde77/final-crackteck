@@ -30,6 +30,7 @@ import '../screens/Field_executive/field_executive_all_products_screen.dart';
 import '../screens/Field_executive/field_executive_case_transfer_screen.dart';
 import '../screens/Field_executive/field_executive_cash_in_hand.dart';
 import '../screens/Field_executive/field_executive_dashboard.dart';
+import '../screens/Field_executive/field_executive_delivery_screen.dart';
 import '../screens/Field_executive/field_executive_detail_requested_product.dart' as detail_requested;
 import '../screens/Field_executive/field_executive_feedback.dart';
 import '../screens/Field_executive/field_executive_installation_detail_screen.dart';
@@ -322,6 +323,9 @@ class RouteGenerator {
               AddProductScreen(
                 roleId: args.roleId,
                 roleName: args.roleName,
+                selectionMode: args.selectionMode,
+                diagnosisName: args.diagnosisName,
+                initialSelectedPart: args.initialSelectedPart,
               ),
           settings: settings,
         );
@@ -351,6 +355,9 @@ class RouteGenerator {
                 roleId: args.roleId,
                 roleName: args.roleName,
                 productId: args.productId,
+                selectionMode: args.selectionMode,
+                diagnosisName: args.diagnosisName,
+                initialSelectedPart: args.initialSelectedPart,
               ),
           settings: settings,
         );
@@ -377,6 +384,20 @@ class RouteGenerator {
         return MaterialPageRoute(
           builder: (_) =>
               FieldExecutiveCashInHandScreen(
+                roleId: args.roleId,
+                roleName: args.roleName,
+              ),
+          settings: settings,
+        );
+
+      case AppRoutes.FieldExecutiveDeliveryScreen:
+        final args = settings.arguments as fieldexecutivedeliveryArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) =>
+              FieldExecutiveDeliveryScreen(
                 roleId: args.roleId,
                 roleName: args.roleName,
               ),

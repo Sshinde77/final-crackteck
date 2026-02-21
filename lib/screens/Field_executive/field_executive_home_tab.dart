@@ -215,16 +215,16 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                         onTap: () {
                           Navigator.pushNamed(
                             context,
-                            AppRoutes.FieldExecutiveCashInHandScreen,
-                            arguments: fieldexecutivecashinhandArguments(
+                            AppRoutes.FieldExecutiveDeliveryScreen,
+                            arguments: fieldexecutivedeliveryArguments(
                               roleId: widget.roleId,
                               roleName: widget.roleName,
                             ),
                           );
                         },
                         child: _StatCard(
-                          title: 'Cash\nin hand',
-                          icon: Icons.payments,
+                          title: 'Delivery',
+                          icon: Icons.local_shipping,
                           iconColor: Colors.green,
                           isSmall: isSmall,
                         ),

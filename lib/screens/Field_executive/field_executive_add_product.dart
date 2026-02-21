@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
+import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
 class AddProductScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
+  final bool selectionMode;
+  final String diagnosisName;
+  final SelectedStockItem? initialSelectedPart;
 
   const AddProductScreen({
     super.key,
     required this.roleId,
     required this.roleName,
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedPart,
   });
 
   static const Color primaryGreen = Color(0xFF1F8B00);
@@ -274,6 +281,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   product: product,
                                   roleId: widget.roleId,
                                   roleName: widget.roleName,
+                                  selectionMode: widget.selectionMode,
+                                  diagnosisName: widget.diagnosisName,
+                                  initialSelectedPart: widget.initialSelectedPart,
                                 );
                               },
                             ),
@@ -289,27 +299,67 @@ class _ProductCard extends StatelessWidget {
   final _Product product;
   final int roleId;
   final String roleName;
+  final bool selectionMode;
+  final String diagnosisName;
+  final SelectedStockItem? initialSelectedPart;
 
   const _ProductCard({
     required this.product,
     required this.roleId,
     required this.roleName,
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedPart,
   });
+
+  SelectedStockItem? _parseSelectedPart(dynamic raw) {
+    if (raw is SelectedStockItem) {
+      return raw;
+    }
+    if (raw is Map<String, dynamic>) {
+      return SelectedStockItem.fromMap(raw);
+    }
+    if (raw is Map) {
+      return SelectedStockItem.fromMap(Map<String, dynamic>.from(raw));
+    }
+    return null;
+  }
+
+  Future<void> _openRequestedProductDetail(BuildContext context) async {
+    final bool isSameAsInitial =
+        initialSelectedPart != null &&
+        initialSelectedPart!.productId.trim().replaceFirst(RegExp(r'^#'), '') ==
+            product.id.trim().replaceFirst(RegExp(r'^#'), '');
+
+    final dynamic result = await Navigator.pushNamed(
+      context,
+      AppRoutes.FieldExecutiveRequestedProductDetailScreen,
+      arguments: fieldexecutiverequestedproductlistArguments(
+        roleId: roleId,
+        roleName: roleName,
+        productId: product.id,
+        selectionMode: selectionMode,
+        diagnosisName: diagnosisName,
+        initialSelectedPart: isSameAsInitial ? initialSelectedPart : null,
+      ),
+    );
+
+    if (!context.mounted || !selectionMode) {
+      return;
+    }
+
+    final selectedPart = _parseSelectedPart(result);
+    if (selectedPart == null) {
+      return;
+    }
+
+    Navigator.pop(context, selectedPart);
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.FieldExecutiveRequestedProductDetailScreen,
-          arguments: fieldexecutiverequestedproductlistArguments(
-            roleId: roleId,
-            roleName: roleName,
-            productId: product.id,
-          ),
-        );
-      },
+      onTap: () => _openRequestedProductDetail(context),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
@@ -363,17 +413,7 @@ class _ProductCard extends StatelessWidget {
                 width: double.infinity,
                 height: 36,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.FieldExecutiveRequestedProductDetailScreen,
-                      arguments: fieldexecutiverequestedproductlistArguments(
-                        roleId: roleId,
-                        roleName: roleName,
-                        productId: product.id,
-                      ),
-                    );
-                  },
+                  onPressed: () => _openRequestedProductDetail(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AddProductScreen.primaryGreen,
                     shape: RoundedRectangleBorder(

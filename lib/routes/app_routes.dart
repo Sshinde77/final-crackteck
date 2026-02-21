@@ -44,6 +44,7 @@ class AppRoutes {
   static const String FieldExecutiveRequestedProductDetailScreen = '/field_executive_requested_product_detail';
   static const String FieldExecutiveProductPaymentScreen = '/field_executive_product_payment';
   static const String FieldExecutiveCashInHandScreen = '/field_executive_cash_in_hand';
+  static const String FieldExecutiveDeliveryScreen = '/field_executive_delivery';
   static const String FieldExecutivePaymentReceiptsScreen = '/field_executive_payment_receipts';
   static const String FieldExecutivePaymentDoneScreen = '/field_executive_payment_done';
   static const String FieldExecutiveWorkCallScreen = '/field_executive_work_call';
@@ -158,18 +159,33 @@ class fieldexecutiveproductdetailArguments {
 class fieldexecutiveaddproductArguments {
   final int roleId;
   final String roleName;
+  final bool selectionMode;
+  final String diagnosisName;
+  final SelectedStockItem? initialSelectedPart;
 
-  fieldexecutiveaddproductArguments({required this.roleId, required this.roleName});
+  fieldexecutiveaddproductArguments({
+    required this.roleId,
+    required this.roleName,
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedPart,
+  });
 }
 class fieldexecutiverequestedproductlistArguments {
   final int roleId;
   final String roleName;
   final String productId;
+  final bool selectionMode;
+  final String diagnosisName;
+  final SelectedStockItem? initialSelectedPart;
 
   fieldexecutiverequestedproductlistArguments({
     required this.roleId,
     required this.roleName,
     this.productId = '',
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedPart,
   });
 }
 
@@ -192,6 +208,13 @@ class fieldexecutivecashinhandArguments {
   final String roleName;
 
   fieldexecutivecashinhandArguments({required this.roleId, required this.roleName});
+}
+
+class fieldexecutivedeliveryArguments {
+  final int roleId;
+  final String roleName;
+
+  fieldexecutivedeliveryArguments({required this.roleId, required this.roleName});
 }
 
 class fieldexecutivepaymentreceiptsArguments {

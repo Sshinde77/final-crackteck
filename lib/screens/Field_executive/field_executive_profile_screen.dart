@@ -250,6 +250,17 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                 );
               },),
               const SizedBox(height: 12),
+              _OptionTile(icon: Icons.payments_outlined, label: "Cash in hand", onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.FieldExecutiveCashInHandScreen,
+                  arguments: fieldexecutivecashinhandArguments(
+                    roleId: widget.roleId,
+                    roleName: widget.roleName,
+                  ),
+                );
+              },),
+              const SizedBox(height: 12),
               _OptionTile(icon: Icons.privacy_tip_outlined, label: "Privacy policy", onTap: ()  {
                 Navigator.push(
                   context,

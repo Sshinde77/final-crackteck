@@ -77,6 +77,7 @@ class _FieldExecutiveInstallationChecklistScreenState
   final Map<String, String> _itemProblemSolution = {};
   final Map<String, File> _itemIssueImage = {};
   final Map<String, List<SelectedStockItem>> _itemSelectedStockItems = {};
+  final Map<String, SelectedStockItem> _itemRequestedPartSelections = {};
   final Map<String, bool> _itemPartUsed = {};
   String _writtenReportText = '';
   bool _isSubmittingDiagnosis = false;
@@ -103,6 +104,12 @@ class _FieldExecutiveInstallationChecklistScreenState
 
   String _normalizeId(String raw) {
     return raw.trim().replaceFirst(RegExp(r'^#'), '');
+  }
+
+  Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
   }
 
   String _readFromMap(Map<String, dynamic>? source, List<String> keys) {
@@ -163,6 +170,215 @@ class _FieldExecutiveInstallationChecklistScreenState
     ]);
   }
 
+  String _normalizeCompletionStatus(String status) {
+    return status
+        .trim()
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_')
+        .replaceAll(RegExp(r'_+'), '_');
+  }
+
+  bool _isDiagnosisCompleteProductStatus(String status) {
+    final normalized = _normalizeCompletionStatus(status);
+    return normalized == 'diagnosis_complete' ||
+        normalized == 'diagnosis_completed' ||
+        normalized == 'completed' ||
+        normalized == 'complete';
+  }
+
+  String _readProductDiagnosisStatus(Map<String, dynamic> product) {
+    final directStatus = _readFromMap(
+      product,
+      const [
+        'diagnosis_status',
+        'diagnosisStatus',
+        'product_status',
+        'productStatus',
+        'service_status',
+        'serviceStatus',
+        'status',
+      ],
+    );
+    if (directStatus.isNotEmpty) {
+      return directStatus;
+    }
+
+    for (final key in const ['product', 'products', 'service_product']) {
+      final nestedStatus = _readFromMap(
+        _asMap(product[key]),
+        const [
+          'diagnosis_status',
+          'diagnosisStatus',
+          'product_status',
+          'productStatus',
+          'service_status',
+          'serviceStatus',
+          'status',
+        ],
+      );
+      if (nestedStatus.isNotEmpty) {
+        return nestedStatus;
+      }
+    }
+
+    return '';
+  }
+
+  List<Map<String, dynamic>> _extractServiceRequestProducts(
+    Map<String, dynamic> detail,
+  ) {
+    final productMaps = <Map<String, dynamic>>[];
+    const candidateKeys = <String>[
+      'products',
+      'product',
+      'product_detail',
+      'product_details',
+      'service_products',
+      'service_product',
+      'items',
+      'item',
+    ];
+
+    void collect(dynamic node) {
+      if (node == null) return;
+      final map = _asMap(node);
+      if (map != null) {
+        productMaps.add(map);
+        return;
+      }
+      if (node is List) {
+        for (final item in node) {
+          collect(item);
+        }
+      }
+    }
+
+    void scan(dynamic node, {int depth = 0}) {
+      if (depth > 3 || node == null) return;
+
+      final map = _asMap(node);
+      if (map != null) {
+        for (final key in candidateKeys) {
+          collect(map[key]);
+        }
+        scan(map['data'], depth: depth + 1);
+        scan(map['service_request'], depth: depth + 1);
+        scan(map['request'], depth: depth + 1);
+        scan(map['service'], depth: depth + 1);
+        return;
+      }
+
+      if (node is List) {
+        for (final item in node) {
+          scan(item, depth: depth + 1);
+        }
+      }
+    }
+
+    scan(detail);
+
+    final seen = <String>{};
+    final deduped = <Map<String, dynamic>>[];
+    for (final product in productMaps) {
+      final identity = [
+        product['id'],
+        product['service_requests_id'],
+        product['item_code_id'],
+        product['name'],
+        product['model_no'],
+        product['sku'],
+      ].map((value) => value?.toString() ?? '').join('|');
+      if (seen.add(identity)) {
+        deduped.add(product);
+      }
+    }
+
+    return deduped;
+  }
+
+  Future<bool> areAllProductsDiagnosisComplete(String serviceRequestId) async {
+    final normalizedServiceRequestId = _normalizeId(serviceRequestId);
+    if (normalizedServiceRequestId.isEmpty) {
+      return false;
+    }
+
+    final detail = await ApiService.fetchServiceRequestDetail(
+      normalizedServiceRequestId,
+      roleId: widget.roleId,
+    );
+
+    final products = _extractServiceRequestProducts(detail);
+    if (products.isEmpty) {
+      debugPrint(
+        '[Checklist] No products found while verifying diagnosis completion '
+        '(service_request_id=$normalizedServiceRequestId)',
+      );
+      return false;
+    }
+
+    for (final product in products) {
+      final status = _readProductDiagnosisStatus(product);
+      if (!_isDiagnosisCompleteProductStatus(status)) {
+        debugPrint(
+          '[Checklist] Product diagnosis incomplete '
+          '(service_request_id=$normalizedServiceRequestId, status="$status")',
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  Future<void> _navigateAfterDiagnosisSubmitSuccess(
+    String serviceRequestId,
+  ) async {
+    bool allProductsDiagnosisComplete = false;
+    try {
+      allProductsDiagnosisComplete = await areAllProductsDiagnosisComplete(
+        serviceRequestId,
+      );
+    } catch (e) {
+      debugPrint(
+        '[Checklist] Failed to verify diagnosis completion from API: $e',
+      );
+      if (mounted) {
+        _showMessageSnackBar(
+          'Could not verify completion status from server. Opening product list.',
+        );
+      }
+    }
+
+    if (!mounted) return;
+
+    if (allProductsDiagnosisComplete) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.FieldExecutiveDashboard,
+        (route) => false,
+        arguments: fieldexecutivedashboardArguments(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.FieldExecutiveAllProductsScreen,
+      (route) => false,
+      arguments: fieldexecutiveallproductsArguments(
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        flow: widget.flow,
+        controller: widget.controller,
+        serviceRequestId: serviceRequestId,
+      ),
+    );
+  }
+
   void _syncChecklistStateForDiagnosis(List<DiagnosisItem> diagnosisItems) {
     final keys = diagnosisItems.map((item) => item.name).toSet();
     _expandedItems.removeWhere((key, _) => !keys.contains(key));
@@ -171,9 +387,12 @@ class _FieldExecutiveInstallationChecklistScreenState
     _itemProblemSolution.removeWhere((key, _) => !keys.contains(key));
     _itemIssueImage.removeWhere((key, _) => !keys.contains(key));
     _itemSelectedStockItems.removeWhere((key, _) => !keys.contains(key));
+    _itemRequestedPartSelections.removeWhere((key, _) => !keys.contains(key));
     _itemPartUsed.removeWhere((key, _) => !keys.contains(key));
     for (final item in diagnosisItems) {
-      if (_normalizePartStatus(item.partStatus) == 'customer_approved') {
+      final normalizedPartStatus = _normalizePartStatus(item.partStatus);
+      if (normalizedPartStatus == 'customer_approved' ||
+          normalizedPartStatus == 'delivered') {
         // Rehydrated API state should always wait for an explicit local click.
         _itemPartUsed[item.name] = false;
       } else {
@@ -181,6 +400,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       }
     }
     _clearSelectedStockForNonUseStatuses(diagnosisItems);
+    _clearRequestedPartForNonRequestStatuses(diagnosisItems);
   }
 
   Future<void> _loadDiagnosisList() async {
@@ -387,6 +607,8 @@ class _FieldExecutiveInstallationChecklistScreenState
         .replaceAll(RegExp(r'_+'), '_');
 
     switch (normalized) {
+      case 'requested':
+      case 'delivered':
       case 'waiting_for_approval':
       case 'customer_approved':
       case 'used':
@@ -407,6 +629,75 @@ class _FieldExecutiveInstallationChecklistScreenState
 
   bool _isUseStockInHandStatus(String? status) {
     return _normalizeStatusLabel(status) == 'Use Stock in Hand';
+  }
+
+  bool _isRequestPartStatus(String? status) {
+    return _normalizeStatusLabel(status) == 'Request a Part';
+  }
+
+  SelectedStockItem? _sanitizeRequestedPartSelection(SelectedStockItem? item) {
+    if (item == null) return null;
+    final String normalizedProductId = _normalizeId(item.productId);
+    final int? numericPartId = int.tryParse(normalizedProductId);
+    if (numericPartId == null) {
+      return null;
+    }
+
+    final int safeQuantity = item.quantity <= 0 ? 1 : item.quantity;
+    final String safeName = item.productName.trim().isEmpty
+        ? 'Part #$numericPartId'
+        : item.productName.trim();
+
+    return item.copyWith(
+      productId: numericPartId.toString(),
+      productName: safeName,
+      quantity: safeQuantity,
+    );
+  }
+
+  SelectedStockItem? _requestedPartFromDiagnosis(DiagnosisItem? diagnosis) {
+    if (diagnosis == null) return null;
+
+    final String rawPartId = _firstResolvedId([
+      diagnosis.requestedPartId,
+      diagnosis.partId,
+      diagnosis.productIdFromApi,
+    ]);
+    final int? partId = int.tryParse(_normalizeId(rawPartId));
+    final int? quantity = int.tryParse(
+      diagnosis.requestedQuantity.trim().isNotEmpty
+          ? diagnosis.requestedQuantity.trim()
+          : (diagnosis.quantity.trim().isNotEmpty
+                ? diagnosis.quantity.trim()
+                : diagnosis.quantityFromApi.trim()),
+    );
+
+    if (partId == null || quantity == null || quantity <= 0) {
+      return null;
+    }
+
+    final String partName = diagnosis.requestedPartName.trim().isNotEmpty
+        ? diagnosis.requestedPartName.trim()
+        : 'Part #$partId';
+
+    return SelectedStockItem(
+      productId: partId.toString(),
+      productName: partName,
+      quantity: quantity,
+    );
+  }
+
+  SelectedStockItem? _resolvedRequestedPartSelection(
+    String diagnosisName, {
+    DiagnosisItem? diagnosis,
+  }) {
+    final localSelection = _sanitizeRequestedPartSelection(
+      _itemRequestedPartSelections[diagnosisName],
+    );
+    if (localSelection != null) {
+      return localSelection;
+    }
+    return _sanitizeRequestedPartSelection(_requestedPartFromDiagnosis(diagnosis));
   }
 
   DiagnosisItem? _findDiagnosisByName(String name) {
@@ -444,6 +735,36 @@ class _FieldExecutiveInstallationChecklistScreenState
       final apiStatus = _normalizeStatusLabel(diagnosisByName[key]?.statusLabel);
       if (apiStatus.isNotEmpty && !_isUseStockInHandStatus(apiStatus)) {
         _itemSelectedStockItems.remove(key);
+      }
+    }
+  }
+
+  void _clearRequestedPartForNonRequestStatuses(
+    List<DiagnosisItem> diagnosisItems,
+  ) {
+    final Map<String, DiagnosisItem> diagnosisByName = {
+      for (final item in diagnosisItems) item.name: item,
+    };
+
+    for (final key in _itemRequestedPartSelections.keys.toList()) {
+      final localStatus = _normalizeStatusLabel(_itemStatus[key]);
+      if (localStatus.isNotEmpty) {
+        if (!_isRequestPartStatus(localStatus)) {
+          _itemRequestedPartSelections.remove(key);
+        }
+        continue;
+      }
+
+      final diagnosis = diagnosisByName[key];
+      final apiStatus = _normalizeStatusLabel(diagnosis?.statusLabel);
+      final partStatus = _normalizePartStatus(diagnosis?.partStatus);
+      final bool retainForApiState =
+          _isRequestPartStatus(apiStatus) ||
+          partStatus == 'requested' ||
+          partStatus == 'delivered' ||
+          partStatus == 'used';
+      if (!retainForApiState) {
+        _itemRequestedPartSelections.remove(key);
       }
     }
   }
@@ -592,10 +913,12 @@ class _FieldExecutiveInstallationChecklistScreenState
         .toSet();
 
     for (final diagnosis in _effectiveDiagnosisItems) {
-      final bool isApprovedAndMarkedUsed =
-          _normalizePartStatus(diagnosis.partStatus) == 'customer_approved' &&
-          (_itemPartUsed[diagnosis.name] ?? false);
-      if (isApprovedAndMarkedUsed) {
+      final String partStatus = _normalizePartStatus(diagnosis.partStatus);
+      final bool markUsedOnSubmit = _itemPartUsed[diagnosis.name] ?? false;
+      final bool skipStockValidationForUsedPart =
+          (partStatus == 'customer_approved' || partStatus == 'delivered') &&
+          markUsedOnSubmit;
+      if (skipStockValidationForUsedPart) {
         continue;
       }
       if (!_isUseStockInHandStatus(_resolvedStatusLabel(diagnosis))) {
@@ -627,23 +950,83 @@ class _FieldExecutiveInstallationChecklistScreenState
     return null;
   }
 
-  String? _firstMarkedUsedDiagnosisMissingApiPartData() {
+  String? _firstDiagnosisWithoutRequestedPartSelection() {
+    final Set<String> diagnosisNames = _effectiveDiagnosisItems
+        .map((item) => item.name)
+        .toSet();
+
     for (final diagnosis in _effectiveDiagnosisItems) {
-      final bool isApprovedAndMarkedUsed =
-          _normalizePartStatus(diagnosis.partStatus) == 'customer_approved' &&
-          (_itemPartUsed[diagnosis.name] ?? false);
-      if (!isApprovedAndMarkedUsed) {
+      final String diagnosisName = diagnosis.name;
+      final bool markUsedOnSubmit = _itemPartUsed[diagnosisName] ?? false;
+      if (markUsedOnSubmit) {
         continue;
       }
-      final int? approvedPartId = int.tryParse(
-        _normalizeId(diagnosis.productIdFromApi),
+      if (!_isRequestPartStatus(_resolvedStatusLabel(diagnosis))) {
+        continue;
+      }
+      final requestedPart = _resolvedRequestedPartSelection(
+        diagnosisName,
+        diagnosis: diagnosis,
       );
-      final int? approvedQuantity = int.tryParse(
-        diagnosis.quantityFromApi.trim(),
+      if (requestedPart == null) {
+        return diagnosisName;
+      }
+    }
+
+    for (final entry in _itemStatus.entries) {
+      if (!_isRequestPartStatus(entry.value)) {
+        continue;
+      }
+      if (diagnosisNames.contains(entry.key)) {
+        continue;
+      }
+      final requestedPart = _sanitizeRequestedPartSelection(
+        _itemRequestedPartSelections[entry.key],
       );
-      if (approvedPartId == null ||
-          approvedQuantity == null ||
-          approvedQuantity <= 0) {
+      if (requestedPart == null) {
+        return entry.key;
+      }
+    }
+
+    return null;
+  }
+
+  String? _firstMarkedUsedDiagnosisMissingPartData() {
+    for (final diagnosis in _effectiveDiagnosisItems) {
+      final String partStatus = _normalizePartStatus(diagnosis.partStatus);
+      final bool markUsedOnSubmit = _itemPartUsed[diagnosis.name] ?? false;
+      if (!markUsedOnSubmit) {
+        continue;
+      }
+      if (partStatus != 'customer_approved' && partStatus != 'delivered') {
+        continue;
+      }
+
+      final SelectedStockItem? usedPartSelection =
+          partStatus == 'customer_approved'
+          ? _sanitizeRequestedPartSelection(
+              SelectedStockItem(
+                productId: _firstResolvedId([
+                  diagnosis.productIdFromApi,
+                  diagnosis.partId,
+                  diagnosis.requestedPartId,
+                ]),
+                productName: diagnosis.requestedPartName.trim().isEmpty
+                    ? diagnosis.name
+                    : diagnosis.requestedPartName.trim(),
+                quantity:
+                    int.tryParse(diagnosis.quantityFromApi.trim()) ??
+                    int.tryParse(diagnosis.quantity.trim()) ??
+                    int.tryParse(diagnosis.requestedQuantity.trim()) ??
+                    0,
+              ),
+            )
+          : _resolvedRequestedPartSelection(
+              diagnosis.name,
+              diagnosis: diagnosis,
+            );
+
+      if (usedPartSelection == null) {
         return diagnosis.name;
       }
     }
@@ -759,6 +1142,44 @@ class _FieldExecutiveInstallationChecklistScreenState
       );
     }
     return parsed;
+  }
+
+  SelectedStockItem? _parseSingleSelectedPart(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is SelectedStockItem) {
+      return _sanitizeRequestedPartSelection(raw);
+    }
+    if (raw is Map<String, dynamic>) {
+      return _sanitizeRequestedPartSelection(SelectedStockItem.fromMap(raw));
+    }
+    if (raw is Map) {
+      return _sanitizeRequestedPartSelection(
+        SelectedStockItem.fromMap(Map<String, dynamic>.from(raw)),
+      );
+    }
+    return null;
+  }
+
+  Future<SelectedStockItem?> _openRequestPartSelection(
+    String diagnosisName,
+  ) async {
+    final DiagnosisItem? diagnosis = _findDiagnosisByName(diagnosisName);
+    final SelectedStockItem? initialSelectedPart = _resolvedRequestedPartSelection(
+      diagnosisName,
+      diagnosis: diagnosis,
+    );
+    final dynamic result = await Navigator.pushNamed(
+      context,
+      AppRoutes.FieldExecutiveAddProductScreen,
+      arguments: fieldexecutiveaddproductArguments(
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        selectionMode: true,
+        diagnosisName: diagnosisName,
+        initialSelectedPart: initialSelectedPart,
+      ),
+    );
+    return _parseSingleSelectedPart(result);
   }
 
   Future<List<SelectedStockItem>?> _openStockInHandSelection(
@@ -1224,9 +1645,12 @@ class _FieldExecutiveInstallationChecklistScreenState
     final Map<String, DiagnosisItem> diagnosisByName = {
       for (final item in _effectiveDiagnosisItems) item.name: item,
     };
-    final List<String> items = _effectiveDiagnosisItems.isNotEmpty
-        ? _effectiveDiagnosisItems.map((item) => item.name).toList()
-        : _itemStatus.keys.toList();
+    final Set<String> itemSet = _effectiveDiagnosisItems
+        .map((item) => item.name)
+        .toSet();
+    itemSet.addAll(_itemStatus.keys);
+    itemSet.addAll(_itemRequestedPartSelections.keys);
+    final List<String> items = itemSet.toList(growable: false);
 
     return List<Map<String, dynamic>>.generate(items.length, (index) {
       final String name = items[index];
@@ -1239,7 +1663,8 @@ class _FieldExecutiveInstallationChecklistScreenState
       );
       final String partStatus = _normalizePartStatus(diagnosis?.partStatus);
       final bool markPartUsedOnSubmit =
-          partStatus == 'customer_approved' && (_itemPartUsed[name] ?? false);
+          (partStatus == 'customer_approved' || partStatus == 'delivered') &&
+          (_itemPartUsed[name] ?? false);
       final int? approvedPartId = int.tryParse(
         _normalizeId(diagnosis?.productIdFromApi ?? ''),
       );
@@ -1267,18 +1692,32 @@ class _FieldExecutiveInstallationChecklistScreenState
       final int? resolvedPartId = selectedPartId ?? rehydratedPartId;
       final int? resolvedQuantity =
           selectedQuantity ?? ((rehydratedQuantity ?? 0) > 0 ? rehydratedQuantity : null);
+      final SelectedStockItem? requestedPartSelection =
+          _resolvedRequestedPartSelection(name, diagnosis: diagnosis);
+      final int? requestedPartId = requestedPartSelection == null
+          ? null
+          : int.tryParse(_normalizeId(requestedPartSelection.productId));
+      final int? requestedQuantity = requestedPartSelection == null
+          ? null
+          : (requestedPartSelection.quantity > 0
+                ? requestedPartSelection.quantity
+                : null);
 
       if (markPartUsedOnSubmit) {
+        final int? usedPartId = partStatus == 'customer_approved'
+            ? approvedPartId
+            : (requestedPartId ?? approvedPartId);
+        final int? usedQuantity = partStatus == 'customer_approved'
+            ? approvedQuantity
+            : (requestedQuantity ?? approvedQuantity);
         final Map<String, dynamic> payload = <String, dynamic>{
           'name': name,
           'status': 'working',
           'part_status': 'used',
         };
-        if (approvedPartId != null &&
-            approvedQuantity != null &&
-            approvedQuantity > 0) {
-          payload['part_id'] = approvedPartId.toString();
-          payload['quantity'] = approvedQuantity.toString();
+        if (usedPartId != null && usedQuantity != null && usedQuantity > 0) {
+          payload['part_id'] = usedPartId.toString();
+          payload['quantity'] = usedQuantity.toString();
         }
         return payload;
       }
@@ -1294,6 +1733,11 @@ class _FieldExecutiveInstallationChecklistScreenState
         if (resolvedPartId != null && resolvedQuantity != null) {
           payload['part_id'] = resolvedPartId.toString();
           payload['quantity'] = resolvedQuantity.toString();
+        }
+      } else if (apiStatus == 'request_part') {
+        if (requestedPartId != null && requestedQuantity != null) {
+          payload['part_id'] = requestedPartId.toString();
+          payload['quantity'] = requestedQuantity.toString();
         }
       }
 
@@ -1326,11 +1770,10 @@ class _FieldExecutiveInstallationChecklistScreenState
       return;
     }
 
-    final String? invalidApprovedPartData =
-        _firstMarkedUsedDiagnosisMissingApiPartData();
-    if (invalidApprovedPartData != null) {
+    final String? invalidMarkedUsedPartData = _firstMarkedUsedDiagnosisMissingPartData();
+    if (invalidMarkedUsedPartData != null) {
       _showMessageSnackBar(
-        'Approved part data missing from API for "$invalidApprovedPartData". Please refresh and try again.',
+        'Part data missing for "$invalidMarkedUsedPartData". Please refresh and try again.',
       );
       return;
     }
@@ -1341,6 +1784,16 @@ class _FieldExecutiveInstallationChecklistScreenState
         _expandedItems[invalidDiagnosis] = true;
       });
       _showMessageSnackBar('At least one stock item is required');
+      return;
+    }
+
+    final String? invalidRequestedPartDiagnosis =
+        _firstDiagnosisWithoutRequestedPartSelection();
+    if (invalidRequestedPartDiagnosis != null) {
+      setState(() {
+        _expandedItems[invalidRequestedPartDiagnosis] = true;
+      });
+      _showMessageSnackBar('Select part and quantity for request part');
       return;
     }
 
@@ -1385,18 +1838,8 @@ class _FieldExecutiveInstallationChecklistScreenState
 
       if (response.success) {
         _itemPartUsed.clear();
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.FieldExecutiveAllProductsScreen,
-          (route) => false,
-          arguments: fieldexecutiveallproductsArguments(
-            roleId: widget.roleId,
-            roleName: widget.roleName,
-            flow: widget.flow,
-            controller: widget.controller,
-            serviceRequestId: _serviceRequestIdForApi(),
-          ),
-        );
+        _itemRequestedPartSelections.clear();
+        await _navigateAfterDiagnosisSubmitSuccess(serviceRequestId);
         return;
       }
     } catch (e) {
@@ -1616,7 +2059,10 @@ class _FieldExecutiveInstallationChecklistScreenState
     if (!mounted || result == null) return;
 
     final bool hadExistingStock = _hasSelectedStockItems(title);
+    final bool hadExistingRequestedPart =
+        _itemRequestedPartSelections.containsKey(title);
     List<SelectedStockItem>? selectedStockItems;
+    SelectedStockItem? selectedRequestedPart;
     if (result.selectedOption == 'Use Stock in Hand') {
       selectedStockItems = await _openStockInHandSelection(title);
       if (!mounted) return;
@@ -1634,10 +2080,21 @@ class _FieldExecutiveInstallationChecklistScreenState
       }
       selectedStockItems = mergedItems;
     }
+    if (result.selectedOption == 'Request a Part') {
+      selectedRequestedPart = await _openRequestPartSelection(title);
+      if (!mounted) return;
+      if (selectedRequestedPart == null) {
+        return;
+      }
+    }
     final List<SelectedStockItem> selectedStockItemsValue =
         selectedStockItems ?? const <SelectedStockItem>[];
+    final SelectedStockItem? requestedPartValue =
+        _sanitizeRequestedPartSelection(selectedRequestedPart);
     final bool shouldAutoClearStock =
         result.selectedOption != 'Use Stock in Hand' && hadExistingStock;
+    final bool shouldAutoClearRequestedPart =
+        result.selectedOption != 'Request a Part' && hadExistingRequestedPart;
 
     setState(() {
       _itemStatus[title] = result.selectedOption;
@@ -1658,14 +2115,26 @@ class _FieldExecutiveInstallationChecklistScreenState
         } else {
           _itemSelectedStockItems[title] = selectedStockItemsValue;
         }
+        _itemRequestedPartSelections.remove(title);
+      } else if (result.selectedOption == 'Request a Part') {
+        _itemSelectedStockItems.remove(title);
+        if (requestedPartValue == null) {
+          _itemRequestedPartSelections.remove(title);
+        } else {
+          _itemRequestedPartSelections[title] = requestedPartValue;
+        }
       } else {
         _itemSelectedStockItems.remove(title);
+        _itemRequestedPartSelections.remove(title);
       }
       _expandedItems[title] = false;
     });
 
     if (shouldAutoClearStock) {
       _showMessageSnackBar('Stock selection cleared due to status change');
+    }
+    if (shouldAutoClearRequestedPart) {
+      _showMessageSnackBar('Requested part selection cleared due to status change');
     }
   }
 
@@ -1884,6 +2353,14 @@ class _FieldExecutiveInstallationChecklistScreenState
     late final String label;
 
     switch (partStatus) {
+      case 'requested':
+        color = Colors.orange;
+        label = 'Part Requested';
+        break;
+      case 'delivered':
+        color = Colors.blue;
+        label = 'Part Delivered';
+        break;
       case 'waiting_for_approval':
         color = Colors.orange;
         label = 'Waiting for approval';
@@ -1898,7 +2375,7 @@ class _FieldExecutiveInstallationChecklistScreenState
         break;
       default:
         color = Colors.blueGrey;
-        label = partStatus;
+        label = partStatus.replaceAll('_', ' ');
         break;
     }
 
@@ -1920,6 +2397,60 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 
+  Widget _buildRequestedPartSummary({
+    required SelectedStockItem part,
+    required bool showRequestedBadge,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Requested Part',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: primaryGreen,
+                  ),
+                ),
+              ),
+              if (showRequestedBadge) _buildPartStatusBadge('requested'),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            part.productName,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Product ID: ${_normalizeId(part.productId)}',
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Quantity: ${part.quantity}',
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildChecklistItem(DiagnosisItem diagnosis) {
     final String title = diagnosis.name;
     final bool isExpanded = _expandedItems[title] ?? false;
@@ -1930,19 +2461,33 @@ class _FieldExecutiveInstallationChecklistScreenState
     final bool isWorking = _isWorkingStatus(statusLabel);
     final bool isNonWorking = _isNonWorkingStatus(statusLabel);
     final bool isUseStockInHand = _isUseStockInHandStatus(statusLabel);
+    final bool isRequestPart = _isRequestPartStatus(statusLabel);
     final bool isWaitingForApproval = partStatus == 'waiting_for_approval';
+    final bool isPartRequested = partStatus == 'requested';
+    final bool isPartDelivered = partStatus == 'delivered';
     final bool isCustomerApproved = partStatus == 'customer_approved';
     final bool isPartUsed = partStatus == 'used';
     final bool isLockedForStatusChange =
         isWaitingForApproval || isPartUsed || isMarkedPartUsed;
     final bool canMarkAsUsed =
-        isCustomerApproved && !isMarkedPartUsed;
+        (isCustomerApproved || isPartDelivered) && !isMarkedPartUsed;
+    final bool showRequestedPartBadge = isRequestPart || isPartRequested;
     final String? reportText = _resolvedReportText(diagnosis);
     final File? issueImage = _itemIssueImage[title];
     final List<SelectedStockItem> selectedStockItems =
         _sanitizeSelectedStockItems(
       _itemSelectedStockItems[title] ?? const <SelectedStockItem>[],
     );
+    final SelectedStockItem? requestedPartSelection = _resolvedRequestedPartSelection(
+      title,
+      diagnosis: diagnosis,
+    );
+    final bool showRequestedPartSummary =
+        requestedPartSelection != null &&
+        (showRequestedPartBadge ||
+            isPartDelivered ||
+            isPartUsed ||
+            isMarkedPartUsed);
 
     Color circleColor = Colors.grey.shade200;
     Widget? circleIcon;
@@ -2017,6 +2562,8 @@ class _FieldExecutiveInstallationChecklistScreenState
                           ),
                         ),
                       if (isUseStockInHand ||
+                          isPartRequested ||
+                          isPartDelivered ||
                           isWaitingForApproval ||
                           isCustomerApproved ||
                           isPartUsed ||
@@ -2035,7 +2582,10 @@ class _FieldExecutiveInstallationChecklistScreenState
                                       : statusLabel,
                                   isWorking: true,
                                 ),
-                              if (isWaitingForApproval ||
+                              if (showRequestedPartBadge)
+                                _buildPartStatusBadge('requested'),
+                              if (isPartDelivered ||
+                                  isWaitingForApproval ||
                                   isCustomerApproved ||
                                   isPartUsed)
                                 _buildPartStatusBadge(partStatus),
@@ -2094,13 +2644,18 @@ class _FieldExecutiveInstallationChecklistScreenState
                           diagnosisName: title,
                           items: selectedStockItems,
                         ),
+                      if (showRequestedPartSummary)
+                        _buildRequestedPartSummary(
+                          part: requestedPartSelection!,
+                          showRequestedBadge: showRequestedPartBadge,
+                        ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 if (hasStatus && !isUseStockInHand) ...[
                   _buildStatusBadge(
-                    statusLabel,
+                    showRequestedPartBadge ? 'Part Requested' : statusLabel,
                     isWorking: isWorking,
                   ),
                   const SizedBox(width: 8),
@@ -2159,17 +2714,25 @@ class _FieldExecutiveInstallationChecklistScreenState
                             final bool hadStockSelection = _hasSelectedStockItems(
                               title,
                             );
+                            final bool hadRequestedPartSelection =
+                                _itemRequestedPartSelections.containsKey(title);
                             setState(() {
                               _itemStatus[title] = 'Working';
                               _itemSelectedAction.remove(title);
                               _itemProblemSolution.remove(title);
                               _itemIssueImage.remove(title);
                               _itemSelectedStockItems.remove(title);
+                              _itemRequestedPartSelections.remove(title);
                               _expandedItems[title] = false;
                             });
                             if (hadStockSelection) {
                               _showMessageSnackBar(
                                 'Stock selection cleared due to status change',
+                              );
+                            }
+                            if (hadRequestedPartSelection) {
+                              _showMessageSnackBar(
+                                'Requested part selection cleared due to status change',
                               );
                             }
                           },

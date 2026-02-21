@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants/api_constants.dart';
 import '../../constants/app_strings.dart';
 import '../../model/field executive/requested_product.dart';
+import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 import '../../services/requested_products_store.dart';
@@ -11,12 +12,18 @@ class ProductRequestedDetailScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
   final String productId;
+  final bool selectionMode;
+  final String diagnosisName;
+  final SelectedStockItem? initialSelectedPart;
 
   const ProductRequestedDetailScreen({
     super.key,
     required this.roleId,
     required this.roleName,
     this.productId = '',
+    this.selectionMode = false,
+    this.diagnosisName = '',
+    this.initialSelectedPart,
   });
 
   @override
@@ -36,6 +43,10 @@ class _ProductRequestedDetailScreenState
   @override
   void initState() {
     super.initState();
+    if (widget.initialSelectedPart != null &&
+        widget.initialSelectedPart!.quantity > 0) {
+      qty = widget.initialSelectedPart!.quantity;
+    }
     _loadProductDetail();
   }
 
@@ -345,6 +356,17 @@ class _ProductRequestedDetailScreenState
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
+                          if (widget.selectionMode) {
+                            Navigator.pop(
+                              context,
+                              SelectedStockItem(
+                                productId: _resolvedProductId,
+                                productName: _product.productName,
+                                quantity: qty < 1 ? 1 : qty,
+                              ),
+                            );
+                            return;
+                          }
                           _addRequestedProductToStore();
                           Navigator.pushNamed(
                             context,

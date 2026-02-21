@@ -4,6 +4,9 @@ class DiagnosisItem {
   final String partStatus;
   final String partId;
   final String quantity;
+  final String requestedPartId;
+  final String requestedQuantity;
+  final String requestedPartName;
   final String productIdFromApi;
   final String quantityFromApi;
   final String? report;
@@ -14,6 +17,9 @@ class DiagnosisItem {
     this.partStatus = '',
     this.partId = '',
     this.quantity = '',
+    this.requestedPartId = '',
+    this.requestedQuantity = '',
+    this.requestedPartName = '',
     this.productIdFromApi = '',
     this.quantityFromApi = '',
     this.report,
@@ -85,12 +91,27 @@ class DiagnosisItem {
       'requested_quantity',
       'requestedQuantity',
     ]);
+    final requestedPartId = readString(const [
+      'requested_part_id',
+      'requestedPartId',
+      'part_id',
+      'partId',
+      'product_id',
+      'productId',
+    ]);
+    final requestedQuantity = readString(const [
+      'requested_quantity',
+      'requestedQuantity',
+      'quantity',
+      'qty',
+    ]);
     final quantityFromApi = readString(const ['quantity']);
     final dynamic productDataRaw = readRaw(const [
       'product_data',
       'productData',
     ]);
     String productIdFromApi = '';
+    String requestedPartName = '';
     if (productDataRaw is Map) {
       final productData = Map<String, dynamic>.from(productDataRaw as Map);
       for (final key in const ['id', 'product_id', 'productId']) {
@@ -104,6 +125,17 @@ class DiagnosisItem {
           break;
         }
       }
+      for (final key in const ['product_name', 'name', 'title']) {
+        final dynamic value = productData[key];
+        if (value == null || value is Map || value is List) {
+          continue;
+        }
+        final String text = value.toString().trim();
+        if (text.isNotEmpty && text.toLowerCase() != 'null') {
+          requestedPartName = text;
+          break;
+        }
+      }
     }
 
     return DiagnosisItem(
@@ -112,6 +144,9 @@ class DiagnosisItem {
       partStatus: _normalizePartStatus(rawPartStatus),
       partId: partId,
       quantity: quantity,
+      requestedPartId: requestedPartId,
+      requestedQuantity: requestedQuantity,
+      requestedPartName: requestedPartName,
       productIdFromApi: productIdFromApi,
       quantityFromApi: quantityFromApi,
       report: reportText.isEmpty ? null : reportText,
@@ -175,6 +210,8 @@ class DiagnosisItem {
         .trim();
 
     switch (normalized) {
+      case 'requested':
+      case 'delivered':
       case 'waiting_for_approval':
       case 'customer_approved':
       case 'used':
