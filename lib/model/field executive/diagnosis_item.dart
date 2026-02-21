@@ -1,11 +1,21 @@
 class DiagnosisItem {
   final String name;
   final String statusLabel;
+  final String partStatus;
+  final String partId;
+  final String quantity;
+  final String productIdFromApi;
+  final String quantityFromApi;
   final String? report;
 
   const DiagnosisItem({
     required this.name,
     this.statusLabel = '',
+    this.partStatus = '',
+    this.partId = '',
+    this.quantity = '',
+    this.productIdFromApi = '',
+    this.quantityFromApi = '',
     this.report,
   });
 
@@ -59,9 +69,51 @@ class DiagnosisItem {
       'working',
     ]);
 
+    final rawPartStatus = readRaw(const [
+      'part_status',
+      'partStatus',
+    ]);
+    final partId = readString(const [
+      'part_id',
+      'partId',
+      'product_id',
+      'productId',
+    ]);
+    final quantity = readString(const [
+      'quantity',
+      'qty',
+      'requested_quantity',
+      'requestedQuantity',
+    ]);
+    final quantityFromApi = readString(const ['quantity']);
+    final dynamic productDataRaw = readRaw(const [
+      'product_data',
+      'productData',
+    ]);
+    String productIdFromApi = '';
+    if (productDataRaw is Map) {
+      final productData = Map<String, dynamic>.from(productDataRaw as Map);
+      for (final key in const ['id', 'product_id', 'productId']) {
+        final dynamic value = productData[key];
+        if (value == null || value is Map || value is List) {
+          continue;
+        }
+        final String text = value.toString().trim();
+        if (text.isNotEmpty && text.toLowerCase() != 'null') {
+          productIdFromApi = text;
+          break;
+        }
+      }
+    }
+
     return DiagnosisItem(
       name: name,
       statusLabel: _normalizeStatusLabel(rawStatus),
+      partStatus: _normalizePartStatus(rawPartStatus),
+      partId: partId,
+      quantity: quantity,
+      productIdFromApi: productIdFromApi,
+      quantityFromApi: quantityFromApi,
       report: reportText.isEmpty ? null : reportText,
     );
   }
@@ -108,5 +160,27 @@ class DiagnosisItem {
               '${word[0].toUpperCase()}${word.length > 1 ? word.substring(1) : ''}',
         )
         .join(' ');
+  }
+
+  static String _normalizePartStatus(dynamic rawPartStatus) {
+    if (rawPartStatus == null) return '';
+    final rawText = rawPartStatus.toString().trim();
+    if (rawText.isEmpty || rawText.toLowerCase() == 'null') return '';
+
+    final normalized = rawText
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .trim();
+
+    switch (normalized) {
+      case 'waiting_for_approval':
+      case 'customer_approved':
+      case 'used':
+        return normalized;
+      default:
+        return '';
+    }
   }
 }

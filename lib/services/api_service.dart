@@ -2938,6 +2938,19 @@ class ApiService {
           statusLabel: existing.statusLabel.isNotEmpty
               ? existing.statusLabel
               : item.statusLabel,
+          partStatus: existing.partStatus.isNotEmpty
+              ? existing.partStatus
+              : item.partStatus,
+          partId: existing.partId.isNotEmpty ? existing.partId : item.partId,
+          quantity: existing.quantity.isNotEmpty
+              ? existing.quantity
+              : item.quantity,
+          productIdFromApi: existing.productIdFromApi.isNotEmpty
+              ? existing.productIdFromApi
+              : item.productIdFromApi,
+          quantityFromApi: existing.quantityFromApi.isNotEmpty
+              ? existing.quantityFromApi
+              : item.quantityFromApi,
           report: (existing.report?.trim().isNotEmpty ?? false)
               ? existing.report
               : item.report,
@@ -3065,6 +3078,7 @@ class ApiService {
         final item = diagnosisList[index];
         final name = (item['name'] ?? '').toString().trim();
         final status = (item['status'] ?? '').toString().trim();
+        final partStatus = (item['part_status'] ?? '').toString().trim();
         final report = (item['report'] ?? '').toString().trim();
         final partIdRaw = item['part_id'];
         final quantityRaw = item['quantity'];
@@ -3075,6 +3089,9 @@ class ApiService {
         }
         if (status.isNotEmpty) {
           request.fields['diagnosis_list[$index][status]'] = status;
+        }
+        if (partStatus.isNotEmpty) {
+          request.fields['diagnosis_list[$index][part_status]'] = partStatus;
         }
         if (reportToSend.isNotEmpty) {
           request.fields['diagnosis_list[$index][report]'] = reportToSend;

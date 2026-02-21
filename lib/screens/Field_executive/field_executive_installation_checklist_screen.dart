@@ -77,6 +77,7 @@ class _FieldExecutiveInstallationChecklistScreenState
   final Map<String, String> _itemProblemSolution = {};
   final Map<String, File> _itemIssueImage = {};
   final Map<String, List<SelectedStockItem>> _itemSelectedStockItems = {};
+  final Map<String, bool> _itemPartUsed = {};
   String _writtenReportText = '';
   bool _isSubmittingDiagnosis = false;
 
@@ -170,6 +171,15 @@ class _FieldExecutiveInstallationChecklistScreenState
     _itemProblemSolution.removeWhere((key, _) => !keys.contains(key));
     _itemIssueImage.removeWhere((key, _) => !keys.contains(key));
     _itemSelectedStockItems.removeWhere((key, _) => !keys.contains(key));
+    _itemPartUsed.removeWhere((key, _) => !keys.contains(key));
+    for (final item in diagnosisItems) {
+      if (_normalizePartStatus(item.partStatus) == 'customer_approved') {
+        // Rehydrated API state should always wait for an explicit local click.
+        _itemPartUsed[item.name] = false;
+      } else {
+        _itemPartUsed.remove(item.name);
+      }
+    }
     _clearSelectedStockForNonUseStatuses(diagnosisItems);
   }
 
@@ -363,6 +373,24 @@ class _FieldExecutiveInstallationChecklistScreenState
       case 'request part':
       case 'request a part':
         return 'Request a Part';
+      default:
+        return '';
+    }
+  }
+
+  String _normalizePartStatus(String? status) {
+    final normalized = (status ?? '')
+        .trim()
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_')
+        .replaceAll(RegExp(r'_+'), '_');
+
+    switch (normalized) {
+      case 'waiting_for_approval':
+      case 'customer_approved':
+      case 'used':
+        return normalized;
       default:
         return '';
     }
@@ -564,6 +592,12 @@ class _FieldExecutiveInstallationChecklistScreenState
         .toSet();
 
     for (final diagnosis in _effectiveDiagnosisItems) {
+      final bool isApprovedAndMarkedUsed =
+          _normalizePartStatus(diagnosis.partStatus) == 'customer_approved' &&
+          (_itemPartUsed[diagnosis.name] ?? false);
+      if (isApprovedAndMarkedUsed) {
+        continue;
+      }
       if (!_isUseStockInHandStatus(_resolvedStatusLabel(diagnosis))) {
         continue;
       }
@@ -590,6 +624,29 @@ class _FieldExecutiveInstallationChecklistScreenState
       }
     }
 
+    return null;
+  }
+
+  String? _firstMarkedUsedDiagnosisMissingApiPartData() {
+    for (final diagnosis in _effectiveDiagnosisItems) {
+      final bool isApprovedAndMarkedUsed =
+          _normalizePartStatus(diagnosis.partStatus) == 'customer_approved' &&
+          (_itemPartUsed[diagnosis.name] ?? false);
+      if (!isApprovedAndMarkedUsed) {
+        continue;
+      }
+      final int? approvedPartId = int.tryParse(
+        _normalizeId(diagnosis.productIdFromApi),
+      );
+      final int? approvedQuantity = int.tryParse(
+        diagnosis.quantityFromApi.trim(),
+      );
+      if (approvedPartId == null ||
+          approvedQuantity == null ||
+          approvedQuantity <= 0) {
+        return diagnosis.name;
+      }
+    }
     return null;
   }
 
@@ -789,6 +846,12 @@ class _FieldExecutiveInstallationChecklistScreenState
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _isLoadingDiagnosis ? null : _loadDiagnosisList,
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -1096,6 +1159,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                               Navigator.of(
                                 dialogContext,
                               ).pop(reportText.trim());
+                              
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -1173,6 +1237,15 @@ class _FieldExecutiveInstallationChecklistScreenState
       final String apiStatus = _statusToApiValue(
         selectedStatus.isEmpty ? 'Working' : selectedStatus,
       );
+      final String partStatus = _normalizePartStatus(diagnosis?.partStatus);
+      final bool markPartUsedOnSubmit =
+          partStatus == 'customer_approved' && (_itemPartUsed[name] ?? false);
+      final int? approvedPartId = int.tryParse(
+        _normalizeId(diagnosis?.productIdFromApi ?? ''),
+      );
+      final int? approvedQuantity = int.tryParse(
+        (diagnosis?.quantityFromApi ?? '').trim(),
+      );
       final String report =
           (_itemProblemSolution[name] ?? diagnosis?.report ?? '').trim();
       final File? issueImage = _itemIssueImage[name];
@@ -1180,6 +1253,35 @@ class _FieldExecutiveInstallationChecklistScreenState
           _sanitizeSelectedStockItems(
         _itemSelectedStockItems[name] ?? const <SelectedStockItem>[],
       );
+      final SelectedStockItem? selectedStockItem = selectedStockItems.isNotEmpty
+          ? selectedStockItems.first
+          : null;
+      final int? selectedPartId = selectedStockItem == null
+          ? null
+          : int.tryParse(_normalizeId(selectedStockItem.productId));
+      final int? selectedQuantity = selectedStockItem == null
+          ? null
+          : (selectedStockItem.quantity > 0 ? selectedStockItem.quantity : null);
+      final int? rehydratedPartId = int.tryParse(_normalizeId(diagnosis?.partId ?? ''));
+      final int? rehydratedQuantity = int.tryParse((diagnosis?.quantity ?? '').trim());
+      final int? resolvedPartId = selectedPartId ?? rehydratedPartId;
+      final int? resolvedQuantity =
+          selectedQuantity ?? ((rehydratedQuantity ?? 0) > 0 ? rehydratedQuantity : null);
+
+      if (markPartUsedOnSubmit) {
+        final Map<String, dynamic> payload = <String, dynamic>{
+          'name': name,
+          'status': 'working',
+          'part_status': 'used',
+        };
+        if (approvedPartId != null &&
+            approvedQuantity != null &&
+            approvedQuantity > 0) {
+          payload['part_id'] = approvedPartId.toString();
+          payload['quantity'] = approvedQuantity.toString();
+        }
+        return payload;
+      }
 
       final Map<String, dynamic> payload = <String, dynamic>{
         'name': name,
@@ -1188,12 +1290,11 @@ class _FieldExecutiveInstallationChecklistScreenState
         if (issueImage != null) 'images': <File>[issueImage],
       };
 
-      // Backend supports only one part per diagnosis for stock_in_hand.
-      // Use the first selected stock item and ignore the rest.
-      if (apiStatus == 'stock_in_hand' && selectedStockItems.isNotEmpty) {
-        final SelectedStockItem selectedStockItem = selectedStockItems.first;
-        payload['part_id'] = int.parse(selectedStockItem.productId);
-        payload['quantity'] = selectedStockItem.quantity;
+      if (apiStatus == 'stock_in_hand') {
+        if (resolvedPartId != null && resolvedQuantity != null) {
+          payload['part_id'] = resolvedPartId.toString();
+          payload['quantity'] = resolvedQuantity.toString();
+        }
       }
 
       return payload;
@@ -1221,6 +1322,15 @@ class _FieldExecutiveInstallationChecklistScreenState
     if (report.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please write report before submitting.')),
+      );
+      return;
+    }
+
+    final String? invalidApprovedPartData =
+        _firstMarkedUsedDiagnosisMissingApiPartData();
+    if (invalidApprovedPartData != null) {
+      _showMessageSnackBar(
+        'Approved part data missing from API for "$invalidApprovedPartData". Please refresh and try again.',
       );
       return;
     }
@@ -1272,6 +1382,23 @@ class _FieldExecutiveInstallationChecklistScreenState
           backgroundColor: response.success ? primaryGreen : Colors.red,
         ),
       );
+
+      if (response.success) {
+        _itemPartUsed.clear();
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.FieldExecutiveAllProductsScreen,
+          (route) => false,
+          arguments: fieldexecutiveallproductsArguments(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            flow: widget.flow,
+            controller: widget.controller,
+            serviceRequestId: _serviceRequestIdForApi(),
+          ),
+        );
+        return;
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1752,14 +1879,64 @@ class _FieldExecutiveInstallationChecklistScreenState
     );
   }
 
+  Widget _buildPartStatusBadge(String partStatus) {
+    late final Color color;
+    late final String label;
+
+    switch (partStatus) {
+      case 'waiting_for_approval':
+        color = Colors.orange;
+        label = 'Waiting for approval';
+        break;
+      case 'used':
+        color = primaryGreen;
+        label = 'Part Used';
+        break;
+      case 'customer_approved':
+        color = primaryGreen;
+        label = 'Customer Approved';
+        break;
+      default:
+        color = Colors.blueGrey;
+        label = partStatus;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
   Widget _buildChecklistItem(DiagnosisItem diagnosis) {
     final String title = diagnosis.name;
     final bool isExpanded = _expandedItems[title] ?? false;
     final String statusLabel = _resolvedStatusLabel(diagnosis);
+    final String partStatus = _normalizePartStatus(diagnosis.partStatus);
+    final bool isMarkedPartUsed = _itemPartUsed[title] == true;
     final bool hasStatus = statusLabel.isNotEmpty;
     final bool isWorking = _isWorkingStatus(statusLabel);
     final bool isNonWorking = _isNonWorkingStatus(statusLabel);
     final bool isUseStockInHand = _isUseStockInHandStatus(statusLabel);
+    final bool isWaitingForApproval = partStatus == 'waiting_for_approval';
+    final bool isCustomerApproved = partStatus == 'customer_approved';
+    final bool isPartUsed = partStatus == 'used';
+    final bool isLockedForStatusChange =
+        isWaitingForApproval || isPartUsed || isMarkedPartUsed;
+    final bool canMarkAsUsed =
+        isCustomerApproved && !isMarkedPartUsed;
     final String? reportText = _resolvedReportText(diagnosis);
     final File? issueImage = _itemIssueImage[title];
     final List<SelectedStockItem> selectedStockItems =
@@ -1839,7 +2016,80 @@ class _FieldExecutiveInstallationChecklistScreenState
                             ),
                           ),
                         ),
-                      if (isUseStockInHand)
+                      if (isUseStockInHand ||
+                          isWaitingForApproval ||
+                          isCustomerApproved ||
+                          isPartUsed ||
+                          isMarkedPartUsed)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (isUseStockInHand)
+                                _buildStatusBadge(
+                                  statusLabel.isEmpty
+                                      ? 'Use Stock in Hand'
+                                      : statusLabel,
+                                  isWorking: true,
+                                ),
+                              if (isWaitingForApproval ||
+                                  isCustomerApproved ||
+                                  isPartUsed)
+                                _buildPartStatusBadge(partStatus),
+                              if (canMarkAsUsed)
+                                OutlinedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _itemPartUsed[title] = true;
+                                      debugPrint('MARK USED -> $title = ${_itemPartUsed[title]}');
+                                    });
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: primaryGreen,
+                                    side: BorderSide(color: Colors.green.shade300),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Mark as Used',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                
+                              if (isMarkedPartUsed)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: Colors.green.shade200),
+                                  ),
+                                  child: Text(
+                                    'Part will be marked as used on submit',
+                                    style: TextStyle(
+                                      color: Colors.green.shade800,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      if (isUseStockInHand &&
+                          !isLockedForStatusChange &&
+                          !isCustomerApproved)
                         _buildInlineStockItemsEditor(
                           diagnosisName: title,
                           items: selectedStockItems,
@@ -1848,7 +2098,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (hasStatus) ...[
+                if (hasStatus && !isUseStockInHand) ...[
                   _buildStatusBadge(
                     statusLabel,
                     isWorking: isWorking,
@@ -1868,84 +2118,90 @@ class _FieldExecutiveInstallationChecklistScreenState
         if (isExpanded)
           Padding(
             padding: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showNotWorkingDialog(title),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isNonWorking
-                            ? Colors.red.shade50
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isNonWorking
-                              ? Colors.red
-                              : Colors.grey.shade200,
+                if (!isLockedForStatusChange) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _showNotWorkingDialog(title),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isNonWorking
+                                  ? Colors.red.shade50
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isNonWorking
+                                    ? Colors.red
+                                    : Colors.grey.shade200,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              isNonWorking ? statusLabel : 'Not Working',
+                              style: TextStyle(
+                                color: isNonWorking
+                                    ? Colors.red
+                                    : Colors.grey.shade500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        isNonWorking ? statusLabel : 'Not Working',
-                        style: TextStyle(
-                          color: isNonWorking
-                              ? Colors.red
-                              : Colors.grey.shade500,
-                          fontWeight: FontWeight.w500,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            final bool hadStockSelection = _hasSelectedStockItems(
+                              title,
+                            );
+                            setState(() {
+                              _itemStatus[title] = 'Working';
+                              _itemSelectedAction.remove(title);
+                              _itemProblemSolution.remove(title);
+                              _itemIssueImage.remove(title);
+                              _itemSelectedStockItems.remove(title);
+                              _expandedItems[title] = false;
+                            });
+                            if (hadStockSelection) {
+                              _showMessageSnackBar(
+                                'Stock selection cleared due to status change',
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isWorking
+                                  ? Colors.green.shade50
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isWorking
+                                    ? primaryGreen
+                                    : Colors.grey.shade200,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Working',
+                              style: TextStyle(
+                                color: isWorking
+                                    ? primaryGreen
+                                    : Colors.grey.shade500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      final bool hadStockSelection = _hasSelectedStockItems(
-                        title,
-                      );
-                      setState(() {
-                        _itemStatus[title] = 'Working';
-                        _itemSelectedAction.remove(title);
-                        _itemProblemSolution.remove(title);
-                        _itemIssueImage.remove(title);
-                        _itemSelectedStockItems.remove(title);
-                        _expandedItems[title] = false;
-                      });
-                      if (hadStockSelection) {
-                        _showMessageSnackBar(
-                          'Stock selection cleared due to status change',
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isWorking
-                            ? Colors.green.shade50
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isWorking
-                              ? primaryGreen
-                              : Colors.grey.shade200,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Working',
-                        style: TextStyle(
-                          color: isWorking
-                              ? primaryGreen
-                              : Colors.grey.shade500,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                ],
               ],
             ),
           ),
