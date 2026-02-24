@@ -1273,8 +1273,311 @@ class ApiService {
     }
   }
 
-  /// Fetch service requests list for field executive
-  /// GET /service-requests?user_id={userId}&role_id={roleId}
+  /// Fetch delivery requests list based on one delivery type only.
+  /// GET /pickup-requests OR /return-requests OR /part-requests
+  static Future<List<Map<String, dynamic>>> fetchDeliveryRequests({
+    required String deliveryType,
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchDeliveryRequests',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    final endpoint = DeliveryRequestTypes.endpointFor(normalizedType);
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId,
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load delivery requests: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Server returned non-JSON delivery request response');
+      }
+
+      List<dynamic> rawList = const [];
+      if (decoded is List) {
+        rawList = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        rawList = _extractDeliveryRequestList(decoded, normalizedType);
+      }
+
+      return rawList
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } on ArgumentError catch (e) {
+      debugPrint('Invalid delivery type: $e');
+      throw Exception('Invalid delivery type: $deliveryType');
+    } catch (e) {
+      debugPrint('Error fetching delivery requests: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetch single delivery request detail based on one delivery type only.
+  /// GET /pickup-request/{id} OR /return-request/{id} OR /part-request/{id}
+  static Future<Map<String, dynamic>> fetchDeliveryRequestDetail({
+    required String deliveryType,
+    required String deliveryId,
+    int roleId = 1,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling fetchDeliveryRequestDetail',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final sanitizedDeliveryId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (sanitizedDeliveryId.isEmpty) {
+      throw Exception('Invalid delivery id: $deliveryId');
+    }
+
+    final endpoint = DeliveryRequestTypes.detailEndpointFor(deliveryType);
+    final effectiveRoleId = (storedRoleId ?? roleId).toString();
+    final url = Uri.parse('$endpoint/$sanitizedDeliveryId').replace(
+      queryParameters: {
+        'role_id': effectiveRoleId,
+        'user_id': storedUserId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+
+      final response = await _performAuthenticatedGet(url);
+
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        debugPrint(
+          'HTML response detected for $url. Treating as authentication failure.',
+        );
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load delivery request details: ${response.statusCode}',
+        );
+      }
+
+      final dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Server returned non-JSON delivery request response');
+      }
+
+      final detail = _extractDeliveryRequestDetail(decoded, sanitizedDeliveryId);
+      return detail ?? const <String, dynamic>{};
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } on ArgumentError catch (e) {
+      debugPrint('Invalid delivery detail params: $e');
+      throw Exception(e.message ?? 'Invalid delivery request detail input');
+    } catch (e) {
+      debugPrint('Error fetching delivery request detail: $e');
+      rethrow;
+    }
+  }
+
+  static Map<String, dynamic>? _extractDeliveryRequestDetail(
+    dynamic response,
+    String deliveryId,
+  ) {
+    final normalizedDeliveryId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericDeliveryId = int.tryParse(normalizedDeliveryId);
+
+    bool matchesRequest(Map<String, dynamic> item) {
+      bool matchesValue(dynamic value) {
+        if (value == null) return false;
+        final asText = value.toString().trim();
+        if (asText.isEmpty) return false;
+        if (asText == normalizedDeliveryId) return true;
+        if (numericDeliveryId != null) {
+          final asNum = int.tryParse(asText);
+          return asNum != null && asNum == numericDeliveryId;
+        }
+        return false;
+      }
+
+      return matchesValue(item['id']) || matchesValue(item['request_id']);
+    }
+
+    Map<String, dynamic>? fromMap(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(value);
+      }
+      if (value is Map) {
+        return Map<String, dynamic>.from(value as Map);
+      }
+      return null;
+    }
+
+    List<Map<String, dynamic>> fromList(dynamic value) {
+      if (value is! List) return const <Map<String, dynamic>>[];
+      return value
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+
+    if (response is Map<String, dynamic>) {
+      const mapKeys = <String>[
+        'data',
+        'pickup_request',
+        'return_request',
+        'part_request',
+        'request',
+      ];
+      for (final key in mapKeys) {
+        final single = fromMap(response[key]);
+        if (single != null) return single;
+      }
+
+      const listKeys = <String>[
+        'data',
+        'pickup_requests',
+        'return_requests',
+        'part_requests',
+        'requests',
+        'items',
+      ];
+      for (final key in listKeys) {
+        final items = fromList(response[key]);
+        if (items.isEmpty) continue;
+        for (final item in items) {
+          if (matchesRequest(item)) return item;
+        }
+        return items.first;
+      }
+      return null;
+    }
+
+    if (response is List) {
+      final items = response
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (items.isEmpty) return null;
+      for (final item in items) {
+        if (matchesRequest(item)) return item;
+      }
+      return items.first;
+    }
+
+    return null;
+  }
+
+  static List<dynamic> _extractDeliveryRequestList(
+    Map<String, dynamic> response,
+    String deliveryType,
+  ) {
+    List<dynamic> readListFromKeys(Map<String, dynamic> source, List<String> keys) {
+      for (final key in keys) {
+        final value = source[key];
+        if (value is List) {
+          return value;
+        }
+      }
+      return const <dynamic>[];
+    }
+
+    final typeSpecificKeys = <String, List<String>>{
+      DeliveryRequestTypes.pickup: const ['pickup_requests', 'pickupRequests'],
+      DeliveryRequestTypes.returnRequest: const [
+        'return_requests',
+        'returnRequests',
+      ],
+      DeliveryRequestTypes.part: const ['part_requests', 'partRequests'],
+    };
+
+    final genericKeys = <String>[
+      'data',
+      'requests',
+      'delivery_requests',
+      'deliveryRequests',
+      'items',
+    ];
+
+    final fromTopLevel = readListFromKeys(
+      response,
+      <String>[
+        ...?typeSpecificKeys[deliveryType],
+        ...genericKeys,
+      ],
+    );
+    if (fromTopLevel.isNotEmpty) {
+      return fromTopLevel;
+    }
+
+    final nestedData = response['data'];
+    if (nestedData is Map<String, dynamic>) {
+      return readListFromKeys(
+        nestedData,
+        <String>[
+          ...?typeSpecificKeys[deliveryType],
+          ...genericKeys,
+        ],
+      );
+    }
+
+    return const <dynamic>[];
+  }
+
   static Future<List<Map<String, dynamic>>> fetchServiceRequests({
     int roleId = 1,
   }) async {
@@ -1935,6 +2238,246 @@ class ApiService {
     }
   }
 
+  /// Accept a delivery request for part / pickup / return.
+  /// POST /part-request/{id}/accept?role_id={roleId}&user_id={userId}
+  /// POST /pickup-request/{id}/accept?role_id={roleId}&user_id={userId}
+  /// POST /return-request/{id}/accept?role_id={roleId}&user_id={userId}
+  static Future<ApiResponse> acceptDeliveryRequest({
+    required String deliveryType,
+    required String deliveryId,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling acceptDeliveryRequest',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+    if (numericId == null) {
+      return ApiResponse(
+        success: false,
+        message: 'Invalid delivery id "$deliveryId". Expected numeric id.',
+      );
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+
+    String endpoint = DeliveryRequestTypes.acceptEndpointTemplateFor(deliveryType)
+        .replaceFirst('{id}', numericId.toString());
+
+    if (endpoint.contains('{id}')) {
+      endpoint = endpoint.replaceAll('{id}', numericId.toString());
+    } else if (!endpoint.contains('/$numericId/accept')) {
+      var base = endpoint.trim();
+      if (base.endsWith('/')) {
+        base = base.substring(0, base.length - 1);
+      }
+      if (base.endsWith('/accept')) {
+        base = base.substring(0, base.length - '/accept'.length);
+      }
+      endpoint = '$base/$numericId/accept';
+    }
+
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'role_id': effectiveRoleId,
+        'user_id': storedUserId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: POST $url');
+      final response = await _performAuthenticatedPost(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success
+                ? 'Delivery request accepted successfully'
+                : 'Failed to accept delivery request'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } on ArgumentError catch (e) {
+      return ApiResponse(
+        success: false,
+        message: e.message?.toString() ?? 'Invalid delivery type',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to accept delivery request: $e',
+      );
+    }
+  }
+
+  /// Send OTP for a delivery request for part / pickup / return.
+  /// POST /part-request/{id}/send-otp?role_id={roleId}&user_id={userId}
+  /// POST /pickup-request/{id}/send-otp?role_id={roleId}&user_id={userId}
+  /// POST /return-request/{id}/send-otp?role_id={roleId}&user_id={userId}
+  static Future<ApiResponse> sendDeliveryRequestOtp({
+    required String deliveryType,
+    required String deliveryId,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling sendDeliveryRequestOtp',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+    if (numericId == null) {
+      return ApiResponse(
+        success: false,
+        message: 'Invalid delivery id "$deliveryId". Expected numeric id.',
+      );
+    }
+
+    String endpoint;
+    try {
+      endpoint = DeliveryRequestTypes.sendOtpEndpointTemplateFor(deliveryType)
+          .replaceFirst('{id}', numericId.toString());
+    } on ArgumentError catch (e) {
+      return ApiResponse(
+        success: false,
+        message: e.message?.toString() ?? 'Invalid delivery type',
+      );
+    }
+
+    if (endpoint.contains('{id}')) {
+      endpoint = endpoint.replaceAll('{id}', numericId.toString());
+    } else if (!endpoint.contains('/$numericId/send-otp')) {
+      var base = endpoint.trim();
+      if (base.endsWith('/')) {
+        base = base.substring(0, base.length - 1);
+      }
+      if (base.endsWith('/send-otp')) {
+        base = base.substring(0, base.length - '/send-otp'.length);
+      }
+      endpoint = '$base/$numericId/send-otp';
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'role_id': effectiveRoleId,
+        'user_id': storedUserId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: POST $url');
+      final response = await _performAuthenticatedPost(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success ? 'OTP sent successfully' : 'Failed to send OTP'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to send OTP: $e',
+      );
+    }
+  }
+
   /// Send OTP for a field-executive service request start flow.
   /// POST /service-request/{id}/send-otp?user_id={userId}&role_id={roleId}
   static Future<ApiResponse> sendServiceRequestOtp(
@@ -2058,6 +2601,140 @@ class ApiService {
       return ApiResponse(
         success: false,
         message: 'Failed to send OTP: $e',
+      );
+    }
+  }
+
+  /// Verify OTP for a delivery request for part / pickup / return.
+  /// POST /part-request/{id}/verify-otp?role_id={roleId}&user_id={userId}
+  /// POST /pickup-request/{id}/verify-otp?role_id={roleId}&user_id={userId}
+  /// POST /return-request/{id}/verify-otp?role_id={roleId}&user_id={userId}
+  static Future<ApiResponse> verifyDeliveryRequestOtp({
+    required String deliveryType,
+    required String deliveryId,
+    required String otp,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling verifyDeliveryRequestOtp',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+    if (numericId == null) {
+      return ApiResponse(
+        success: false,
+        message: 'Invalid delivery id "$deliveryId". Expected numeric id.',
+      );
+    }
+
+    final normalizedOtp = otp.trim();
+    if (normalizedOtp.isEmpty) {
+      return ApiResponse(
+        success: false,
+        message: 'OTP is required.',
+      );
+    }
+
+    String endpoint;
+    try {
+      endpoint = DeliveryRequestTypes.verifyOtpEndpointTemplateFor(deliveryType)
+          .replaceFirst('{id}', numericId.toString());
+    } on ArgumentError catch (e) {
+      return ApiResponse(
+        success: false,
+        message: e.message?.toString() ?? 'Invalid delivery type',
+      );
+    }
+
+    if (endpoint.contains('{id}')) {
+      endpoint = endpoint.replaceAll('{id}', numericId.toString());
+    } else if (!endpoint.contains('/$numericId/verify-otp')) {
+      var base = endpoint.trim();
+      if (base.endsWith('/')) {
+        base = base.substring(0, base.length - 1);
+      }
+      if (base.endsWith('/verify-otp')) {
+        base = base.substring(0, base.length - '/verify-otp'.length);
+      }
+      endpoint = '$base/$numericId/verify-otp';
+    }
+
+    final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'role_id': effectiveRoleId,
+        'user_id': storedUserId.toString(),
+      },
+    );
+
+    final body = <String, String>{
+      'otp': normalizedOtp,
+    };
+
+    try {
+      debugPrint('API Request: POST $url');
+      debugPrint('API Request Body: $body');
+      final response = await _performAuthenticatedPost(url, body: body);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success ? 'OTP verified successfully' : 'Invalid or expired OTP'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to verify OTP: $e',
       );
     }
   }

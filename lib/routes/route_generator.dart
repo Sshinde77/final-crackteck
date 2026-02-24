@@ -29,6 +29,10 @@ import '../screens/Field_executive/field_executive_add_product.dart';
 import '../screens/Field_executive/field_executive_all_products_screen.dart';
 import '../screens/Field_executive/field_executive_case_transfer_screen.dart';
 import '../screens/Field_executive/field_executive_cash_in_hand.dart';
+import '../screens/Field_executive/field_executive_delivery_map_tracking_screen.dart';
+import '../screens/Field_executive/field_executive_delivery_otp_verification_screen.dart';
+import '../screens/Field_executive/field_executive_delivery_product_detail_screen.dart';
+import '../screens/Field_executive/field_executive_delivery_request_list_screen.dart';
 import '../screens/Field_executive/field_executive_dashboard.dart';
 import '../screens/Field_executive/field_executive_delivery_screen.dart';
 import '../screens/Field_executive/field_executive_detail_requested_product.dart' as detail_requested;
@@ -401,6 +405,105 @@ class RouteGenerator {
                 roleId: args.roleId,
                 roleName: args.roleName,
               ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryRequestListScreen:
+        final rawArgs = settings.arguments;
+        int? roleId;
+        String? roleName;
+        String? deliveryType;
+
+        if (rawArgs is deliveryrequestlistArguments) {
+          roleId = rawArgs.roleId;
+          roleName = rawArgs.roleName;
+          deliveryType = rawArgs.deliveryType;
+        } else if (rawArgs is Map) {
+          final roleIdRaw = rawArgs['roleId'] ?? rawArgs['role_id'];
+          if (roleIdRaw is int) {
+            roleId = roleIdRaw;
+          } else if (roleIdRaw is String) {
+            roleId = int.tryParse(roleIdRaw);
+          }
+          roleName = (rawArgs['roleName'] ?? rawArgs['role_name'])?.toString();
+          deliveryType = rawArgs['deliveryType']?.toString();
+        }
+
+        if (deliveryType == null || deliveryType.isEmpty) {
+          return _errorRoute('Arguments missing');
+        }
+
+        final safeRoleId = roleId ?? 1;
+        final safeRoleName = (roleName == null || roleName.isEmpty)
+            ? 'Field Executive'
+            : roleName;
+        final safeDeliveryType = deliveryType;
+
+        return MaterialPageRoute(
+          builder: (_) => DeliveryRequestListScreen(
+            roleId: safeRoleId,
+            roleName: safeRoleName,
+            deliveryType: safeDeliveryType!,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryProductDetailScreen:
+        final args = settings.arguments as deliveryproductdetailArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryProductDetailScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            deliveryType: args.deliveryType,
+            deliveryId: args.deliveryId,
+            requestType: args.requestType,
+            requestId: args.requestId,
+            productName: args.productName,
+            location: args.location,
+            status: args.status,
+            customerName: args.customerName,
+            customerPhone: args.customerPhone,
+            customerAddress: args.customerAddress,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryMapTrackingScreen:
+        final args = settings.arguments as deliverymaptrackingArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryMapTrackingScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            deliveryType: args.deliveryType,
+            deliveryId: args.deliveryId,
+            requestId: args.requestId,
+            productName: args.productName,
+            customerName: args.customerName,
+            customerPhone: args.customerPhone,
+            customerAddress: args.customerAddress,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryOtpVerificationScreen:
+        final args = settings.arguments as deliveryotpverificationArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryOtpVerificationScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            deliveryType: args.deliveryType,
+            deliveryId: args.deliveryId,
+            requestId: args.requestId,
+          ),
           settings: settings,
         );
 

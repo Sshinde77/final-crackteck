@@ -1,5 +1,6 @@
 import '../model/field executive/field_executive_product_service.dart';
 import '../model/field executive/selected_stock_item.dart';
+import '../constants/api_constants.dart';
 
 /// App-wide route name constants
 class AppRoutes {
@@ -45,6 +46,10 @@ class AppRoutes {
   static const String FieldExecutiveProductPaymentScreen = '/field_executive_product_payment';
   static const String FieldExecutiveCashInHandScreen = '/field_executive_cash_in_hand';
   static const String FieldExecutiveDeliveryScreen = '/field_executive_delivery';
+  static const String DeliveryRequestListScreen = '/delivery_request_list';
+  static const String DeliveryProductDetailScreen = '/delivery_product_detail';
+  static const String DeliveryMapTrackingScreen = '/delivery_map_tracking';
+  static const String DeliveryOtpVerificationScreen = '/delivery_otp_verification';
   static const String FieldExecutivePaymentReceiptsScreen = '/field_executive_payment_receipts';
   static const String FieldExecutivePaymentDoneScreen = '/field_executive_payment_done';
   static const String FieldExecutiveWorkCallScreen = '/field_executive_work_call';
@@ -215,6 +220,90 @@ class fieldexecutivedeliveryArguments {
   final String roleName;
 
   fieldexecutivedeliveryArguments({required this.roleId, required this.roleName});
+}
+
+class deliveryrequestlistArguments {
+  final int roleId;
+  final String roleName;
+  final String deliveryType;
+
+  String get requestType => DeliveryRequestTypes.labelFor(deliveryType);
+
+  deliveryrequestlistArguments({
+    required this.roleId,
+    required this.roleName,
+    required this.deliveryType,
+  });
+}
+
+class deliveryproductdetailArguments {
+  final int roleId;
+  final String roleName;
+  final String deliveryType;
+  final String deliveryId;
+  final String requestType;
+  final String requestId;
+  final String productName;
+  final String location;
+  final String status;
+  final String customerName;
+  final String customerPhone;
+  final String customerAddress;
+
+  deliveryproductdetailArguments({
+    required this.roleId,
+    required this.roleName,
+    required this.deliveryType,
+    required this.deliveryId,
+    required this.requestType,
+    required this.requestId,
+    required this.productName,
+    required this.location,
+    required this.status,
+    required this.customerName,
+    required this.customerPhone,
+    required this.customerAddress,
+  });
+}
+
+class deliverymaptrackingArguments {
+  final int roleId;
+  final String roleName;
+  final String deliveryType;
+  final String deliveryId;
+  final String requestId;
+  final String productName;
+  final String customerName;
+  final String customerPhone;
+  final String customerAddress;
+
+  deliverymaptrackingArguments({
+    required this.roleId,
+    required this.roleName,
+    required this.deliveryType,
+    required this.deliveryId,
+    required this.requestId,
+    required this.productName,
+    required this.customerName,
+    required this.customerPhone,
+    required this.customerAddress,
+  });
+}
+
+class deliveryotpverificationArguments {
+  final int roleId;
+  final String roleName;
+  final String deliveryType;
+  final String deliveryId;
+  final String requestId;
+
+  deliveryotpverificationArguments({
+    required this.roleId,
+    required this.roleName,
+    required this.deliveryType,
+    required this.deliveryId,
+    required this.requestId,
+  });
 }
 
 class fieldexecutivepaymentreceiptsArguments {

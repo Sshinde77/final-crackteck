@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../constants/api_constants.dart';
 import '../../routes/app_routes.dart';
 
 class FieldExecutiveDeliveryScreen extends StatelessWidget {
@@ -43,10 +44,11 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pushNamed(
                   context,
-                  AppRoutes.RepairRequestScreen,
-                  arguments: fieldexecutiveRepairRequestArguments(
+                  AppRoutes.DeliveryRequestListScreen,
+                  arguments: deliveryrequestlistArguments(
                     roleId: roleId,
                     roleName: roleName,
+                    deliveryType: DeliveryRequestTypes.returnRequest,
                   ),
                 );
               },
@@ -58,10 +60,11 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pushNamed(
                   context,
-                  AppRoutes.PickupMaterialsScreen,
-                  arguments: fieldexecutivePickupMaterialArguments(
+                  AppRoutes.DeliveryRequestListScreen,
+                  arguments: deliveryrequestlistArguments(
                     roleId: roleId,
                     roleName: roleName,
+                    deliveryType: DeliveryRequestTypes.pickup,
                   ),
                 );
               },
@@ -73,10 +76,11 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pushNamed(
                   context,
-                  AppRoutes.FieldExecutiveAddProductScreen,
-                  arguments: fieldexecutiveaddproductArguments(
+                  AppRoutes.DeliveryRequestListScreen,
+                  arguments: deliveryrequestlistArguments(
                     roleId: roleId,
                     roleName: roleName,
+                    deliveryType: DeliveryRequestTypes.part,
                   ),
                 );
               },

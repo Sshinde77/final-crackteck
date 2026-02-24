@@ -84,9 +84,138 @@ class ApiConstants {
       "$baseUrl/products/{product_id}";
   static const String Requestnewproduct =
       "$baseUrl/stock-in-hand/request";
+  static const String deliverypickuprequestlist =
+      "$baseUrl/pickup-requests";
+  static const String deliveryreturnrequestlist =
+      "$baseUrl/return-requests";
+  static const String deliverypartrequestlist =
+      "$baseUrl/part-requests";
+  static const String deliverypickuprequestdetail =
+      "$baseUrl/pickup-request";
+  static const String deliveryreturnrequestdetail =
+      "$baseUrl/return-request";
+  static const String deliverypartrequestdetail =
+      "$baseUrl/part-request";
+
+  static const String deliverypickuprequestaccept =
+      "$baseUrl/pickup-request/{id}/accept";
+  static const String deliveryreturnrequestaccept =
+      "$baseUrl/return-request/{id}/accept";
+  static const String deliverypartrequestaccept =
+      "$baseUrl/part-request/{id}/accept";
+
+  static const String deliverypickuprequestsendotp =
+      "$baseUrl/pickup-request/{id}/send-otp";
+  static const String deliveryreturnrequestsendotp =
+      "$baseUrl/return-request/{id}/send-otp";
+  static const String deliverypartrequestsendotp =
+      "$baseUrl/part-request/{id}/send-otp";
+
+  static const String deliverypickuprequestverifyotp =
+      "$baseUrl/pickup-request/{id}/verify-otp";
+  static const String deliveryreturnrequestverifyotp =
+      "$baseUrl/return-request/{id}/verify-otp";
+  static const String deliverypartrequestverifyotp =
+      "$baseUrl/part-request/{id}/verify-otp";
+
+
 
 
 
   // Country Code
   static const String defaultCountryCode = '+91';
+}
+
+/// Delivery request type helper.
+///
+/// Use one `deliveryType` identifier end-to-end and resolve label/endpoint
+/// from here so widgets don't hardcode API URLs.
+class DeliveryRequestTypes {
+  DeliveryRequestTypes._();
+
+  static const String pickup = 'pickup';
+  static const String returnRequest = 'return';
+  static const String part = 'part';
+
+  static String normalize(String deliveryType) {
+    return deliveryType.trim().toLowerCase();
+  }
+
+  static String labelFor(String deliveryType) {
+    switch (normalize(deliveryType)) {
+      case pickup:
+        return 'Pickup Request';
+      case returnRequest:
+        return 'Return Request';
+      case part:
+        return 'Part Request';
+      default:
+        return 'Delivery Request';
+    }
+  }
+
+  static String endpointFor(String deliveryType) {
+    switch (normalize(deliveryType)) {
+      case pickup:
+        return ApiConstants.deliverypickuprequestlist;
+      case returnRequest:
+        return ApiConstants.deliveryreturnrequestlist;
+      case part:
+        return ApiConstants.deliverypartrequestlist;
+      default:
+        throw ArgumentError('Invalid delivery type: $deliveryType');
+    }
+  }
+
+  static String detailEndpointFor(String deliveryType) {
+    switch (normalize(deliveryType)) {
+      case pickup:
+        return ApiConstants.deliverypickuprequestdetail;
+      case returnRequest:
+        return ApiConstants.deliveryreturnrequestdetail;
+      case part:
+        return ApiConstants.deliverypartrequestdetail;
+      default:
+        throw ArgumentError('Invalid delivery type: $deliveryType');
+    }
+  }
+
+  static String acceptEndpointTemplateFor(String deliveryType) {
+    switch (normalize(deliveryType)) {
+      case pickup:
+        return ApiConstants.deliverypickuprequestaccept;
+      case returnRequest:
+        return ApiConstants.deliveryreturnrequestaccept;
+      case part:
+        return ApiConstants.deliverypartrequestaccept;
+      default:
+        throw ArgumentError('Invalid delivery type: $deliveryType');
+    }
+  }
+
+  static String sendOtpEndpointTemplateFor(String deliveryType) {
+    switch (normalize(deliveryType)) {
+      case pickup:
+        return ApiConstants.deliverypickuprequestsendotp;
+      case returnRequest:
+        return ApiConstants.deliveryreturnrequestsendotp;
+      case part:
+        return ApiConstants.deliverypartrequestsendotp;
+      default:
+        throw ArgumentError('Invalid delivery type: $deliveryType');
+    }
+  }
+
+  static String verifyOtpEndpointTemplateFor(String deliveryType) {
+    switch (normalize(deliveryType)) {
+      case pickup:
+        return ApiConstants.deliverypickuprequestverifyotp;
+      case returnRequest:
+        return ApiConstants.deliveryreturnrequestverifyotp;
+      case part:
+        return ApiConstants.deliverypartrequestverifyotp;
+      default:
+        throw ArgumentError('Invalid delivery type: $deliveryType');
+    }
+  }
 }
