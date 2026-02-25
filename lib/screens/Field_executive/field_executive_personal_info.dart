@@ -1,18 +1,78 @@
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
+
 class FieldExecutivePersonalInfo extends StatefulWidget {
   final int roleId;
   final String roleName;
-  const FieldExecutivePersonalInfo({super.key,    required this.roleId,
-    required this.roleName,});
+
+  const FieldExecutivePersonalInfo({
+    super.key,
+    required this.roleId,
+    required this.roleName,
+  });
 
   @override
-  State<FieldExecutivePersonalInfo> createState() => _FieldExecutivePersonalInfoState();
+  State<FieldExecutivePersonalInfo> createState() =>
+      _FieldExecutivePersonalInfoState();
 }
 
 class _FieldExecutivePersonalInfoState extends State<FieldExecutivePersonalInfo> {
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  String _firstName = '-';
+  String _lastName = '-';
+  String _phone = '-';
+  String _email = '-';
+  String _dob = '-';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  String _readValue(Map<String, dynamic> source, String key) {
+    final value = source[key];
+    if (value == null) return '-';
+    final text = value.toString().trim();
+    return text.isEmpty ? '-' : text;
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final profile = await ApiService.fetchFieldExecutivePersonalInfo(
+        roleId: widget.roleId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _firstName = _readValue(profile, 'first_name');
+        _lastName = _readValue(profile, 'last_name');
+        _phone = _readValue(profile, 'phone');
+        _email = _readValue(profile, 'email');
+        _dob = _readValue(profile, 'dob');
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +96,7 @@ class _FieldExecutivePersonalInfoState extends State<FieldExecutivePersonalInfo>
           ),
         ),
         title: const Text(
-          "Personal info",
+          'Personal info',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
@@ -45,83 +105,89 @@ class _FieldExecutivePersonalInfoState extends State<FieldExecutivePersonalInfo>
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            _buildTextField(label: "", placeholder: "Select"),
-            const SizedBox(height: 16),
-            _buildTextField(label: "", placeholder: "Add More Field"),
-            const SizedBox(height: 16),
-            _buildTextField(label: "Name", placeholder: ""),
-            const SizedBox(height: 16),
-            _buildTextField(label: "Number", placeholder: "+91", isNumber: true),
-            const SizedBox(height: 16),
-            _buildTextField(label: "Email", placeholder: ""),
-            const SizedBox(height: 16),
-            _buildTextField(label: "Address", placeholder: ""),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: darkGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  "Edit",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            ],
-          ),
+          child: _buildBody(),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({required String label, required String placeholder, bool isNumber = false}) {
-    return Column(
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadProfile,
+              style: ElevatedButton.styleFrom(backgroundColor: darkGreen),
+              child: const Text('Retry', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Column(
+          children: [
+            _infoRow(label: 'First Name', value: _firstName),
+            const Divider(height: 20),
+            _infoRow(label: 'Last Name', value: _lastName),
+            const Divider(height: 20),
+            _infoRow(label: 'Phone', value: _phone),
+            const Divider(height: 20),
+            _infoRow(label: 'Email', value: _email),
+            const Divider(height: 20),
+            _infoRow(label: 'DOB', value: _dob),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow({required String label, required String value}) {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label.isNotEmpty) ...[
-          Text(
+        SizedBox(
+          width: 100,
+          child: Text(
             label,
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
             ),
           ),
-          const SizedBox(height: 8),
-        ],
-        TextField(
-          keyboardType: isNumber ? TextInputType.phone : TextInputType.text,
-          decoration: InputDecoration(
-            hintText: placeholder,
-            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: midGreen),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
         ),

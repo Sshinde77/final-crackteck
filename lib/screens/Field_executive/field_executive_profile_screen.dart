@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -32,9 +33,161 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
   bool _isLoggingOut = false;
+  bool _isClockingIn = false;
+  bool _isClockingOut = false;
 
   String loginTime = "00:00 AM";
   String logoutTime = "00:00 PM";
+
+  String _formatTime(DateTime dateTime) {
+    return DateFormat('hh:mm a').format(dateTime.toLocal());
+  }
+
+  DateTime? _parseClockInDateTime(dynamic source, {int depth = 0}) {
+    if (source == null || depth > 4) return null;
+
+    if (source is Map<String, dynamic>) {
+      final raw = source['login_at'] ?? source['check_in_at'] ?? source['clock_in_at'];
+      if (raw is String && raw.trim().isNotEmpty) {
+        final parsed = DateTime.tryParse(raw.trim());
+        if (parsed != null) return parsed;
+      }
+
+      final nestedAuthLog = source['auth_log'];
+      final nestedParsed = _parseClockInDateTime(nestedAuthLog, depth: depth + 1);
+      if (nestedParsed != null) return nestedParsed;
+
+      for (final value in source.values) {
+        final parsed = _parseClockInDateTime(value, depth: depth + 1);
+        if (parsed != null) return parsed;
+      }
+      return null;
+    }
+
+    if (source is List) {
+      for (final item in source) {
+        final parsed = _parseClockInDateTime(item, depth: depth + 1);
+        if (parsed != null) return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  DateTime? _parseClockOutDateTime(dynamic source, {int depth = 0}) {
+    if (source == null || depth > 4) return null;
+
+    if (source is Map<String, dynamic>) {
+      final raw = source['logout_at'] ?? source['check_out_at'] ?? source['clock_out_at'];
+      if (raw is String && raw.trim().isNotEmpty) {
+        final parsed = DateTime.tryParse(raw.trim());
+        if (parsed != null) return parsed;
+      }
+
+      final nestedAuthLog = source['auth_log'];
+      final nestedParsed = _parseClockOutDateTime(nestedAuthLog, depth: depth + 1);
+      if (nestedParsed != null) return nestedParsed;
+
+      for (final value in source.values) {
+        final parsed = _parseClockOutDateTime(value, depth: depth + 1);
+        if (parsed != null) return parsed;
+      }
+      return null;
+    }
+
+    if (source is List) {
+      for (final item in source) {
+        final parsed = _parseClockOutDateTime(item, depth: depth + 1);
+        if (parsed != null) return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _handleClockIn() async {
+    if (_isClockingIn) return;
+
+    setState(() => _isClockingIn = true);
+
+    try {
+      final response = await ApiService.instance.clockIn(roleId: widget.roleId);
+      if (!mounted) return;
+
+      if (!response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message ?? 'Clock-in failed. Please try again.'),
+          ),
+        );
+        return;
+      }
+
+      final parsedLoginAt = _parseClockInDateTime(response.data);
+      setState(() {
+        loginTime = _formatTime(parsedLoginAt ?? DateTime.now());
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message ?? 'Clock-in successful.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong during clock-in. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isClockingIn = false);
+      }
+    }
+  }
+
+  Future<void> _handleClockOut() async {
+    if (_isClockingOut) return;
+
+    setState(() => _isClockingOut = true);
+
+    try {
+      final response = await ApiService.instance.clockOut(roleId: widget.roleId);
+      if (!mounted) return;
+
+      if (!response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message ?? 'Clock-out failed. Please try again.'),
+          ),
+        );
+        return;
+      }
+
+      final parsedLogoutAt = _parseClockOutDateTime(response.data);
+      setState(() {
+        logoutTime = _formatTime(parsedLogoutAt ?? DateTime.now());
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message ?? 'Clock-out successful.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong during clock-out. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isClockingOut = false);
+      }
+    }
+  }
 
   Future<void> _handleLogout() async {
     if (_isLoggingOut) return;
@@ -153,25 +306,25 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                   children: [
                     Expanded(
                       child: _TimeCard(
-                        title: "Login",
+                        title: "Clockin",
                         time: loginTime,
                         bg: const Color(0xFFE9FFE6),
                         iconBg: const Color(0xFF2E7D32),
-                        icon: Icons.login,
+                        icon: _isClockingIn ? Icons.sync : Icons.login,
                         titleColor: const Color(0xFF2E7D32),
-                        onTap: () => setState(() => loginTime = "09:00 AM"),
+                        onTap: _isClockingIn ? () {} : _handleClockIn,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _TimeCard(
-                        title: "Logout",
+                        title: "Clockout",
                         time: logoutTime,
                         bg: const Color(0xFFFFE9E9),
                         iconBg: const Color(0xFFD32F2F),
-                        icon: Icons.logout,
+                        icon: _isClockingOut ? Icons.sync : Icons.logout,
                         titleColor: const Color(0xFFD32F2F),
-                        onTap: () => setState(() => logoutTime = "06:00 PM"),
+                        onTap: _isClockingOut ? () {} : _handleClockOut,
                       ),
                     ),
                   ],
@@ -188,7 +341,10 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const FieldExecutivePersonalInfo( roleId: 0, roleName: '', ),
+                      builder: (context) => FieldExecutivePersonalInfo(
+                        roleId: widget.roleId,
+                        roleName: widget.roleName,
+                      ),
                     ),
                   );
                 },

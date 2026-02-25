@@ -4,8 +4,14 @@ class ApiConstants {
 
   // Base URL Configuration
 
-  // Current Configuration: Android Emulator
-  static const String baseUrl = 'https://crackteck.co.in/api/v1';
+  // Override with:
+  // flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1  (Android emulator)
+  // flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1 (iOS simulator/Desktop)
+  // flutter run --dart-define=API_BASE_URL=http://<LAN-IP>:8000/api/v1   (Physical device)
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://crackteck.co.in/api/v1',
+  );
 
   // Authentication Endpoints
   static const String login = '$baseUrl/send-otp';
@@ -117,6 +123,16 @@ class ApiConstants {
       "$baseUrl/return-request/{id}/verify-otp";
   static const String deliverypartrequestverifyotp =
       "$baseUrl/part-request/{id}/verify-otp";
+
+  static const String fieldexecutiveclockin =
+      "$baseUrl/check-in";
+  static const String fieldexecutiveclockout =
+      "$baseUrl/check-out";
+  static const String fieldexecutiveattendance =
+      "$baseUrl/attendance";
+
+  static const String fieldexecutivepersonalinfo =
+      "$baseUrl/profile";
 
 
 

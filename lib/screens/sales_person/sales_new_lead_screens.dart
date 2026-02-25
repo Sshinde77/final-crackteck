@@ -506,7 +506,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                         'user_id': userId,
                         'requirement_type': requirementTypeCtrl.text.trim(),
                         'budget_range': budgetRangeCtrl.text.trim(),
-                        'urgency': _selectedUrgency ?? '',
+                        'urgency': (_selectedUrgency ?? '').toLowerCase(),
                         'status': 'New',
                       };
 
@@ -553,8 +553,14 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                           token: accessToken,
                         );
                       } else {
+                        final uri = Uri.parse(ApiConstants.new_lead).replace(
+                          queryParameters: {
+                            'user_id': userId.toString(),
+                            'role_id': widget.roleId.toString(),
+                          },
+                        );
                         response = await ApiService.post(
-                          ApiConstants.new_lead,
+                          uri.toString(),
                           body,
                           token: accessToken,
                         );

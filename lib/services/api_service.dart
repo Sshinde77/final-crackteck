@@ -698,6 +698,150 @@ class ApiService {
     }
   }
 
+  /// Field Executive Clock-In
+  ///
+  /// POST /check-in?user_id={userId}&role_id={roleId}
+  Future<ApiResponse> clockIn({required int roleId}) async {
+    try {
+      final storedUserId = await SecureStorageService.getUserId();
+      final storedRoleId = await SecureStorageService.getRoleId();
+      final effectiveRoleId = storedRoleId ?? (roleId > 0 ? roleId : null);
+
+      if (storedUserId == null || effectiveRoleId == null) {
+        return ApiResponse(
+          success: false,
+          message: 'Missing user/role information. Please log in again.',
+        );
+      }
+
+      final uri = Uri.parse(ApiConstants.fieldexecutiveclockin).replace(
+        queryParameters: {
+          'user_id': storedUserId.toString(),
+          'role_id': effectiveRoleId.toString(),
+        },
+      );
+
+      debugPrint('API Request: POST $uri');
+      final response = await _performAuthenticatedPost(uri);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      final jsonResponse = _safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      final bool success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: jsonResponse['message'] ??
+            (success ? 'Clock-in successful' : 'Clock-in failed'),
+        // Keep the full response when "data" is not present
+        // so screens can still read fields like auth_log.login_at.
+        data: jsonResponse['data'] ?? jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } catch (e) {
+      debugPrint('Clock-in error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Unexpected error during clock-in: $e',
+      );
+    }
+  }
+
+  /// Field Executive Clock-Out
+  ///
+  /// POST /check-out?user_id={userId}&role_id={roleId}
+  Future<ApiResponse> clockOut({required int roleId}) async {
+    try {
+      final storedUserId = await SecureStorageService.getUserId();
+      final storedRoleId = await SecureStorageService.getRoleId();
+      final effectiveRoleId = storedRoleId ?? (roleId > 0 ? roleId : null);
+
+      if (storedUserId == null || effectiveRoleId == null) {
+        return ApiResponse(
+          success: false,
+          message: 'Missing user/role information. Please log in again.',
+        );
+      }
+
+      final uri = Uri.parse(ApiConstants.fieldexecutiveclockout).replace(
+        queryParameters: {
+          'user_id': storedUserId.toString(),
+          'role_id': effectiveRoleId.toString(),
+        },
+      );
+
+      debugPrint('API Request: POST $uri');
+      final response = await _performAuthenticatedPost(uri);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      final jsonResponse = _safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      final bool success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: jsonResponse['message'] ??
+            (success ? 'Clock-out successful' : 'Clock-out failed'),
+        // Keep the full response when "data" is not present
+        // so screens can still read fields like auth_log.logout_at.
+        data: jsonResponse['data'] ?? jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } catch (e) {
+      debugPrint('Clock-out error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Unexpected error during clock-out: $e',
+      );
+    }
+  }
+
   /// Register vehicle for Delivery Person
   ///
   /// POST /vehicle-registration?role_id={roleId}&brand={brand}&model={model}
@@ -5023,6 +5167,103 @@ class ApiService {
       throw Exception('No internet connection. Please check your network.');
     } catch (e) {
       debugPrint('🔴 Error fetching profile: $e');
+      throw Exception('Failed to load profile: $e');
+    }
+  }
+
+  /// Fetch profile data for the currently authenticated field executive.
+  /// GET /profile?user_id={userId}&role_id={roleId}
+  static Future<Map<String, dynamic>> fetchFieldExecutivePersonalInfo({
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId = storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchFieldExecutivePersonalInfo',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final url = Uri.parse(ApiConstants.fieldexecutivepersonalinfo).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load field executive profile: ${response.statusCode}');
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      if (decoded is! Map<String, dynamic>) {
+        return <String, dynamic>{};
+      }
+
+      final candidateMaps = <Map<String, dynamic>>[decoded];
+      if (decoded['data'] is Map<String, dynamic>) {
+        final dataMap = decoded['data'] as Map<String, dynamic>;
+        candidateMaps.add(dataMap);
+        if (dataMap['user'] is Map<String, dynamic>) {
+          candidateMaps.add(dataMap['user'] as Map<String, dynamic>);
+        }
+        if (dataMap['staff'] is Map<String, dynamic>) {
+          candidateMaps.add(dataMap['staff'] as Map<String, dynamic>);
+        }
+        if (dataMap['profile'] is Map<String, dynamic>) {
+          candidateMaps.add(dataMap['profile'] as Map<String, dynamic>);
+        }
+      }
+      if (decoded['user'] is Map<String, dynamic>) {
+        candidateMaps.add(decoded['user'] as Map<String, dynamic>);
+      }
+      if (decoded['staff'] is Map<String, dynamic>) {
+        candidateMaps.add(decoded['staff'] as Map<String, dynamic>);
+      }
+      if (decoded['profile'] is Map<String, dynamic>) {
+        candidateMaps.add(decoded['profile'] as Map<String, dynamic>);
+      }
+
+      for (final map in candidateMaps) {
+        if (map.containsKey('first_name') ||
+            map.containsKey('last_name') ||
+            map.containsKey('phone') ||
+            map.containsKey('email') ||
+            map.containsKey('dob')) {
+          return Map<String, dynamic>.from(map);
+        }
+      }
+
+      return decoded;
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching field executive profile: $e');
       throw Exception('Failed to load profile: $e');
     }
   }
