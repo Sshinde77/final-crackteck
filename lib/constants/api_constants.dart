@@ -134,6 +134,12 @@ class ApiConstants {
   static const String fieldexecutivepersonalinfo =
       "$baseUrl/profile";
 
+  static const String fieldexecutivefeedback =
+      "$baseUrl/get-all-feedback";
+
+  static const String fieldexecutivefeedbackdetail =
+      "$baseUrl/get-feedback";
+
 
 
 

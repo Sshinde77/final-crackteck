@@ -413,11 +413,13 @@ class RouteGenerator {
         int? roleId;
         String? roleName;
         String? deliveryType;
+        bool? showCompletedOnly;
 
         if (rawArgs is deliveryrequestlistArguments) {
           roleId = rawArgs.roleId;
           roleName = rawArgs.roleName;
           deliveryType = rawArgs.deliveryType;
+          showCompletedOnly = rawArgs.showCompletedOnly;
         } else if (rawArgs is Map) {
           final roleIdRaw = rawArgs['roleId'] ?? rawArgs['role_id'];
           if (roleIdRaw is int) {
@@ -427,6 +429,13 @@ class RouteGenerator {
           }
           roleName = (rawArgs['roleName'] ?? rawArgs['role_name'])?.toString();
           deliveryType = rawArgs['deliveryType']?.toString();
+          final showCompletedRaw =
+              rawArgs['showCompletedOnly'] ?? rawArgs['show_completed_only'];
+          if (showCompletedRaw is bool) {
+            showCompletedOnly = showCompletedRaw;
+          } else if (showCompletedRaw is String) {
+            showCompletedOnly = showCompletedRaw.toLowerCase() == 'true';
+          }
         }
 
         if (deliveryType == null || deliveryType.isEmpty) {
@@ -438,12 +447,14 @@ class RouteGenerator {
             ? 'Field Executive'
             : roleName;
         final safeDeliveryType = deliveryType;
+        final safeShowCompletedOnly = showCompletedOnly ?? false;
 
         return MaterialPageRoute(
           builder: (_) => DeliveryRequestListScreen(
             roleId: safeRoleId,
             roleName: safeRoleName,
             deliveryType: safeDeliveryType!,
+            showCompletedOnly: safeShowCompletedOnly,
           ),
           settings: settings,
         );

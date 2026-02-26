@@ -9,12 +9,14 @@ class DeliveryRequestListScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
   final String deliveryType;
+  final bool showCompletedOnly;
 
   const DeliveryRequestListScreen({
     super.key,
     required this.roleId,
     required this.roleName,
     required this.deliveryType,
+    this.showCompletedOnly = false,
   });
 
   @override
@@ -50,9 +52,23 @@ class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
         roleId: widget.roleId,
       );
 
+      final parsedRequests =
+          rawRequests.map(DeliveryRequestModel.fromJson).toList();
+      final normalizedType = DeliveryRequestTypes.normalize(widget.deliveryType);
+      final isPickupType = normalizedType == DeliveryRequestTypes.pickup;
+      final visibleRequests = widget.showCompletedOnly
+          ? parsedRequests
+              .where((request) => _isCompletedStatus(request.status))
+              .toList()
+          : isPickupType
+              ? parsedRequests
+                  .where((request) => !_isCompletedStatus(request.status))
+                  .toList()
+              : parsedRequests;
+
       if (!mounted) return;
       setState(() {
-        _requests = rawRequests.map(DeliveryRequestModel.fromJson).toList();
+        _requests = visibleRequests;
         _isLoading = false;
       });
     } catch (error) {
@@ -62,6 +78,10 @@ class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  bool _isCompletedStatus(String status) {
+    return status.trim().toLowerCase() == 'completed';
   }
 
   String _cleanErrorMessage(Object error) {
@@ -113,10 +133,17 @@ class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
     }
 
     if (_requests.isEmpty) {
-      return const Center(
+      final normalizedType = DeliveryRequestTypes.normalize(widget.deliveryType);
+      final isPickupType = normalizedType == DeliveryRequestTypes.pickup;
+      final emptyMessage = widget.showCompletedOnly
+          ? 'No completed ${_requestTypeLabel.toLowerCase()} requests found'
+          : isPickupType
+              ? 'No pending pickup requests found'
+              : 'No delivery requests found';
+      return Center(
         child: Text(
-          'No delivery requests found',
-          style: TextStyle(
+          emptyMessage,
+          style: const TextStyle(
             fontSize: 14,
             color: Color(0xFF6B7280),
             fontWeight: FontWeight.w600,

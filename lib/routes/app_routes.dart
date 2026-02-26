@@ -226,6 +226,7 @@ class deliveryrequestlistArguments {
   final int roleId;
   final String roleName;
   final String deliveryType;
+  final bool showCompletedOnly;
 
   String get requestType => DeliveryRequestTypes.labelFor(deliveryType);
 
@@ -233,6 +234,7 @@ class deliveryrequestlistArguments {
     required this.roleId,
     required this.roleName,
     required this.deliveryType,
+    this.showCompletedOnly = false,
   });
 }
 

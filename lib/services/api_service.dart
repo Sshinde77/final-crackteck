@@ -5268,6 +5268,89 @@ class ApiService {
     }
   }
 
+  /// Fetch attendance logs for the currently authenticated field executive.
+  /// GET /attendance?user_id={userId}&role_id={roleId}
+  static Future<List<Map<String, dynamic>>> fetchFieldExecutiveAttendance({
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchFieldExecutiveAttendance',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final url = Uri.parse(ApiConstants.fieldexecutiveattendance).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load field executive attendance: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      List<dynamic> rawLogs = const <dynamic>[];
+      if (decoded is List) {
+        rawLogs = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['logs'] is List) {
+          rawLogs = decoded['logs'] as List<dynamic>;
+        } else if (decoded['data'] is List) {
+          rawLogs = decoded['data'] as List<dynamic>;
+        } else if (decoded['data'] is Map<String, dynamic>) {
+          final dataMap = decoded['data'] as Map<String, dynamic>;
+          if (dataMap['logs'] is List) {
+            rawLogs = dataMap['logs'] as List<dynamic>;
+          } else if (dataMap['data'] is List) {
+            rawLogs = dataMap['data'] as List<dynamic>;
+          }
+        }
+      }
+
+      return rawLogs
+          .whereType<Map>()
+          .map((log) => Map<String, dynamic>.from(log))
+          .toList();
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching field executive attendance: $e');
+      throw Exception('Failed to load attendance: $e');
+    }
+  }
+
   // ========================================
   // Generic HTTP Methods
   // ========================================

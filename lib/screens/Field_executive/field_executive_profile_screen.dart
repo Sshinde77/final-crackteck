@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../constants/api_constants.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 import 'field_excutive_attendance.dart';
 import 'field_executive_feedback.dart';
-import 'field_executive_payment.dart';
 import 'field_executive_personal_info.dart';
-import 'field_executive_pickup_product.dart';
 import 'field_executive_privacy_policy.dart';
-import 'field_executive_repair_request_part.dart';
 import 'field_executive_stock_in_hand.dart';
-import 'field_executive_work.dart';
+import '../../widgets/placeholder.dart';
 
 class CombinedProfileScreen extends StatefulWidget {
   final String userName;
@@ -354,45 +352,35 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const field_executive_attendance( roleId: 0, roleName: '', ),
+                    builder: (context) => field_executive_attendance(
+                      roleId: widget.roleId,
+                      roleName: widget.roleName,
+                    ),
                   ),
                 );
               },),
               const SizedBox(height: 12),
               _OptionTile(icon: Icons.local_shipping, label: "Pick up request", onTap: () {
-                Navigator.push(
+                Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const PickupMaterialsScreen( roleId: 0, roleName: '', ),
+                  AppRoutes.DeliveryRequestListScreen,
+                  arguments: deliveryrequestlistArguments(
+                    roleId: widget.roleId,
+                    roleName: widget.roleName,
+                    deliveryType: DeliveryRequestTypes.pickup,
+                    showCompletedOnly: true,
                   ),
                 );
               },),
               const SizedBox(height: 12),
               _OptionTile(icon: Icons.handyman, label: "Repair part request", onTap: () {
-                Navigator.push(
+                Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const RepairRequestScreen( roleId: 0, roleName: '', ),
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.payment_rounded, label: "Payment", onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PaymentsScreen ( roleId: 0, roleName: '', ),
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.playlist_add, label: "Add new AMC", onTap: () {}),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.support_agent, label: "Work calls", onTap: ()  {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WorksScreen ( roleId: 0, roleName: '', ),
+                  AppRoutes.DeliveryRequestListScreen,
+                  arguments: deliveryrequestlistArguments(
+                    roleId: widget.roleId,
+                    roleName: widget.roleName,
+                    deliveryType: DeliveryRequestTypes.part,
                   ),
                 );
               },),
@@ -402,17 +390,6 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => StockInHandScreen ( roleId: 0, roleName: '', ),
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.payments_outlined, label: "Cash in hand", onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoutes.FieldExecutiveCashInHandScreen,
-                  arguments: fieldexecutivecashinhandArguments(
-                    roleId: widget.roleId,
-                    roleName: widget.roleName,
                   ),
                 );
               },),
@@ -436,6 +413,30 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
               },),
               const SizedBox(height: 12),
               _OptionTile(icon: Icons.privacy_tip_outlined, label: "Help & Support", onTap: () {}),
+              const SizedBox(height: 12),
+              _OptionTile(icon: Icons.payment_rounded, label: "Payment", onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ComingSoonScreen(
+                      roleId: widget.roleId,
+                      roleName: widget.roleName,
+                    ),
+                  ),
+                );
+              },),
+              const SizedBox(height: 12),
+              _OptionTile(icon: Icons.payments_outlined, label: "Cash in hand", onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ComingSoonScreen(
+                      roleId: widget.roleId,
+                      roleName: widget.roleName,
+                    ),
+                  ),
+                );
+              },),
               const SizedBox(height: 12),
               _OptionTile(
                 icon: Icons.logout,

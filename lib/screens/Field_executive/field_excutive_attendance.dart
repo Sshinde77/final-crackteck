@@ -1,44 +1,46 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../services/api_service.dart';
+
 void main() {
-  runApp(const field_executive_attendance(roleId: 0, roleName: ''));
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: field_executive_attendance(roleId: 0, roleName: ''),
+    ),
+  );
 }
 
 class field_executive_attendance extends StatelessWidget {
   final int roleId;
   final String roleName;
-  const field_executive_attendance({super.key,
+
+  const field_executive_attendance({
+    super.key,
     required this.roleId,
     required this.roleName,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Attendance',
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: null,
-      ),
-      home: const AttendanceScreen(),
-    );
+    return AttendanceScreen(roleId: roleId);
   }
 }
 
 class AttendanceRecord {
-  final DateTime date; // date only
+  final DateTime date;
+  final DateTime loginAt;
   final String loginTime;
   final String logoutTime;
   final String serviceId;
   final String status;
-  final Duration totalHours;
-  final Duration workingHours;
+  final Duration? totalHours;
+  final Duration? workingHours;
 
   const AttendanceRecord({
     required this.date,
+    required this.loginAt,
     required this.loginTime,
     required this.logoutTime,
     required this.serviceId,
@@ -49,7 +51,12 @@ class AttendanceRecord {
 }
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  final int roleId;
+
+  const AttendanceScreen({
+    super.key,
+    required this.roleId,
+  });
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -58,78 +65,133 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   static const Color brandGreen = Color(0xFF1B6E1B);
 
-  // Sample data (replace with API/Firebase later)
-  final List<AttendanceRecord> _all = [
-    AttendanceRecord(
-      date: DateTime(2026, 4, 17),
-      loginTime: "09:00 AM",
-      logoutTime: "05:00 PM",
-      serviceId: "#UORD658858DYE",
-      status: "Completed",
-      totalHours: const Duration(hours: 8),
-      workingHours: const Duration(hours: 6),
-    ),
-    AttendanceRecord(
-      date: DateTime(2026, 4, 16),
-      loginTime: "09:00 AM",
-      logoutTime: "05:00 PM",
-      serviceId: "#UORD658858DYE",
-      status: "Completed",
-      totalHours: const Duration(hours: 8),
-      workingHours: const Duration(hours: 6),
-    ),
-    AttendanceRecord(
-      date: DateTime(2026, 4, 15),
-      loginTime: "09:00 AM",
-      logoutTime: "05:00 PM",
-      serviceId: "#UORD658858DYE",
-      status: "Completed",
-      totalHours: const Duration(hours: 8),
-      workingHours: const Duration(hours: 6),
-    ),
-    AttendanceRecord(
-      date: DateTime(2026, 4, 14),
-      loginTime: "09:00 AM",
-      logoutTime: "05:00 PM",
-      serviceId: "#UORD658858DYE",
-      status: "Completed",
-      totalHours: const Duration(hours: 8),
-      workingHours: const Duration(hours: 6),
-    ),
-  ];
+  final List<AttendanceRecord> _all = <AttendanceRecord>[];
+  bool _isLoading = true;
+  String? _errorMessage;
+  DateTime? _selectedDate;
 
-  DateTime? _selectedDate; // if selected from calendar
-
-  List<AttendanceRecord> get _visibleList {
-    if (_selectedDate == null) return _all..sort((a, b) => b.date.compareTo(a.date));
-    return _all
-        .where((r) => _isSameDate(r.date, _selectedDate!))
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+  @override
+  void initState() {
+    super.initState();
+    _loadAttendance();
   }
 
   bool _isSameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  String _hhmmss(Duration d) {
+  List<AttendanceRecord> get _visibleList {
+    final list = _selectedDate == null
+        ? List<AttendanceRecord>.from(_all)
+        : _all.where((r) => _isSameDate(r.date, _selectedDate!)).toList();
+
+    list.sort((a, b) => b.loginAt.compareTo(a.loginAt));
+    return list;
+  }
+
+  String _hhmmss(Duration? d) {
+    if (d == null) return '--';
     final h = d.inHours.toString().padLeft(2, '0');
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return "$h:$m:$s hrs";
+    return '$h:$m:$s hrs';
+  }
+
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    final parsed = DateTime.tryParse(text);
+    return parsed?.toLocal();
+  }
+
+  String _formatTime(DateTime? value) {
+    if (value == null) return '--';
+    return DateFormat('hh:mm a').format(value);
+  }
+
+  Duration? _calculateDuration(DateTime loginAt, DateTime? logoutAt) {
+    if (logoutAt == null) return null;
+    if (logoutAt.isBefore(loginAt)) return Duration.zero;
+    return logoutAt.difference(loginAt);
+  }
+
+  String _deriveStatus(Map<String, dynamic> log, DateTime? logoutAt) {
+    if (logoutAt != null) return 'Completed';
+    final loginSuccessful = log['login_successful'] == true ||
+        log['login_successful']?.toString() == '1';
+    return loginSuccessful ? 'In Progress' : 'Failed';
+  }
+
+  Future<void> _loadAttendance() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final logs = await ApiService.fetchFieldExecutiveAttendance(
+        roleId: widget.roleId,
+      );
+
+      final parsed = <AttendanceRecord>[];
+      for (final log in logs) {
+        final loginAt = _parseDateTime(
+          log['login_at'] ?? log['check_in_at'] ?? log['clock_in_at'],
+        );
+        if (loginAt == null) {
+          continue;
+        }
+
+        final logoutAt = _parseDateTime(
+          log['logout_at'] ?? log['check_out_at'] ?? log['clock_out_at'],
+        );
+        final duration = _calculateDuration(loginAt, logoutAt);
+        final logId = log['id']?.toString().trim();
+        final displayId =
+            (logId == null || logId.isEmpty) ? '-' : '#ATT$logId';
+
+        parsed.add(
+          AttendanceRecord(
+            date: DateTime(loginAt.year, loginAt.month, loginAt.day),
+            loginAt: loginAt,
+            loginTime: _formatTime(loginAt),
+            logoutTime: _formatTime(logoutAt),
+            serviceId: displayId,
+            status: _deriveStatus(log, logoutAt),
+            totalHours: duration,
+            workingHours: duration,
+          ),
+        );
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _all
+          ..clear()
+          ..addAll(parsed);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _openCalendar() async {
     final now = DateTime.now();
-    final initial = _selectedDate ?? _all.first.date;
+    final initial = _selectedDate ?? (_all.isNotEmpty ? _all.first.date : now);
 
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 5),
-      helpText: "Select attendance date",
+      helpText: 'Select attendance date',
       builder: (context, child) {
-        // Make the popup feel branded (optional)
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
@@ -165,22 +227,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Attendance",
+          'Attendance',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
-
-      // Floating "Calendar" button like the screenshot
-      floatingActionButton: _CalendarFab(
-        onTap: _openCalendar,
-      ),
-
+      floatingActionButton: _CalendarFab(onTap: _openCalendar),
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 10),
-
-            // Optional: show selected date chip + clear
             if (_selectedDate != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -199,42 +254,47 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           const Icon(Icons.event, size: 18, color: brandGreen),
                           const SizedBox(width: 8),
                           Text(
-                            DateFormat("dd MMM yyyy").format(_selectedDate!),
+                            DateFormat('dd MMM yyyy').format(_selectedDate!),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
                     const Spacer(),
-                    TextButton(
-                      onPressed: _clearFilter,
-                      child: const Text("Clear"),
-                    ),
+                    TextButton(onPressed: _clearFilter, child: const Text('Clear')),
                   ],
                 ),
               ),
-
             const SizedBox(height: 8),
-
             Expanded(
-              child: list.isEmpty
-                  ? _EmptyState(
-                date: _selectedDate,
-                onPick: _openCalendar,
-                onClear: _selectedDate == null ? null : _clearFilter,
-              )
-                  : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
-                itemCount: list.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final r = list[index];
-                  return _AttendanceCard(
-                    record: r,
-                    hhmmss: _hhmmss,
-                  );
-                },
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage != null
+                      ? _ErrorState(
+                          message: _errorMessage!,
+                          onRetry: _loadAttendance,
+                        )
+                      : list.isEmpty
+                          ? _EmptyState(
+                              date: _selectedDate,
+                              onPick: _openCalendar,
+                              onClear: _selectedDate == null ? null : _clearFilter,
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _loadAttendance,
+                              child: ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
+                                itemCount: list.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  final r = list[index];
+                                  return _AttendanceCard(
+                                    record: r,
+                                    hhmmss: _hhmmss,
+                                  );
+                                },
+                              ),
+                            ),
             ),
           ],
         ),
@@ -245,7 +305,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
 class _AttendanceCard extends StatelessWidget {
   final AttendanceRecord record;
-  final String Function(Duration) hhmmss;
+  final String Function(Duration?) hhmmss;
 
   const _AttendanceCard({
     required this.record,
@@ -256,8 +316,8 @@ class _AttendanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final day = DateFormat("dd").format(record.date);
-    final month = DateFormat("MMMM").format(record.date);
+    final day = DateFormat('dd').format(record.date);
+    final month = DateFormat('MMMM').format(record.date);
 
     return Container(
       decoration: BoxDecoration(
@@ -269,7 +329,6 @@ class _AttendanceCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date tile (left)
           Container(
             width: 64,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -301,19 +360,15 @@ class _AttendanceCard extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Details (right)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Login & Out line
                 Row(
                   children: [
                     const Text(
-                      "Login & Out",
+                      'Login & Out',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF6B7280),
@@ -322,7 +377,7 @@ class _AttendanceCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      "${record.loginTime}  -  ${record.logoutTime}",
+                      '${record.loginTime}  -  ${record.logoutTime}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: brandGreen,
@@ -332,14 +387,13 @@ class _AttendanceCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-
-                _kv("Service ID", record.serviceId),
+                _kv('Log ID', record.serviceId),
                 const SizedBox(height: 6),
-                _kv("Status", record.status),
+                _kv('Status', record.status),
                 const SizedBox(height: 6),
-                _kv("Total Hours", hhmmss(record.totalHours)),
+                _kv('Total Hours', hhmmss(record.totalHours)),
                 const SizedBox(height: 6),
-                _kv("Working Hours", hhmmss(record.workingHours)),
+                _kv('Working Hours', hhmmss(record.workingHours)),
               ],
             ),
           ),
@@ -375,6 +429,7 @@ class _AttendanceCard extends StatelessWidget {
 
 class _CalendarFab extends StatelessWidget {
   final VoidCallback onTap;
+
   const _CalendarFab({required this.onTap});
 
   static const Color brandGreen = Color(0xFF1B6E1B);
@@ -388,15 +443,15 @@ class _CalendarFab extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Icon(Icons.calendar_month_rounded, color: Colors.white, size: 22),
               SizedBox(width: 8),
               Text(
-                "Calendar",
+                'Calendar',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -404,6 +459,42 @@ class _CalendarFab extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final Future<void> Function() onRetry;
+
+  const _ErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 46, color: Colors.redAccent),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
         ),
       ),
     );
@@ -423,9 +514,9 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final msg = (date == null)
-        ? "No attendance loaded."
-        : "No attendance found for\n${DateFormat("dd MMM yyyy").format(date!)}";
+    final msg = date == null
+        ? 'No attendance found.'
+        : 'No attendance found for\n${DateFormat('dd MMM yyyy').format(date!)}';
 
     return Center(
       child: Padding(
@@ -446,15 +537,15 @@ class _EmptyState extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: onPick,
-                  child: const Text("Pick a date"),
+                  child: const Text('Pick a date'),
                 ),
                 if (onClear != null)
                   OutlinedButton(
                     onPressed: onClear,
-                    child: const Text("Clear filter"),
+                    child: const Text('Clear filter'),
                   ),
               ],
-            )
+            ),
           ],
         ),
       ),
