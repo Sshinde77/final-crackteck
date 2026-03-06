@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/secure_storage_service.dart';
 import '../../model/sales_person/lead_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -22,67 +26,128 @@ class NewQuotationScreen extends StatefulWidget {
 class _NewQuotationScreenState extends State<NewQuotationScreen> {
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
+
+  final _formKey = GlobalKey<FormState>();
+
   bool _moreOpen = false;
   int _navIndex = 0;
+  bool _submitting = false;
+  bool _showValidationErrors = false;
+  bool _leadsLoading = false;
+  bool _amcLoading = false;
+  String? _leadLoadError;
+  String? _amcLoadError;
 
-  bool isSearchExpanded = false;
-  bool showProductList = false;
-  bool showOverlay = false;
+  int? _selectedLeadId;
+  int? _selectedAmcPlanId;
+  File? _selectedProductImage;
 
-  final TextEditingController searchCtrl = TextEditingController();
-  int? selectedLeadId;
-  bool leadsLoading = false;
-  String? leadLoadError;
-  final List<LeadModel> leadOptions = [];
+  final List<LeadModel> _leadOptions = <LeadModel>[];
+  final List<Map<String, dynamic>> _amcPlans = <Map<String, dynamic>>[];
 
-  // ✅ products list (demo)
-  final List<ProductItem> _allProducts = const [
-    ProductItem(name: 'Apple MacBook Air M1', price: '₹ 62,990'),
-    ProductItem(name: 'ASUS ROG Strix G13CHR', price: '₹ 1,29,990'),
-    ProductItem(name: 'Qubo Smart 360', price: '₹ 1,489'),
-    ProductItem(name: 'HP Pavilion', price: '₹ 78,999'),
-    ProductItem(name: 'Dell Inspiron 15', price: '₹ 54,990'),
-    ProductItem(name: 'Lenovo ThinkPad', price: '₹ 92,990'),
+  final TextEditingController _quotationDateCtrl = TextEditingController();
+  final TextEditingController _expiryDateCtrl = TextEditingController();
+  final TextEditingController _productNameCtrl = TextEditingController();
+  final TextEditingController _productTypeCtrl = TextEditingController();
+  final TextEditingController _modelNoCtrl = TextEditingController();
+  final TextEditingController _hsnCtrl = TextEditingController();
+  final TextEditingController _purchaseDateCtrl = TextEditingController();
+  final TextEditingController _brandCtrl = TextEditingController();
+  final TextEditingController _descriptionCtrl = TextEditingController();
+  final TextEditingController _skuCtrl = TextEditingController();
+  final TextEditingController _quantityCtrl = TextEditingController();
+  final TextEditingController _planStartDateCtrl = TextEditingController();
+  final TextEditingController _additionalNotesCtrl = TextEditingController();
+
+  DateTime? _quotationDate;
+  DateTime? _expiryDate;
+  DateTime? _purchaseDate;
+  DateTime? _planStartDate;
+  String? _priorityLevel;
+
+  static const List<String> _priorityOptions = <String>[
+    'low',
+    'medium',
+    'high',
+    'critical',
   ];
 
   @override
   void initState() {
     super.initState();
     _loadLeadOptions();
+    _loadAmcPlans();
   }
 
   @override
   void dispose() {
-    searchCtrl.dispose();
+    _quotationDateCtrl.dispose();
+    _expiryDateCtrl.dispose();
+    _productNameCtrl.dispose();
+    _productTypeCtrl.dispose();
+    _modelNoCtrl.dispose();
+    _hsnCtrl.dispose();
+    _purchaseDateCtrl.dispose();
+    _brandCtrl.dispose();
+    _descriptionCtrl.dispose();
+    _skuCtrl.dispose();
+    _quantityCtrl.dispose();
+    _planStartDateCtrl.dispose();
+    _additionalNotesCtrl.dispose();
     super.dispose();
   }
 
-  int _asInt(dynamic value, {int fallback = 1}) {
+  int _asInt(dynamic value, {int fallback = 0}) {
     if (value is int) return value;
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value) ?? fallback;
     return fallback;
   }
 
-  Map<String, dynamic>? _extractLeadMap(Map<String, dynamic> payload) {
-    final data = payload['data'];
-    if (data is Map<String, dynamic>) return data;
+  double _asDouble(dynamic value, {double fallback = 0}) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? fallback;
+    return fallback;
+  }
 
-    final lead = payload['lead'];
-    if (lead is Map<String, dynamic>) return lead;
-
-    if (payload.containsKey('id')) return payload;
+  Map<String, dynamic>? _selectedAmcPlan() {
+    for (final plan in _amcPlans) {
+      if (_asInt(plan['id']) == _selectedAmcPlanId) {
+        return plan;
+      }
+    }
     return null;
+  }
+
+  DateTime _calculatePlanEndDate(DateTime startDate, int durationInMonths) {
+    if (durationInMonths <= 0) {
+      return startDate;
+    }
+
+    final targetMonth = startDate.month + durationInMonths;
+    final normalizedYear = startDate.year + ((targetMonth - 1) ~/ 12);
+    final normalizedMonth = ((targetMonth - 1) % 12) + 1;
+    final firstDayOfFollowingMonth = normalizedMonth == 12
+        ? DateTime(normalizedYear + 1, 1, 1)
+        : DateTime(normalizedYear, normalizedMonth + 1, 1);
+    final lastDayOfTargetMonth =
+        firstDayOfFollowingMonth.subtract(const Duration(days: 1)).day;
+    final normalizedDay = startDate.day.clamp(1, lastDayOfTargetMonth);
+
+    return DateTime(normalizedYear, normalizedMonth, normalizedDay)
+        .subtract(const Duration(days: 1));
   }
 
   Future<void> _loadLeadOptions() async {
     setState(() {
-      leadsLoading = true;
-      leadLoadError = null;
+      _leadsLoading = true;
+      _leadLoadError = null;
     });
 
     try {
-      final List<LeadModel> allLeads = [];
+      final List<LeadModel> allLeads = <LeadModel>[];
       int page = 1;
       int lastPage = 1;
 
@@ -108,355 +173,206 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
 
       if (!mounted) return;
       setState(() {
-        leadOptions
+        _leadOptions
           ..clear()
           ..addAll(allLeads);
-        leadsLoading = false;
+        _leadsLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        leadsLoading = false;
-        leadLoadError = e.toString();
+        _leadsLoading = false;
+        _leadLoadError = e.toString();
       });
     }
   }
 
-  Future<void> _onLeadSelected(int? leadId) async {
-    setState(() => selectedLeadId = leadId);
-
-    if (leadId == null) return;
+  Future<void> _loadAmcPlans() async {
+    setState(() {
+      _amcLoading = true;
+      _amcLoadError = null;
+    });
 
     try {
-      final detail = await ApiService.fetchLeadDetail(
-        leadId.toString(),
-        roleId: widget.roleId,
-      );
-      if (!mounted || selectedLeadId != leadId) return;
-
-      final detailMap = _extractLeadMap(detail);
-      if (detailMap == null) return;
-
-      final detailedLead = LeadModel.fromJson(detailMap);
-      final idx = leadOptions.indexWhere((l) => l.id == detailedLead.id);
-      if (idx >= 0) {
-        setState(() {
-          leadOptions[idx] = detailedLead;
-        });
-      }
-    } catch (_) {
-      // Keep locally selected lead values if detail call fails.
+      final plans = await ApiService.fetchAmcPlans();
+      if (!mounted) return;
+      setState(() {
+        _amcPlans
+          ..clear()
+          ..addAll(plans);
+        _amcLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _amcLoading = false;
+        _amcLoadError = e.toString();
+      });
     }
   }
 
-  List<ProductItem> get _filteredProducts {
-    final q = searchCtrl.text.trim().toLowerCase();
-    if (q.isEmpty) return _allProducts;
-    return _allProducts.where((p) => p.name.toLowerCase().contains(q)).toList();
+  String _formatDisplayDate(DateTime value) {
+    final dd = value.day.toString().padLeft(2, '0');
+    final mm = value.month.toString().padLeft(2, '0');
+    final yyyy = value.year.toString();
+    return '$dd/$mm/$yyyy';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-
-      /// APP BAR
-      appBar: AppBar(
-        backgroundColor: midGreen,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'New Quotation',
-          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              // Navigator.pushNamed(
-              //   context,
-              //   AppRoutes.NotificationScreen,
-              //   arguments: NotificationArguments(
-              //     roleId: widget.roleId,
-              //     roleName: widget.roleName,
-              //   ),
-              // );
-            },
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-
-      /// BODY
-      body: Stack(
-        clipBehavior: Clip.none, // ✅ important (prevents flash + clipping)
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Personal Information',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-
-                _leadDropdown(),
-                _input('Quotation ID', 'QTN-001'),
-                _dateInput('Quotation Date', '12-01-2025'),
-                _dateInput('Expiration Date', '12-01-2025'),
-
-                const SizedBox(height: 12),
-
-                /// ITEM CARD (STATIC, MULTIPLE)
-                _itemCard(),
-                _itemCard(),
-
-                const SizedBox(height: 16),
-
-                /// GENERATE BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: midGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {},
-                    child: const Text(
-                      'Generate',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          /// ✅ OVERLAY (tap outside closes dropdown + collapses search)
-          if (showOverlay)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  FocusScope.of(context).unfocus();
-                  setState(() {
-                    showOverlay = false;
-                    showProductList = false;
-                    isSearchExpanded = false;
-                  });
-                },
-                child: Container(color: Colors.black.withOpacity(0.06)),
-              ),
-            ),
-
-          /// ✅ PRODUCT LIST PANEL (ABOVE SEARCH BAR)
-          if (showProductList)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 80, // ✅ above search bar
-              child: _productPanel(), // now filtered
-            ),
-
-          /// ✅ SEARCH BAR (fixed left/right = no red flash)
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 20,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOut,
-                height: 48,
-                width: isSearchExpanded ? double.infinity : 48,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: midGreen,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    /// ✅ SEARCH ICON
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          // ✅ One click: expand + show list above
-                          isSearchExpanded = true;
-                          showOverlay = true;
-                          showProductList = true;
-                        });
-                      },
-                      child: const Icon(
-                        Icons.search,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-
-                    if (isSearchExpanded) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: searchCtrl,
-                          autofocus: true,
-                          onChanged: (_) {
-                            setState(() {
-                              // ✅ triggers product list filter refresh
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'Search',
-                            hintStyle: TextStyle(color: Colors.white70),
-                            border: InputBorder.none,
-                          ),
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          FocusScope.of(context).unfocus();
-                          setState(() {
-                            isSearchExpanded = false;
-                            showOverlay = false;
-                            showProductList = false;
-                            searchCtrl.clear();
-                          });
-                        },
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-
-      bottomNavigationBar: CrackteckBottomSwitcher(
-        isMoreOpen: _moreOpen,
-        currentIndex: _navIndex,
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-              onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
-        onMore: () => setState(() => _moreOpen = true),
-        onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
-      ),
-    );
+  String _formatApiDate(DateTime value) {
+    final yyyy = value.year.toString().padLeft(4, '0');
+    final mm = value.month.toString().padLeft(2, '0');
+    final dd = value.day.toString().padLeft(2, '0');
+    return '$yyyy-$mm-$dd';
   }
 
-  /// INPUT FIELD
-  Widget _input(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
+  Future<void> _pickDate({
+    required TextEditingController controller,
+    required ValueChanged<DateTime> onSelected,
+    DateTime? initialDate,
+  }) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? now,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2035, 12, 31),
     );
+
+    if (picked == null) return;
+
+    controller.text = _formatDisplayDate(picked);
+    onSelected(picked);
   }
 
-  Widget _leadDropdown() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _label('Lead'),
-          DropdownButtonFormField<int>(
-            value: selectedLeadId,
-            isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
-            decoration: _dropdownDecor(
-              'Select lead',
-              suffixIcon: const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
-              ),
-            ),
-            hint: Text(
-              leadsLoading ? 'Loading leads...' : 'Select lead',
-              style: const TextStyle(color: Colors.black38, fontSize: 13),
-            ),
-            dropdownColor: const Color(0xFFEFEFEF),
-            items: leadOptions.map((lead) {
-              return DropdownMenuItem<int>(
-                value: lead.id,
-                child: Text(
-                  '${lead.id} - ${lead.name}',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: leadsLoading ? null : _onLeadSelected,
-          ),
-          if (leadsLoading)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: LinearProgressIndicator(minHeight: 2),
-            ),
-          if (!leadsLoading && leadLoadError != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline, size: 16, color: Colors.red),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Failed to load leads',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  TextButton(onPressed: _loadLeadOptions, child: const Text('Retry')),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
+  Future<void> _pickProductImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final path = result?.files.single.path;
+    if (path == null || path.trim().isEmpty) return;
+
+    setState(() {
+      _selectedProductImage = File(path);
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+
+    FocusScope.of(context).unfocus();
+    debugPrint('Quotation submit tapped');
+
+    final formState = _formKey.currentState;
+    if (formState == null) {
+      debugPrint('Quotation form state is null');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Form is not ready. Please try again.')),
+      );
+      return;
+    }
+
+    if (!formState.validate()) {
+      debugPrint('Quotation form validation failed');
+      if (!_showValidationErrors && mounted) {
+        setState(() => _showValidationErrors = true);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields.')),
+      );
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final userId = await SecureStorageService.getUserId();
+    if (userId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Authentication error. Please log in again.')),
+      );
+      return;
+    }
+
+    if (_selectedLeadId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please select lead ID.')),
+      );
+      return;
+    }
+
+    if (_selectedAmcPlanId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please select AMC plan.')),
+      );
+      return;
+    }
+
+    if (_quotationDate == null ||
+        _expiryDate == null ||
+        _purchaseDate == null ||
+        _planStartDate == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please select all required dates.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final selectedPlan = _selectedAmcPlan();
+      final planDurationMonths = _asInt(selectedPlan?['duration']);
+      final planEndDate = _calculatePlanEndDate(_planStartDate!, planDurationMonths);
+      final totalAmount = _asDouble(
+        selectedPlan?['total_cost'] ?? selectedPlan?['total_amount'],
+      );
+
+      final fields = <String, String>{
+        'user_id': userId.toString(),
+        'lead_id': _selectedLeadId.toString(),
+        'quote_date': _formatApiDate(_quotationDate!),
+        'expiry_date': _formatApiDate(_expiryDate!),
+        'products[0][name]': _productNameCtrl.text.trim(),
+        'products[0][product_name]': _productNameCtrl.text.trim(),
+        'products[0][type]': _productTypeCtrl.text.trim(),
+        'products[0][model_no]': _modelNoCtrl.text.trim(),
+        'products[0][hsn]': _hsnCtrl.text.trim(),
+        'products[0][hsn_code]': _hsnCtrl.text.trim(),
+        'products[0][purchase_date]': _formatApiDate(_purchaseDate!),
+        'products[0][brand]': _brandCtrl.text.trim(),
+        'products[0][description]': _descriptionCtrl.text.trim(),
+        'products[0][sku]': _skuCtrl.text.trim(),
+        'products[0][quantity]': _quantityCtrl.text.trim(),
+        'amc_plan_id': _selectedAmcPlanId.toString(),
+        'plan_start_date': _formatApiDate(_planStartDate!),
+        'plan_end_date': _formatApiDate(planEndDate),
+        'total_amount': totalAmount.toStringAsFixed(2),
+        'priority_level': _priorityLevel ?? '',
+        'additional_notes': _additionalNotesCtrl.text.trim(),
+      };
+
+      final response = await ApiService.createQuotation(
+        fields: fields,
+        productImage: _selectedProductImage,
+      );
+
+      debugPrint(
+        'Quotation submit response: success=${response.success}, message=${response.message}',
+      );
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(response.message ?? 'Quotation submitted'),
+        ),
+      );
+
+      if (response.success && mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to submit quotation: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
   }
 
   Widget _label(String text) {
@@ -473,7 +389,7 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
     );
   }
 
-  InputDecoration _dropdownDecor(String hint, {Widget? suffixIcon}) {
+  InputDecoration _decor(String hint, {Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
@@ -501,223 +417,443 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
     );
   }
 
-  /// DATE FIELD
-  Widget _dateInput(String label, String value) {
+  Widget _textField({
+    required String label,
+    required TextEditingController controller,
+    String hint = '',
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(label),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          readOnly: readOnly,
+          onTap: onTap,
+          decoration: _decor(hint, suffixIcon: suffixIcon),
+          validator: validator,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _leadDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Lead ID'),
+        DropdownButtonFormField<int>(
+          value: _selectedLeadId,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+          decoration: _decor('Select lead ID'),
+          hint: Text(
+            _leadsLoading ? 'Loading lead IDs...' : 'Select lead ID',
+            style: const TextStyle(color: Colors.black38, fontSize: 13),
+          ),
+          items: _leadOptions.map((lead) {
+            final leadIdText = lead.leadNumber.trim().isEmpty
+                ? lead.id.toString()
+                : lead.leadNumber.trim();
+            return DropdownMenuItem<int>(
+              value: lead.id,
+              child: Text(
+                leadIdText,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: _leadsLoading ? null : (value) => setState(() => _selectedLeadId = value),
+          validator: (v) => v == null ? 'Please select lead' : null,
+        ),
+        if (_leadsLoading)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (!_leadsLoading && _leadLoadError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Failed to load leads',
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: _loadLeadOptions, child: const Text('Retry')),
+              ],
+            ),
+          ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _amcPlanDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('AMC Plan'),
+        DropdownButtonFormField<int>(
+          value: _selectedAmcPlanId,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+          decoration: _decor('Select AMC plan'),
+          hint: Text(
+            _amcLoading ? 'Loading AMC plans...' : 'Select AMC plan',
+            style: const TextStyle(color: Colors.black38, fontSize: 13),
+          ),
+          items: _amcPlans.map((plan) {
+            final id = _asInt(plan['id']);
+            final label = (plan['plan_name'] ?? '').toString().trim();
+            return DropdownMenuItem<int>(
+              value: id,
+              child: Text(
+                label.isEmpty ? 'Plan $id' : label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: _amcLoading ? null : (value) => setState(() => _selectedAmcPlanId = value),
+          validator: (v) => v == null ? 'Please select AMC plan' : null,
+        ),
+        if (_amcLoading)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (!_amcLoading && _amcLoadError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Failed to load AMC plans',
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: _loadAmcPlans, child: const Text('Retry')),
+              ],
+            ),
+          ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _priorityDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Priority Level'),
+        DropdownButtonFormField<String>(
+          value: _priorityLevel,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+          decoration: _decor('Select priority'),
+          items: _priorityOptions.map((priority) {
+            return DropdownMenuItem<String>(
+              value: priority,
+              child: Text(
+                priority,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (value) => setState(() => _priorityLevel = value),
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? 'Please select priority'
+              : null,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          suffixIcon: const Icon(Icons.calendar_today, color: midGreen),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     );
   }
-
-  /// ITEM CARD
-  Widget _itemCard() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _row('Item Description', 'Laptop'),
-          _row('HSN Code', '8471'),
-          _row('Quantity', '2'),
-          _row('Unit Price', '50,000'),
-          _row('Tax (%)', '18%'),
-          _row('Total', '1,18,000', bold: true),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _actionBtn(
-                  'Edit',
-                  Icons.edit,
-                  Colors.orange.shade100,
-                  Colors.orange,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _actionBtn(
-                  'Delete',
-                  Icons.delete,
-                  Colors.red.shade100,
-                  Colors.red,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// ROW TEXT
-  Widget _row(String k, String v, {bool bold = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(k, style: const TextStyle(color: Colors.black54)),
-          Text(v, style: TextStyle(fontWeight: bold ? FontWeight.w700 : null)),
-        ],
-      ),
-    );
-  }
-
-  /// ACTION BUTTON
-  Widget _actionBtn(String t, IconData i, Color bg, Color fg) {
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(i, size: 16, color: fg),
-            const SizedBox(width: 6),
-            Text(t, style: TextStyle(color: fg)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// ✅ PRODUCT PANEL (filtered by searchCtrl)
-  Widget _productPanel() {
-    final list = _filteredProducts;
-
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        height: 240,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.12),
-              blurRadius: 14,
-              offset: const Offset(0, -6),
-            ),
-          ],
-        ),
-        child: list.isEmpty
-            ? const Center(
-                child: Text(
-                  "No products found",
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              )
-            : ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: list.length,
-                itemBuilder: (_, i) {
-                  final p = list[i];
-                  return _ProductCard(
-                    name: p.name,
-                    price: p.price,
-                    roleId: widget.roleId,
-                    roleName: widget.roleName,
-                  );
-                },
-              ),
-      ),
-    );
-  }
-}
-
-/// ✅ Simple product model
-class ProductItem {
-  final String name;
-  final String price;
-
-  const ProductItem({required this.name, required this.price});
-}
-
-/// PRODUCT CARD
-class _ProductCard extends StatelessWidget {
-  final String name;
-  final String price;
-  final int roleId;
-  final String roleName;
-
-  const _ProductCard({
-    required this.name,
-    required this.price,
-    required this.roleId,
-    required this.roleName,
-  });
-
-  static const Color midGreen = Color(0xFF1F8B00);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black12),
-        color: Colors.white,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=600&q=80",
-              height: 70,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.computer, size: 48),
-            ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: midGreen,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'New Quotation',
+          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
           ),
-          Text(
-            name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-          Text(price, style: const TextStyle(fontWeight: FontWeight.w700)),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: midGreen),
-              onPressed: () {
-                // Navigator.pushNamed(
-                //   context,
-                //   AppRoutes.ProductScreen,
-                //   arguments: SalesproductArguments(
-                //     roleId: roleId,
-                //     roleName: roleName,
-                //   ),
-                // );
-              },
-              child: const Text('View', style: TextStyle(color: Colors.white)),
-            ),
-          ),
+          const SizedBox(width: 8),
         ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+           child: Form(
+             key: _formKey,
+             autovalidateMode: _showValidationErrors
+                 ? AutovalidateMode.onUserInteraction
+                 : AutovalidateMode.disabled,
+             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionTitle('Quotation Details'),
+                _leadDropdown(),
+                _textField(
+                  label: 'Quotation Date',
+                  controller: _quotationDateCtrl,
+                  readOnly: true,
+                  onTap: () => _pickDate(
+                    controller: _quotationDateCtrl,
+                    initialDate: _quotationDate,
+                    onSelected: (value) => _quotationDate = value,
+                  ),
+                  suffixIcon: const Icon(Icons.calendar_month_outlined),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Select quotation date' : null,
+                ),
+                _textField(
+                  label: 'Expiry Date',
+                  controller: _expiryDateCtrl,
+                  readOnly: true,
+                  onTap: () => _pickDate(
+                    controller: _expiryDateCtrl,
+                    initialDate: _expiryDate,
+                    onSelected: (value) => _expiryDate = value,
+                  ),
+                  suffixIcon: const Icon(Icons.calendar_month_outlined),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Select expiry date' : null,
+                ),
+                const SizedBox(height: 8),
+                _sectionTitle('Product Details'),
+                _textField(
+                  label: 'Product Name',
+                  controller: _productNameCtrl,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter product name' : null,
+                ),
+                _textField(
+                  label: 'Product Type',
+                  controller: _productTypeCtrl,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter product type' : null,
+                ),
+                _textField(
+                  label: 'Model No',
+                  controller: _modelNoCtrl,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter model number' : null,
+                ),
+                _textField(
+                  label: 'HSN',
+                  controller: _hsnCtrl,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter HSN' : null,
+                ),
+                _textField(
+                  label: 'Purchase Date',
+                  controller: _purchaseDateCtrl,
+                  readOnly: true,
+                  onTap: () => _pickDate(
+                    controller: _purchaseDateCtrl,
+                    initialDate: _purchaseDate,
+                    onSelected: (value) => _purchaseDate = value,
+                  ),
+                  suffixIcon: const Icon(Icons.calendar_month_outlined),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Select purchase date' : null,
+                ),
+                _textField(
+                  label: 'Brand',
+                  controller: _brandCtrl,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter brand' : null,
+                ),
+                _textField(
+                  label: 'Description',
+                  controller: _descriptionCtrl,
+                  maxLines: 3,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter description' : null,
+                ),
+                _textField(
+                  label: 'SKU',
+                  controller: _skuCtrl,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter SKU' : null,
+                ),
+                _textField(
+                  label: 'Quantity',
+                  controller: _quantityCtrl,
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final value = (v ?? '').trim();
+                    if (value.isEmpty) return 'Enter quantity';
+                    final qty = int.tryParse(value);
+                    if (qty == null || qty <= 0) return 'Enter valid quantity';
+                    return null;
+                  },
+                ),
+                _label('Product Image'),
+                InkWell(
+                  onTap: _pickProductImage,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.upload_file, color: darkGreen),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _selectedProductImage == null
+                                ? 'Select product image'
+                                : _selectedProductImage!.path.split(Platform.pathSeparator).last,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const SizedBox(height: 8),
+                _sectionTitle('AMC Details'),
+                _amcPlanDropdown(),
+                _textField(
+                  label: 'Plan Start Date',
+                  controller: _planStartDateCtrl,
+                  readOnly: true,
+                  onTap: () => _pickDate(
+                    controller: _planStartDateCtrl,
+                    initialDate: _planStartDate,
+                    onSelected: (value) => _planStartDate = value,
+                  ),
+                  suffixIcon: const Icon(Icons.calendar_month_outlined),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Select plan start date' : null,
+                ),
+                _priorityDropdown(),
+                _textField(
+                  label: 'Additional Notes',
+                  controller: _additionalNotesCtrl,
+                  maxLines: 4,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: midGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _submitting ? null : _submit,
+                    child: Text(
+                      _submitting ? 'Submitting...' : 'Submit',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: CrackteckBottomSwitcher(
+        isMoreOpen: _moreOpen,
+        currentIndex: _navIndex,
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
+        onMore: () => setState(() => _moreOpen = true),
+        onLess: () => setState(() => _moreOpen = false),
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }

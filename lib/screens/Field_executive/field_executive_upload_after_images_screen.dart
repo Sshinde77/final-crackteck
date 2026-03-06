@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+
+import '../../services/media_picker_service.dart';
 
 class FieldExecutiveUploadAfterImagesScreen extends StatefulWidget {
   final int roleId;
@@ -23,7 +25,6 @@ class _FieldExecutiveUploadAfterImagesScreenState
   final ImagePicker _picker = ImagePicker();
   static const primaryGreen = Color(0xFF1E7C10);
 
-  /// 🔒 Prevent multiple permission / camera calls
   bool _isPicking = false;
 
   final Map<String, File?> _pickedFiles = {
@@ -37,76 +38,38 @@ class _FieldExecutiveUploadAfterImagesScreenState
   };
 
   Future<void> _pickImage(String category, bool isVideo) async {
-    /// 🚫 Block multiple taps
     if (_isPicking) return;
-    _isPicking = true;
+
+    setState(() {
+      _isPicking = true;
+    });
 
     try {
-      /// ✅ Request required permissions ONCE
-      final cameraStatus = await Permission.camera.request();
-      if (!cameraStatus.isGranted) {
-        if (cameraStatus.isPermanentlyDenied && mounted) {
-          _showPermissionDialog();
-        }
-        return;
+      final XFile? file = isVideo
+          ? await MediaPickerService.pickVideo(
+              context,
+              picker: _picker,
+              source: ImageSource.camera,
+            )
+          : await MediaPickerService.pickImage(
+              context,
+              picker: _picker,
+              source: ImageSource.camera,
+              imageQuality: 50,
+            );
+
+      if (file != null && mounted) {
+        setState(() {
+          _pickedFiles[category] = File(file.path);
+        });
       }
-
-      if (isVideo) {
-        final micStatus = await Permission.microphone.request();
-        if (!micStatus.isGranted) return;
-
-        final XFile? video =
-        await _picker.pickVideo(source: ImageSource.camera);
-
-        if (video != null && mounted) {
-          setState(() {
-            _pickedFiles[category] = File(video.path);
-          });
-        }
-      } else {
-        final XFile? photo = await _picker.pickImage(
-          source: ImageSource.camera,
-          imageQuality: 50,
-        );
-
-        if (photo != null && mounted) {
-          setState(() {
-            _pickedFiles[category] = File(photo.path);
-          });
-        }
-      }
-    } catch (e, st) {
-      debugPrint('Pick error: $e');
-      debugPrintStack(stackTrace: st);
     } finally {
-      /// 🔓 Always unlock
-      _isPicking = false;
+      if (mounted) {
+        setState(() {
+          _isPicking = false;
+        });
+      }
     }
-  }
-
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Camera Permission'),
-        content: const Text(
-          'Camera permission is required to take photos. Please enable it in settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              openAppSettings();
-              Navigator.pop(context);
-            },
-            child: const Text('Settings'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -161,7 +124,6 @@ class _FieldExecutiveUploadAfterImagesScreenState
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
                 onPressed: () {
-                  // Final submission or back
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
@@ -189,7 +151,7 @@ class _FieldExecutiveUploadAfterImagesScreenState
 
   Widget _buildBottomImagePreview() {
     final capturedItems =
-    _pickedFiles.entries.where((e) => e.value != null).toList();
+        _pickedFiles.entries.where((e) => e.value != null).toList();
 
     if (capturedItems.isEmpty) return const SizedBox.shrink();
 
@@ -206,7 +168,7 @@ class _FieldExecutiveUploadAfterImagesScreenState
           const Padding(
             padding: EdgeInsets.only(left: 16, bottom: 8),
             child: Text(
-              "Captured Images",
+              'Captured Images',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -228,14 +190,13 @@ class _FieldExecutiveUploadAfterImagesScreenState
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border:
-                    Border.all(color: primaryGreen.withOpacity(0.3)),
+                    border: Border.all(color: primaryGreen.withOpacity(0.3)),
                     image: isVideo
                         ? null
                         : DecorationImage(
-                      image: FileImage(entry.value!),
-                      fit: BoxFit.cover,
-                    ),
+                            image: FileImage(entry.value!),
+                            fit: BoxFit.cover,
+                          ),
                   ),
                   child: Stack(
                     children: [
@@ -258,8 +219,11 @@ class _FieldExecutiveUploadAfterImagesScreenState
                           child: const CircleAvatar(
                             radius: 8,
                             backgroundColor: Colors.red,
-                            child: Icon(Icons.close,
-                                size: 10, color: Colors.white),
+                            child: Icon(
+                              Icons.close,
+                              size: 10,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -275,10 +239,10 @@ class _FieldExecutiveUploadAfterImagesScreenState
   }
 
   Widget _buildUploadItem(
-      String title,
-      IconData icon, {
-        bool isVideo = false,
-      }) {
+    String title,
+    IconData icon, {
+    bool isVideo = false,
+  }) {
     final pickedFile = _pickedFiles[title];
 
     return GestureDetector(
@@ -310,12 +274,20 @@ class _FieldExecutiveUploadAfterImagesScreenState
                 ),
               ),
             ),
-            Icon(
-              pickedFile != null
-                  ? Icons.check_circle
-                  : Icons.arrow_forward,
-              color: primaryGreen,
-            ),
+            if (_isPicking)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(primaryGreen),
+                ),
+              )
+            else
+              Icon(
+                pickedFile != null ? Icons.check_circle : Icons.arrow_forward,
+                color: primaryGreen,
+              ),
           ],
         ),
       ),

@@ -726,7 +726,7 @@ class ApiService {
       debugPrint('API Response Status: ${response.statusCode}');
       debugPrint('API Response Body: ${response.body}');
 
-      final jsonResponse = _safeJsonDecode(response.body);
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
       final bool isHtml = jsonResponse['isHtml'] == true;
 
       if (isHtml) {
@@ -798,7 +798,7 @@ class ApiService {
       debugPrint('API Response Status: ${response.statusCode}');
       debugPrint('API Response Body: ${response.body}');
 
-      final jsonResponse = _safeJsonDecode(response.body);
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
       final bool isHtml = jsonResponse['isHtml'] == true;
 
       if (isHtml) {
@@ -1183,6 +1183,61 @@ class ApiService {
         return response;
       }
     }
+  }
+
+  static Future<http.Response> _performAuthenticatedPut(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    int retryCount = 0;
+    while (true) {
+      final accessToken = await SecureStorageService.getAccessToken();
+      final mergedHeaders = <String, String>{
+        'Accept': 'application/json',
+        if (headers != null) ...headers,
+        if (accessToken != null && accessToken.isNotEmpty)
+          'Authorization': 'Bearer $accessToken',
+      };
+
+      final response = await http
+          .put(url, headers: mergedHeaders, body: body)
+          .timeout(ApiConstants.requestTimeout);
+
+      if (!_isUnauthorizedResponse(response)) {
+        return response;
+      }
+
+      if (retryCount >= _maxAuthRetries) {
+        await _handleAuthFailure();
+        return response;
+      }
+
+      retryCount++;
+      final refreshed = await _attemptTokenRefresh();
+      if (!refreshed) {
+        await _handleAuthFailure();
+        return response;
+      }
+    }
+  }
+
+  static String? _extractFirstErrorMessage(dynamic errors) {
+    if (errors is Map<String, dynamic>) {
+      for (final value in errors.values) {
+        if (value is List && value.isNotEmpty) {
+          final first = value.first?.toString().trim();
+          if (first != null && first.isNotEmpty) return first;
+        }
+        final text = value?.toString().trim();
+        if (text != null && text.isNotEmpty) return text;
+      }
+    }
+    if (errors is List && errors.isNotEmpty) {
+      final first = errors.first?.toString().trim();
+      if (first != null && first.isNotEmpty) return first;
+    }
+    return null;
   }
 
   /// Fetch dashboard data for a specific user
@@ -4048,6 +4103,168 @@ class ApiService {
     }
   }
 
+  /// Create a lead.
+  /// POST /lead
+  static Future<ApiResponse<Map<String, dynamic>>> createLead(
+    Map<String, dynamic> body, {
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId = storedRoleId ?? roleId;
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final payload = <String, dynamic>{...body, 'user_id': storedUserId};
+    final url = Uri.parse(ApiConstants.new_lead);
+
+    try {
+      debugPrint('CREATE LEAD API Request: POST $url');
+      debugPrint('CREATE LEAD Request Body: ${jsonEncode(payload)}');
+
+      final response = await _performAuthenticatedPost(
+        url,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('CREATE LEAD API Response Status: ${response.statusCode}');
+      debugPrint('CREATE LEAD API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Lead submitted'
+              : 'Failed to submit lead');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('CREATE LEAD Error: $e');
+      return ApiResponse(success: false, message: 'Failed to submit lead: $e');
+    }
+  }
+
+  /// Update a lead.
+  /// PUT /lead/{lead_id}?user_id={userId}
+  static Future<ApiResponse<Map<String, dynamic>>> updateLead(
+    String leadId,
+    Map<String, dynamic> body, {
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId = storedRoleId ?? roleId;
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final payload = <String, dynamic>{...body, 'user_id': storedUserId};
+    final endpoint = ApiConstants.edit_lead.replaceFirst('{lead_id}', leadId);
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {'user_id': storedUserId.toString()},
+    );
+
+    try {
+      debugPrint('UPDATE LEAD API Request: PUT $url');
+      debugPrint('UPDATE LEAD Request Body: ${jsonEncode(payload)}');
+
+      final response = await _performAuthenticatedPut(
+        url,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('UPDATE LEAD API Response Status: ${response.statusCode}');
+      debugPrint('UPDATE LEAD API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Lead updated successfully'
+              : 'Failed to update lead');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('UPDATE LEAD Error: $e');
+      return ApiResponse(success: false, message: 'Failed to update lead: $e');
+    }
+  }
+
   /// Fetch leads list
   /// GET /leads?user_id={userId}&role_id={roleId}&page={page}
   static Future<Map<String, dynamic>> fetchLeads(
@@ -4460,6 +4677,335 @@ class ApiService {
     } catch (e) {
       debugPrint('Error deleting meeting: $e');
       rethrow;
+    }
+  }
+
+  /// Create a follow-up.
+  /// POST /follow-up?user_id={userId}
+  static Future<ApiResponse<Map<String, dynamic>>> createFollowUp(
+    Map<String, dynamic> body,
+  ) async {
+    final storedUserId = await SecureStorageService.getUserId();
+
+    if (storedUserId == null) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final payload = <String, dynamic>{...body, 'user_id': storedUserId};
+    final url = Uri.parse(ApiConstants.new_follow_up).replace(
+      queryParameters: {'user_id': storedUserId.toString()},
+    );
+
+    try {
+      debugPrint('CREATE Follow-up API Request: POST $url');
+      debugPrint('CREATE Follow-up Request Body: ${jsonEncode(payload)}');
+
+      final response = await _performAuthenticatedPost(
+        url,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('CREATE Follow-up API Response Status: ${response.statusCode}');
+      debugPrint('CREATE Follow-up API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Follow-up submitted'
+              : 'Failed to submit follow-up');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('CREATE Follow-up Error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to submit follow-up: $e',
+      );
+    }
+  }
+
+  /// Update a follow-up.
+  /// PUT /follow-up/{follow_up_id}?user_id={userId}
+  static Future<ApiResponse<Map<String, dynamic>>> updateFollowUp(
+    String followUpId,
+    Map<String, dynamic> body,
+  ) async {
+    final storedUserId = await SecureStorageService.getUserId();
+
+    if (storedUserId == null) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final payload = <String, dynamic>{...body, 'user_id': storedUserId};
+    final endpoint = ApiConstants.edit_follow_up.replaceFirst(
+      '{follow_up_id}',
+      followUpId,
+    );
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {'user_id': storedUserId.toString()},
+    );
+
+    try {
+      debugPrint('UPDATE Follow-up API Request: PUT $url');
+      debugPrint('UPDATE Follow-up Request Body: ${jsonEncode(payload)}');
+
+      final response = await _performAuthenticatedPut(
+        url,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('UPDATE Follow-up API Response Status: ${response.statusCode}');
+      debugPrint('UPDATE Follow-up API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Follow-up updated successfully'
+              : 'Failed to update follow-up');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('UPDATE Follow-up Error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to update follow-up: $e',
+      );
+    }
+  }
+
+  /// Create a meeting.
+  /// POST /meet
+  static Future<ApiResponse<Map<String, dynamic>>> createMeeting(
+    Map<String, dynamic> body,
+  ) async {
+    final storedUserId = await SecureStorageService.getUserId();
+
+    if (storedUserId == null) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final payload = <String, dynamic>{...body, 'user_id': storedUserId};
+    final url = Uri.parse(ApiConstants.new_meet);
+
+    try {
+      debugPrint('CREATE Meeting API Request: POST $url');
+      debugPrint('CREATE Meeting Request Body: ${jsonEncode(payload)}');
+
+      final response = await _performAuthenticatedPost(
+        url,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('CREATE Meeting API Response Status: ${response.statusCode}');
+      debugPrint('CREATE Meeting API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Meeting submitted'
+              : 'Failed to submit meeting');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('CREATE Meeting Error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to submit meeting: $e',
+      );
+    }
+  }
+
+  /// Update a meeting.
+  /// PUT /meet/{meet_id}?user_id={userId}
+  static Future<ApiResponse<Map<String, dynamic>>> updateMeeting(
+    String meetingId,
+    Map<String, dynamic> body,
+  ) async {
+    final storedUserId = await SecureStorageService.getUserId();
+
+    if (storedUserId == null) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final payload = <String, dynamic>{...body, 'user_id': storedUserId};
+    final endpoint = ApiConstants.edit_meet.replaceFirst('{meet_id}', meetingId);
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {'user_id': storedUserId.toString()},
+    );
+
+    try {
+      debugPrint('UPDATE Meeting API Request: PUT $url');
+      debugPrint('UPDATE Meeting Request Body: ${jsonEncode(payload)}');
+
+      final response = await _performAuthenticatedPut(
+        url,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('UPDATE Meeting API Response Status: ${response.statusCode}');
+      debugPrint('UPDATE Meeting API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Meeting updated successfully'
+              : 'Failed to update meeting');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('UPDATE Meeting Error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to update meeting: $e',
+      );
     }
   }
 
@@ -5100,6 +5646,185 @@ class ApiService {
     }
   }
 
+  /// Fetch AMC plans for quotation form.
+  /// GET /amc-plans?user_id={userId}&role_id={roleId}
+  static Future<List<Map<String, dynamic>>> fetchAmcPlans() async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+
+    if (storedUserId == null || storedRoleId == null) {
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final url = Uri.parse(ApiConstants.amcplanslist).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': storedRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('AMC Plans API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('AMC Plans API Response Status: ${response.statusCode}');
+      debugPrint('AMC Plans API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load AMC plans: ${response.statusCode}');
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <dynamic>[];
+      }
+
+      List<dynamic> rawList = const <dynamic>[];
+      if (decoded is List) {
+        rawList = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['data'] is List) {
+          rawList = decoded['data'] as List<dynamic>;
+        } else if (decoded['plans'] is List) {
+          rawList = decoded['plans'] as List<dynamic>;
+        } else if (decoded['amc_plans'] is List) {
+          rawList = decoded['amc_plans'] as List<dynamic>;
+        } else if (decoded['data'] is Map<String, dynamic>) {
+          final dataMap = decoded['data'] as Map<String, dynamic>;
+          if (dataMap['plans'] is List) {
+            rawList = dataMap['plans'] as List<dynamic>;
+          } else if (dataMap['amc_plans'] is List) {
+            rawList = dataMap['amc_plans'] as List<dynamic>;
+          }
+        }
+      }
+
+      return rawList
+          .whereType<Map>()
+          .map((item) {
+            final map = Map<String, dynamic>.from(item as Map);
+            final nestedPlan = map['plan'];
+
+            if (nestedPlan is Map) {
+              return <String, dynamic>{
+                ...Map<String, dynamic>.from(nestedPlan),
+                if (map['covered_items'] != null) 'covered_items_meta': map['covered_items'],
+              };
+            }
+
+            return map;
+          })
+          .toList();
+    } on TimeoutException {
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException {
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('AMC Plans Error: $e');
+      rethrow;
+    }
+  }
+
+  /// Create quotation with one product payload and image file.
+  static Future<ApiResponse<Map<String, dynamic>>> createQuotation({
+    required Map<String, String> fields,
+    File? productImage,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final accessToken = await SecureStorageService.getAccessToken();
+
+    if (storedUserId == null || accessToken == null || accessToken.isEmpty) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final request = http.MultipartRequest('POST', Uri.parse(ApiConstants.new_quotation))
+      ..headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      })
+      ..fields.addAll({
+        ...fields,
+        'user_id': storedUserId.toString(),
+      });
+
+    try {
+      if (productImage != null && productImage.path.trim().isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'products[0][images]',
+            productImage.path,
+          ),
+        );
+      }
+
+      debugPrint('CREATE Quotation API Request: POST ${request.url}');
+      debugPrint('CREATE Quotation Request Fields: ${request.fields}');
+
+      final streamedResponse = await request.send().timeout(ApiConstants.requestTimeout);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('CREATE Quotation API Response Status: ${response.statusCode}');
+      debugPrint('CREATE Quotation API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Quotation submitted'
+              : 'Failed to submit quotation');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : jsonResponse,
+        errors: jsonResponse['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('CREATE Quotation Error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to submit quotation: $e',
+      );
+    }
+  }
+
   /// Fetch profile for the currently authenticated salesperson
   /// GET /profile?user_id={userId}&role_id={roleId}
   static Future<Map<String, dynamic>> fetchProfile() async {
@@ -5169,6 +5894,310 @@ class ApiService {
       debugPrint('🔴 Error fetching profile: $e');
       throw Exception('Failed to load profile: $e');
     }
+  }
+
+  /// Fetch feedback list for the currently authenticated field executive.
+  /// GET /get-all-feedback?user_id={userId}&role_id={roleId}
+  static Future<List<Map<String, dynamic>>> fetchFieldExecutiveFeedbackList({
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchFieldExecutiveFeedbackList',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final url = Uri.parse(ApiConstants.fieldexecutivefeedback).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load field executive feedback list: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <String, dynamic>{};
+      }
+
+      return _extractFieldExecutiveFeedbackList(decoded);
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching field executive feedback list: $e');
+      throw Exception('Failed to load feedback list: $e');
+    }
+  }
+
+  static List<Map<String, dynamic>> _extractFieldExecutiveFeedbackList(
+    dynamic decoded,
+  ) {
+    List<dynamic> rawList = const <dynamic>[];
+
+    if (decoded is List) {
+      rawList = decoded;
+    } else if (decoded is Map<String, dynamic>) {
+      if (decoded['feedbacks'] is List) {
+        rawList = decoded['feedbacks'] as List<dynamic>;
+      } else if (decoded['feedback'] is List) {
+        rawList = decoded['feedback'] as List<dynamic>;
+      } else if (decoded['items'] is List) {
+        rawList = decoded['items'] as List<dynamic>;
+      } else if (decoded['data'] is List) {
+        rawList = decoded['data'] as List<dynamic>;
+      } else if (decoded['data'] is Map<String, dynamic>) {
+        final dataMap = decoded['data'] as Map<String, dynamic>;
+        if (dataMap['feedbacks'] is List) {
+          rawList = dataMap['feedbacks'] as List<dynamic>;
+        } else if (dataMap['feedback'] is List) {
+          rawList = dataMap['feedback'] as List<dynamic>;
+        } else if (dataMap['items'] is List) {
+          rawList = dataMap['items'] as List<dynamic>;
+        } else if (dataMap['data'] is List) {
+          rawList = dataMap['data'] as List<dynamic>;
+        }
+      }
+    }
+
+    return rawList
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  /// Fetch one feedback detail for the currently authenticated field executive.
+  /// GET /get-feedback?feedback_id={feedbackId}&user_id={userId}&role_id={roleId}
+  static Future<Map<String, dynamic>> fetchFieldExecutiveFeedbackDetail({
+    required String feedbackId,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+    final sanitizedFeedbackId = feedbackId.trim().replaceFirst(RegExp(r'^#'), '');
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchFieldExecutiveFeedbackDetail',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    if (sanitizedFeedbackId.isEmpty) {
+      throw Exception('Invalid feedback id: $feedbackId');
+    }
+
+    Future<http.Response> performDetailRequest(Uri url) async {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+      return response;
+    }
+
+    final baseDetailEndpoint =
+        ApiConstants.fieldexecutivefeedbackdetail.replaceFirst(RegExp(r'/$'), '');
+    final primaryUrl = Uri.parse(baseDetailEndpoint).replace(
+      queryParameters: {
+        'feedback_id': sanitizedFeedbackId,
+        'id': sanitizedFeedbackId,
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+    final fallbackUrl = Uri.parse('$baseDetailEndpoint/$sanitizedFeedbackId').replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      var response = await performDetailRequest(primaryUrl);
+
+      if (response.statusCode != 200) {
+        response = await performDetailRequest(fallbackUrl);
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load field executive feedback detail: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <String, dynamic>{};
+      }
+
+      final detail = _extractFieldExecutiveFeedbackDetail(
+        decoded,
+        sanitizedFeedbackId,
+      );
+      return detail ?? const <String, dynamic>{};
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching field executive feedback detail: $e');
+      throw Exception('Failed to load feedback detail: $e');
+    }
+  }
+
+  static Map<String, dynamic>? _extractFieldExecutiveFeedbackDetail(
+    dynamic decoded,
+    String feedbackId,
+  ) {
+    final normalizedFeedbackId = feedbackId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericFeedbackId = int.tryParse(normalizedFeedbackId);
+
+    bool matchesFeedback(Map<String, dynamic> map) {
+      bool matchesValue(dynamic value) {
+        if (value == null) return false;
+        final text = value.toString().trim();
+        if (text.isEmpty) return false;
+        if (text == normalizedFeedbackId) return true;
+        if (numericFeedbackId != null) {
+          final parsed = int.tryParse(text);
+          return parsed != null && parsed == numericFeedbackId;
+        }
+        return false;
+      }
+
+      return matchesValue(map['id']) ||
+          matchesValue(map['feedback_id']) ||
+          matchesValue(map['request_id']);
+    }
+
+    Map<String, dynamic>? asMap(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(value);
+      }
+      if (value is Map) {
+        return Map<String, dynamic>.from(value as Map);
+      }
+      return null;
+    }
+
+    List<Map<String, dynamic>> asList(dynamic value) {
+      if (value is! List) return const <Map<String, dynamic>>[];
+      return value
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      const directMapKeys = <String>[
+        'feedback',
+        'item',
+        'details',
+        'data',
+      ];
+      for (final key in directMapKeys) {
+        final map = asMap(decoded[key]);
+        if (map != null && map.isNotEmpty) {
+          return map;
+        }
+      }
+
+      const directListKeys = <String>[
+        'feedbacks',
+        'feedback',
+        'items',
+        'data',
+        'results',
+      ];
+      for (final key in directListKeys) {
+        final items = asList(decoded[key]);
+        if (items.isEmpty) continue;
+        for (final item in items) {
+          if (matchesFeedback(item)) return item;
+        }
+        return items.first;
+      }
+
+      final nestedData = decoded['data'];
+      if (nestedData is Map<String, dynamic>) {
+        final nestedFeedback = asMap(nestedData['feedback']);
+        if (nestedFeedback != null && nestedFeedback.isNotEmpty) {
+          return nestedFeedback;
+        }
+        final nestedItems = asList(nestedData['items']);
+        if (nestedItems.isNotEmpty) {
+          for (final item in nestedItems) {
+            if (matchesFeedback(item)) return item;
+          }
+          return nestedItems.first;
+        }
+      }
+
+      final looksLikeFeedbackDetail =
+          decoded.containsKey('rating') ||
+          decoded.containsKey('message') ||
+          decoded.containsKey('comment') ||
+          decoded.containsKey('feedback');
+      if (looksLikeFeedbackDetail) {
+        return Map<String, dynamic>.from(decoded);
+      }
+
+      return null;
+    }
+
+    if (decoded is List) {
+      final items = decoded
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      if (items.isEmpty) return null;
+      for (final item in items) {
+        if (matchesFeedback(item)) return item;
+      }
+      return items.first;
+    }
+
+    return null;
   }
 
   /// Fetch profile data for the currently authenticated field executive.

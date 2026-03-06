@@ -36,6 +36,7 @@ class ApiConstants {
 
   //Follow-up Tab endpoints
   static const follow_up_page = "$baseUrl/follow-up";
+
   static const view_detail_follow_up = "$baseUrl/follow-up/{follow_up_id}";
   static const new_follow_up = "$baseUrl/follow-up";
   static const edit_follow_up = "$baseUrl/follow-up/{follow_up_id}";
@@ -130,15 +131,18 @@ class ApiConstants {
       "$baseUrl/check-out";
   static const String fieldexecutiveattendance =
       "$baseUrl/attendance";
+  static const String fieldexecutivefeedback =
+      "$baseUrl/get-all-feedback";
+  static const String fieldexecutivefeedbackdetail =
+
+      "$baseUrl/get-feedback";
 
   static const String fieldexecutivepersonalinfo =
       "$baseUrl/profile";
 
-  static const String fieldexecutivefeedback =
-      "$baseUrl/get-all-feedback";
+  static const String amcplanslist =
+      "$baseUrl/amc-plans";
 
-  static const String fieldexecutivefeedbackdetail =
-      "$baseUrl/get-feedback";
 
 
 

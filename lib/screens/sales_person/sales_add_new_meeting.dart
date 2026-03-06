@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/api_constants.dart';
 import '../../core/secure_storage_service.dart';
 import '../../model/sales_person/lead_model.dart';
 import '../../routes/app_routes.dart';
@@ -109,9 +108,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
   void initState() {
     super.initState();
     _applyInitialValues();
-    if (_isEditMode) {
-      _loadLeadOptions();
-    }
+    _loadLeadOptions();
   }
 
   @override
@@ -434,9 +431,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
 
     final messenger = ScaffoldMessenger.of(context);
     final userId = await SecureStorageService.getUserId();
-    final accessToken = await SecureStorageService.getAccessToken();
-
-    if (userId == null || accessToken == null || accessToken.isEmpty) {
+    if (userId == null) {
       messenger.showSnackBar(
         const SnackBar(content: Text("Authentication error. Please log in again.")),
       );
@@ -445,6 +440,12 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
     if (_selectedMeetingDate == null || _selectedStartTime == null) {
       messenger.showSnackBar(
         const SnackBar(content: Text("Please select start date and start time.")),
+      );
+      return;
+    }
+    if (selectedLeadId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Please select lead ID.")),
       );
       return;
     }
@@ -458,60 +459,34 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
         return;
       }
 
+      final body = <String, dynamic>{
+        "user_id": userId,
+        "lead_id": selectedLeadId,
+        "meet_title": meetingTitleCtrl.text.trim(),
+        "meeting_type": meetingTypeApiValues[meetingTypeValue] ?? "other",
+        "date": _toApiDate(_selectedMeetingDate!),
+        "time": _toApiTime(_selectedStartTime!),
+        "location": locationCtrl.text.trim(),
+        "attachment": "",
+        "meetAgenda": agendaCtrl.text.trim(),
+        "followUp": followupTaskCtrl.text.trim(),
+        "status": statusValue,
+      };
+
       final response = _isEditMode
-          ? await ApiService.put(
-              Uri.parse(
-                ApiConstants.edit_meet.replaceFirst(
-                  '{meet_id}',
-                  widget.initialMeetingId.toString(),
-                ),
-              ).replace(
-                queryParameters: {'user_id': userId.toString()},
-              ).toString(),
-              <String, dynamic>{
-                "meet_title": meetingTitleCtrl.text.trim(),
-                "meeting_type": meetingTypeApiValues[meetingTypeValue] ?? "other",
-                "date": _toApiDate(_selectedMeetingDate!),
-                "time": _toApiTime(_selectedStartTime!),
-                "location": locationCtrl.text.trim(),
-                "attachment": "",
-                "meetAgenda": agendaCtrl.text.trim(),
-                "followUp": followupTaskCtrl.text.trim(),
-              },
-              token: accessToken,
+          ? await ApiService.updateMeeting(
+              widget.initialMeetingId.toString(),
+              body,
             )
-          : await ApiService.post(
-              ApiConstants.new_meet,
-              <String, dynamic>{
-                "user_id": userId,
-                "meet_title": meetingTitleCtrl.text.trim(),
-                "meeting_type": meetingTypeApiValues[meetingTypeValue] ?? "other",
-                "date": _toApiDate(_selectedMeetingDate!),
-                "time": _toApiTime(_selectedStartTime!),
-                "location": locationCtrl.text.trim(),
-                "attachment": "",
-                "meetAgenda": agendaCtrl.text.trim(),
-                "followUp": followupTaskCtrl.text.trim(),
-                "status": statusValue,
-                if (selectedLeadId != null) "lead_id": selectedLeadId,
-              },
-              token: accessToken,
+          : await ApiService.createMeeting(
+              body,
             );
 
-      String message = _isEditMode
-          ? "Meeting updated successfully"
-          : "Meeting submitted";
-      bool success = true;
-      if (response is Map<String, dynamic>) {
-        if (response['message'] != null) {
-          message = response['message'].toString();
-        }
-        if (response['success'] is bool) {
-          success = response['success'] as bool;
-        } else if (response['status'] is bool) {
-          success = response['status'] as bool;
-        }
-      }
+      String message = response.message ??
+          (_isEditMode
+              ? "Meeting updated successfully"
+              : "Meeting submitted");
+      final bool success = response.success;
 
       messenger.showSnackBar(SnackBar(content: Text(message)));
       if (success && mounted) {
@@ -674,10 +649,13 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
 
   Widget _leadDropdown() {
     final items = leadOptions.map((lead) {
+      final leadIdText = lead.leadNumber.trim().isEmpty
+          ? lead.id.toString()
+          : lead.leadNumber.trim();
       return DropdownMenuItem<int>(
         value: lead.id,
         child: Text(
-          '${lead.id} - ${lead.name}',
+          leadIdText,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 13,
@@ -691,14 +669,12 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
     final hasSelected = selectedLeadId != null &&
         items.any((item) => item.value == selectedLeadId);
     if (selectedLeadId != null && !hasSelected) {
-      final name = clientNameCtrl.text.trim().isEmpty
-          ? "Lead"
-          : clientNameCtrl.text.trim();
+      final name = widget.initialClientLeadName?.trim();
       items.add(
         DropdownMenuItem<int>(
           value: selectedLeadId,
           child: Text(
-            '${selectedLeadId!} - $name',
+            (name == null || name.isEmpty) ? selectedLeadId!.toString() : name,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
@@ -719,14 +695,14 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor(
-            "Select lead",
+            "Select lead ID",
             suffixIcon: const Padding(
               padding: EdgeInsets.only(right: 8),
               child: Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
             ),
           ),
           hint: Text(
-            leadsLoading ? "Loading leads..." : "Select lead",
+            leadsLoading ? "Loading lead IDs..." : "Select lead ID",
             style: const TextStyle(color: Colors.black38, fontSize: 13),
           ),
           dropdownColor: const Color(0xFFEFEFEF),
@@ -873,15 +849,14 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
             key: _formKey,
             child: Column(
               children: [
-                if (_isEditMode) _leadDropdown(),
-                if (_isEditMode)
-                  _textField(
-                    label: "Client / Lead Name *",
-                    controller: clientNameCtrl,
-                    readOnly: _isPrimaryLocked,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? "Enter name" : null,
-                  ),
+                _leadDropdown(),
+                _textField(
+                  label: "Client / Lead Name *",
+                  controller: clientNameCtrl,
+                  readOnly: true,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? "Select lead first" : null,
+                ),
                 _textField(
                   label: "Meeting Title",
                   controller: meetingTitleCtrl,

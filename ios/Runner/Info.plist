@@ -22,6 +22,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Crackteck uses the camera to capture service, installation, and receipt photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Crackteck uses the microphone when recording service videos from the camera.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Crackteck accesses your photo library so you can attach existing service images when needed.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

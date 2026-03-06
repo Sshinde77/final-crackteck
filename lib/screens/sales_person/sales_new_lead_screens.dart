@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:country_state_city_picker/model/select_status_model.dart'
     as csc_picker;
 
-import '../../constants/api_constants.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -69,6 +68,14 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   String? _selectedUrgency;
   bool _locationLoading = true;
   bool _leadLoading = false;
+  bool _submitting = false;
+  String _leadStatus = 'New';
+  String _leadCompanyName = '';
+  String _leadDesignation = '';
+  String _leadIndustryType = '';
+  String _leadSource = 'app';
+  String _leadDob = '';
+  String _leadGender = '';
 
   bool get _isEditMode =>
       widget.isEdit && (widget.leadId != null && widget.leadId!.isNotEmpty);
@@ -247,6 +254,61 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     return null;
   }
 
+  String _joinNonEmpty(Iterable<String> parts, {String separator = ', '}) {
+    return parts.map((e) => e.trim()).where((e) => e.isNotEmpty).join(separator);
+  }
+
+  Map<String, dynamic> _buildLeadPayload(int userId) {
+    final firstName = firstNameCtrl.text.trim();
+    final lastName = lastNameCtrl.text.trim();
+    final fullName = _joinNonEmpty([firstName, lastName], separator: ' ');
+    final address1 = address1Ctrl.text.trim();
+    final address2 = address2Ctrl.text.trim();
+    final city = cityCtrl.text.trim();
+    final state = stateCtrl.text.trim();
+    final country = countryCtrl.text.trim().isEmpty ? 'India' : countryCtrl.text.trim();
+    final pincode = pincodeCtrl.text.trim();
+    final notes = notesCtrl.text.trim();
+    final address = _joinNonEmpty([
+      address1,
+      address2,
+      city,
+      state,
+      country,
+      pincode,
+    ]);
+
+    return <String, dynamic>{
+      'user_id': userId,
+      'name': fullName,
+      'full_name': fullName,
+      'first_name': firstName,
+      'last_name': lastName,
+      'phone': phoneCtrl.text.trim(),
+      'email': emailCtrl.text.trim(),
+      'dob': _leadDob,
+      'gender': _leadGender,
+      'address': address,
+      'address1': address1,
+      'address2': address2,
+      'address_line_1': address1,
+      'address_line_2': address2,
+      'city': city,
+      'state': state,
+      'country': country,
+      'pincode': pincode,
+      'company_name': _leadCompanyName,
+      'designation': _leadDesignation,
+      'industry_type': _leadIndustryType,
+      'source': _leadSource,
+      'requirement_type': requirementTypeCtrl.text.trim(),
+      'budget_range': budgetRangeCtrl.text.trim(),
+      'urgency': (_selectedUrgency ?? '').toLowerCase(),
+      'status': _isEditMode ? _leadStatus : 'New',
+      if (notes.isNotEmpty) 'notes': notes,
+    };
+  }
+
   Future<void> _loadLeadForEdit() async {
     if (!_isEditMode) return;
     setState(() => _leadLoading = true);
@@ -340,6 +402,17 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         budgetRangeCtrl.text = _pick(leadMap, ['budget_range']);
         notesCtrl.text = _pick(leadMap, ['notes']);
         _selectedUrgency = _normalizeUrgency(_pick(leadMap, ['urgency']));
+        _leadStatus = _pick(leadMap, ['status']).isEmpty
+            ? 'New'
+            : _pick(leadMap, ['status']);
+        _leadCompanyName = _pick(leadMap, ['company_name']);
+        _leadDesignation = _pick(leadMap, ['designation']);
+        _leadIndustryType = _pick(leadMap, ['industry_type']);
+        _leadSource = _pick(leadMap, ['source']).isEmpty
+            ? 'app'
+            : _pick(leadMap, ['source']);
+        _leadDob = _pick(leadMap, ['dob']);
+        _leadGender = _pick(leadMap, ['gender']);
       });
     } catch (_) {
       if (!mounted) return;
@@ -477,109 +550,43 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                     ),
                   ),
                   onPressed: () async {
-                    if (_leadLoading) return;
+                    if (_leadLoading || _submitting) return;
                     final messenger = ScaffoldMessenger.of(context);
                     if (!_formKey.currentState!.validate()) {
                       return;
                     }
 
-                    try {
-                      final userId = await SecureStorageService.getUserId();
-                      final accessToken =
-                          await SecureStorageService.getAccessToken();
-
-                      if (userId == null ||
-                          accessToken == null ||
-                          accessToken.isEmpty) {
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Authentication error. Please log in again.',
-                            ),
+                    final userId = await SecureStorageService.getUserId();
+                    if (userId == null) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Authentication error. Please log in again.',
                           ),
-                        );
-                        return;
-                      }
+                        ),
+                      );
+                      return;
+                    }
 
-                      final isEdit = _isEditMode;
-                      final body = <String, dynamic>{
-                        'user_id': userId,
-                        'requirement_type': requirementTypeCtrl.text.trim(),
-                        'budget_range': budgetRangeCtrl.text.trim(),
-                        'urgency': (_selectedUrgency ?? '').toLowerCase(),
-                        'status': 'New',
-                      };
+                    setState(() => _submitting = true);
+                    try {
+                      final body = _buildLeadPayload(userId);
+                      final response = _isEditMode
+                          ? await ApiService.updateLead(
+                              widget.leadId!,
+                              body,
+                              roleId: widget.roleId,
+                            )
+                          : await ApiService.createLead(
+                              body,
+                              roleId: widget.roleId,
+                            );
 
-                      if (!isEdit) {
-                        body.addAll({
-                          'first_name': firstNameCtrl.text.trim(),
-                          'last_name': lastNameCtrl.text.trim(),
-                          'name':
-                              '${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}'
-                                  .trim(),
-                          'phone': phoneCtrl.text.trim(),
-                          'email': emailCtrl.text.trim(),
-                          'address1': address1Ctrl.text.trim(),
-                          'address2': address2Ctrl.text.trim(),
-                          'address':
-                              '${address1Ctrl.text.trim()} ${address2Ctrl.text.trim()}'
-                                  .trim(),
-                          'city': cityCtrl.text.trim(),
-                          'state': stateCtrl.text.trim(),
-                          'country': countryCtrl.text.trim().isEmpty
-                              ? 'India'
-                              : countryCtrl.text.trim(),
-                          'pincode': pincodeCtrl.text.trim(),
-                          'industry_type': '',
-                          'notes': notesCtrl.text.trim(),
-                        });
-                      }
-
-                      final dynamic response;
-                      if (isEdit) {
-                        final endpoint = ApiConstants.edit_lead.replaceFirst(
-                          '{lead_id}',
-                          widget.leadId!,
-                        );
-                        final uri = Uri.parse(endpoint).replace(
-                          queryParameters: {
-                            'user_id': userId.toString(),
-                            'role_id': widget.roleId.toString(),
-                          },
-                        );
-                        response = await ApiService.put(
-                          uri.toString(),
-                          body,
-                          token: accessToken,
-                        );
-                      } else {
-                        final uri = Uri.parse(ApiConstants.new_lead).replace(
-                          queryParameters: {
-                            'user_id': userId.toString(),
-                            'role_id': widget.roleId.toString(),
-                          },
-                        );
-                        response = await ApiService.post(
-                          uri.toString(),
-                          body,
-                          token: accessToken,
-                        );
-                      }
-
-                      String message = isEdit
-                          ? 'Lead updated successfully'
-                          : 'Lead submitted';
-                      bool success = true;
-                      if (response is Map<String, dynamic>) {
-                        if (response['message'] != null) {
-                          message = response['message'].toString();
-                        }
-                        if (response['success'] is bool) {
-                          success = response['success'] as bool;
-                        } else if (response['status'] is bool) {
-                          success = response['status'] as bool;
-                        }
-                      }
+                      final message = response.message ??
+                          (_isEditMode
+                              ? 'Lead updated successfully'
+                              : 'Lead submitted');
+                      final success = response.success;
 
                       messenger.showSnackBar(SnackBar(content: Text(message)));
 
@@ -599,10 +606,16 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                       messenger.showSnackBar(
                         SnackBar(content: Text('Failed to submit lead: $e')),
                       );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _submitting = false);
+                      }
                     }
                   },
                   child: Text(
-                    _isEditMode ? 'Update' : 'Submit',
+                    _submitting
+                        ? (_isEditMode ? 'Updating...' : 'Submitting...')
+                        : (_isEditMode ? 'Update' : 'Submit'),
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,

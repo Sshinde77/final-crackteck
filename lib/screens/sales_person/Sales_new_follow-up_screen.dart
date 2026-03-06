@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/api_constants.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
@@ -363,19 +362,6 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
 
     setState(() => submitLoading = true);
     try {
-      final endpoint = _isEditMode
-          ? Uri.parse(
-              ApiConstants.edit_follow_up.replaceFirst(
-                '{follow_up_id}',
-                widget.followUpId ?? '',
-              ),
-            ).replace(
-              queryParameters: {'user_id': userId.toString()},
-            )
-          : Uri.parse(ApiConstants.new_follow_up).replace(
-              queryParameters: {'user_id': userId.toString()},
-            );
-
       if (_isEditMode && (widget.followUpId == null || widget.followUpId!.trim().isEmpty)) {
         messenger.showSnackBar(
           const SnackBar(content: Text("Follow-up ID is missing for edit.")),
@@ -389,35 +375,23 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
         'followup_date': _toApiDate(_selectedFollowUpDate!),
         'followup_time': _toApiTime(_selectedFollowUpTime!),
         'remarks': remarksCtrl.text.trim(),
-        'status': 'pending',
+        'status': 'Pending',
       };
 
       final response = _isEditMode
-          ? await ApiService.put(
-              endpoint.toString(),
+          ? await ApiService.updateFollowUp(
+              widget.followUpId!,
               body,
-              token: accessToken,
             )
-          : await ApiService.post(
-              endpoint.toString(),
+          : await ApiService.createFollowUp(
               body,
-              token: accessToken,
             );
 
-      String message = _isEditMode
+      String message = response.message ??
+          (_isEditMode
           ? "Follow-up updated successfully"
-          : "Follow-up submitted";
-      bool success = true;
-      if (response is Map<String, dynamic>) {
-        if (response['message'] != null) {
-          message = response['message'].toString();
-        }
-        if (response['success'] is bool) {
-          success = response['success'] as bool;
-        } else if (response['status'] is bool) {
-          success = response['status'] as bool;
-        }
-      }
+          : "Follow-up submitted");
+      final bool success = response.success;
 
       messenger.showSnackBar(SnackBar(content: Text(message)));
 

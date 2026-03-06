@@ -7,6 +7,7 @@ import '../../model/field executive/field_executive_product_service.dart';
 import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
+import '../../services/media_picker_service.dart';
 
 class _NotWorkingDialogResult {
   final String selectedOption;
@@ -455,7 +456,9 @@ class _FieldExecutiveInstallationChecklistScreenState
     });
 
     try {
-      final XFile? picked = await _picker.pickImage(
+      final XFile? picked = await MediaPickerService.pickImage(
+        context,
+        picker: _picker,
         source: source,
         imageQuality: 70,
       );
@@ -464,8 +467,6 @@ class _FieldExecutiveInstallationChecklistScreenState
           _beforeImage = File(picked.path);
         });
       }
-    } catch (e) {
-      debugPrint("Error picking before image: $e");
     } finally {
       if (mounted) {
         setState(() {
@@ -517,7 +518,9 @@ class _FieldExecutiveInstallationChecklistScreenState
     });
 
     try {
-      final XFile? picked = await _picker.pickImage(
+      final XFile? picked = await MediaPickerService.pickImage(
+        context,
+        picker: _picker,
         source: source,
         imageQuality: 70,
       );
@@ -526,8 +529,6 @@ class _FieldExecutiveInstallationChecklistScreenState
           _afterImage = File(picked.path);
         });
       }
-    } catch (e) {
-      debugPrint("Error picking after image: $e");
     } finally {
       if (mounted) {
         setState(() {
@@ -1885,7 +1886,9 @@ class _FieldExecutiveInstallationChecklistScreenState
                 isPickingImage = true;
               });
               try {
-                final XFile? picked = await _picker.pickImage(
+                final XFile? picked = await MediaPickerService.pickImage(
+                  dialogContext,
+                  picker: _picker,
                   source: source,
                   imageQuality: 70,
                 );
@@ -1894,8 +1897,6 @@ class _FieldExecutiveInstallationChecklistScreenState
                     selectedImage = File(picked.path);
                   });
                 }
-              } catch (e) {
-                debugPrint('Error picking issue image: $e');
               } finally {
                 if (dialogContext.mounted) {
                   setDialogState(() {
