@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
+import '../reimbursement/reimbursement_screen.dart';
 import '../../widgets/placeholder.dart';
 
 
@@ -166,8 +167,6 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
               ],
             ),
 
-            const SizedBox(height: 20),
-
             // ---------------- MENU LIST ----------------
             _ProfileTile(
               icon: Icons.person_outline,
@@ -182,6 +181,18 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                 //   context,
                 //   MaterialPageRoute(builder: (context) => const DocumentsScreen()),
                 // );
+              },
+            ),
+            _ProfileTile(
+              icon: Icons.account_balance_wallet_outlined,
+              label: "Reimbursement",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReimbursementScreen(),
+                  ),
+                );
               },
             ),
             _ProfileTile(

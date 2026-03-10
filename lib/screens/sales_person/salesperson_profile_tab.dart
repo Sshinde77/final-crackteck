@@ -6,6 +6,7 @@ import '../../widgets/bottom_navigation.dart';
 import '../../model/sales_person/profile_provider.dart';
 import '../../services/api_service.dart';
 import '../../core/secure_storage_service.dart';
+import '../reimbursement/reimbursement_screen.dart';
 
 class SalesPersonMoreScreen extends StatefulWidget {
   final String userName;
@@ -264,8 +265,6 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                 //       ],
                 //     ),
                 //   ),
-                const SizedBox(height: 16),
-
                 _OptionTile(
                   icon: Icons.info_outline,
                   label: "Personal info",
@@ -273,6 +272,20 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                     Navigator.pushNamed(
                       context,
                       AppRoutes.SalesPersonPersonalInfoScreen,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                _OptionTile(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: "Reimbursement",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReimbursementScreen(),
+                      ),
                     );
                   },
                 ),

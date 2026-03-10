@@ -268,42 +268,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.white,
-          child: SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoutes.FieldExecutiveProductPaymentScreen,
-                  arguments: fieldexecutiveproductpaymentArguments(
-                    roleId: widget.roleId,
-                    roleName: widget.roleName,
-                  ),
-                );
-              },
-              child: const Text(
-                'Use in repair',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

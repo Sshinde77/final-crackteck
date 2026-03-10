@@ -1,20 +1,26 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Lightweight token storage abstraction.
 ///
-/// Values are cached in memory and persisted using SharedPreferences.
+/// Values are cached in memory and persisted using FlutterSecureStorage.
 class SecureStorageService {
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _roleIdKey = 'role_id';
   static const String _userIdKey = 'user_id';
+  static const String _userProfileKey = 'user_profile';
 
   static String? _accessToken;
   static String? _refreshToken;
   static int? _roleId;
   static int? _userId;
+  static Map<String, dynamic>? _userProfile;
 
   /// Tracks which userIds have completed vehicle registration during this
   /// app session. This lets us treat vehicle registration as a one-time
@@ -34,28 +40,23 @@ class SecureStorageService {
     if (!forceReload && _accessToken != null && _accessToken!.isNotEmpty) {
       return _accessToken;
     }
-    final prefs = await SharedPreferences.getInstance();
-    _accessToken = _normalizeToken(prefs.getString(_accessTokenKey));
+    _accessToken = _normalizeToken(await _storage.read(key: _accessTokenKey));
     return _accessToken;
   }
 
   /// Persist a new access token.
   static Future<void> saveAccessToken(String token) async {
     final normalizedToken = _normalizeToken(token);
-    final prefs = await SharedPreferences.getInstance();
     if (normalizedToken == null) {
       _accessToken = null;
-      await prefs.remove(_accessTokenKey);
+      await _storage.delete(key: _accessTokenKey);
       debugPrint(
         'WARNING: saveAccessToken received an empty token. Cleared access_token.',
       );
       return;
     }
 
-    final saved = await prefs.setString(_accessTokenKey, normalizedToken);
-    if (!saved) {
-      debugPrint('WARNING: Failed to persist access_token to SharedPreferences.');
-    }
+    await _storage.write(key: _accessTokenKey, value: normalizedToken);
     _accessToken = normalizedToken;
   }
 
@@ -64,71 +65,95 @@ class SecureStorageService {
     if (!forceReload && _refreshToken != null && _refreshToken!.isNotEmpty) {
       return _refreshToken;
     }
-    final prefs = await SharedPreferences.getInstance();
-    _refreshToken = _normalizeToken(prefs.getString(_refreshTokenKey));
+    _refreshToken = _normalizeToken(await _storage.read(key: _refreshTokenKey));
     return _refreshToken;
   }
 
   /// Persist a new refresh token.
   static Future<void> saveRefreshToken(String token) async {
     final normalizedToken = _normalizeToken(token);
-    final prefs = await SharedPreferences.getInstance();
     if (normalizedToken == null) {
       _refreshToken = null;
-      await prefs.remove(_refreshTokenKey);
+      await _storage.delete(key: _refreshTokenKey);
       return;
     }
 
-    final saved = await prefs.setString(_refreshTokenKey, normalizedToken);
-    if (!saved) {
-      debugPrint(
-        'WARNING: Failed to persist refresh_token to SharedPreferences.',
-      );
-    }
+    await _storage.write(key: _refreshTokenKey, value: normalizedToken);
     _refreshToken = normalizedToken;
   }
 
   /// Get the currently stored role id (if any).
   static Future<int?> getRoleId({bool forceReload = false}) async {
     if (!forceReload && _roleId != null) return _roleId;
-    final prefs = await SharedPreferences.getInstance();
-    _roleId = prefs.getInt(_roleIdKey);
+    final String? raw = await _storage.read(key: _roleIdKey);
+    _roleId = raw == null ? null : int.tryParse(raw);
     return _roleId;
   }
 
   /// Persist the current role id.
   static Future<void> saveRoleId(int roleId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = await prefs.setInt(_roleIdKey, roleId);
-    if (!saved) {
-      debugPrint('WARNING: Failed to persist role_id to SharedPreferences.');
-    }
+    await _storage.write(key: _roleIdKey, value: roleId.toString());
     _roleId = roleId;
   }
 
   /// Get the currently stored user id (if any).
   static Future<int?> getUserId({bool forceReload = false}) async {
     if (!forceReload && _userId != null) return _userId;
-    final prefs = await SharedPreferences.getInstance();
-    _userId = prefs.getInt(_userIdKey);
+    final String? raw = await _storage.read(key: _userIdKey);
+    _userId = raw == null ? null : int.tryParse(raw);
     return _userId;
   }
 
   /// Persist the current user id.
   static Future<void> saveUserId(int userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = await prefs.setInt(_userIdKey, userId);
-    if (!saved) {
-      debugPrint('WARNING: Failed to persist user_id to SharedPreferences.');
-    }
+    await _storage.write(key: _userIdKey, value: userId.toString());
     _userId = userId;
   }
 
   /// Clear the current user id while keeping tokens unchanged.
   static Future<void> clearUserId() async {
     _userId = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userIdKey);
+    await _storage.delete(key: _userIdKey);
+  }
+
+  /// Get the currently stored user profile (if any).
+  static Future<Map<String, dynamic>?> getUserProfile({
+    bool forceReload = false,
+  }) async {
+    if (!forceReload && _userProfile != null) {
+      return _userProfile;
+    }
+
+    final String? raw = await _storage.read(key: _userProfileKey);
+    if (raw == null || raw.trim().isEmpty) {
+      _userProfile = null;
+      return null;
+    }
+
+    try {
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        _userProfile = decoded;
+        return _userProfile;
+      }
+    } catch (error) {
+      debugPrint('WARNING: Failed to decode stored user profile: $error');
+    }
+
+    _userProfile = null;
+    return null;
+  }
+
+  /// Persist the current user profile.
+  static Future<void> saveUserProfile(Map<String, dynamic> profile) async {
+    await _storage.write(key: _userProfileKey, value: jsonEncode(profile));
+    _userProfile = Map<String, dynamic>.from(profile);
+  }
+
+  /// Clear the stored user profile.
+  static Future<void> clearUserProfile() async {
+    _userProfile = null;
+    await _storage.delete(key: _userProfileKey);
   }
 
   /// Returns `true` if the in-memory current user has already completed the
@@ -161,12 +186,13 @@ class SecureStorageService {
     _refreshToken = null;
     _roleId = null;
     _userId = null;
-    final prefs = await SharedPreferences.getInstance();
+    _userProfile = null;
     await Future.wait([
-      prefs.remove(_accessTokenKey),
-      prefs.remove(_refreshTokenKey),
-      prefs.remove(_roleIdKey),
-      prefs.remove(_userIdKey),
+      _storage.delete(key: _accessTokenKey),
+      _storage.delete(key: _refreshTokenKey),
+      _storage.delete(key: _roleIdKey),
+      _storage.delete(key: _userIdKey),
+      _storage.delete(key: _userProfileKey),
     ]);
   }
 }

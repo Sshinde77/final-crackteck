@@ -143,6 +143,9 @@ class ApiConstants {
   static const String amcplanslist =
       "$baseUrl/amc-plans";
 
+  static const String googlelogin =
+      "$baseUrl/google-login";
+
 
 
 

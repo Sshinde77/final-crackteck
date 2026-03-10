@@ -1,7 +1,11 @@
 import 'package:final_crackteck/routes/app_routes.dart';
+import 'package:final_crackteck/core/secure_storage_service.dart';
+import 'package:final_crackteck/services/auth_service.dart';
 import 'package:final_crackteck/services/api_service.dart';
+import 'package:final_crackteck/services/google_auth_service.dart';
 import 'package:final_crackteck/widgets/custom_button.dart';
 import 'package:final_crackteck/widgets/error_dialog.dart';
+import 'package:final_crackteck/widgets/google_sign_in_button.dart';
 import 'package:final_crackteck/widgets/phone_input_field.dart';
 import 'package:flutter/material.dart';
 
@@ -25,8 +29,11 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final ApiService _apiService = ApiService.instance;
+  final AuthService _authService = AuthService();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   String? _errorText;
 
   @override
@@ -138,6 +145,96 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _errorText = null;
+    });
+
+    try {
+      final GoogleAuthResult googleResult = await _googleAuthService.signIn();
+      final Map<String, dynamic> response = await _authService.loginWithGoogle(
+        googleResult.accessToken,
+        roleId: widget.roleId,
+      );
+
+      if (!mounted) return;
+
+      final bool isSuccess = response['success'] == true;
+      if (!isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response['message']?.toString() ??
+                  'Google sign-in failed. Please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      await SecureStorageService.saveRoleId(widget.roleId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google sign-in successful.')),
+      );
+      _navigateToDashboard();
+    } on GoogleAuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (error) {
+      debugPrint('Unhandled Google sign-in error: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google sign-in failed. Please try again.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  void _navigateToDashboard() {
+    switch (widget.roleId) {
+      case 1:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.FieldExecutiveDashboard,
+          (route) => false,
+          arguments: fieldexecutivedashboardArguments(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+          ),
+        );
+        return;
+      case 2:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.Deliverypersondashbord,
+          (route) => false,
+        );
+        return;
+      case 3:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.salespersonDashboard,
+          (route) => false,
+        );
+        return;
+      default:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.roleSelection,
+          (route) => false,
+        );
+    }
+  }
+
   /// Navigate to sign up screen
   void _navigateToSignUp() {
     Navigator.pushNamed(
@@ -218,6 +315,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 text: AppStrings.loginButton,
                 onPressed: _handleLogin,
                 isLoading: _isLoading,
+              ),
+
+              const SizedBox(height: 16),
+
+              GoogleSignInButton(
+                onPressed: (_isLoading || _isGoogleLoading)
+                    ? null
+                    : _handleGoogleSignIn,
+                isLoading: _isGoogleLoading,
               ),
 
               const SizedBox(height: AppSpacing.buttonSignUpSpacing),

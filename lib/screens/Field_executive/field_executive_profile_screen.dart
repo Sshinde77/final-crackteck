@@ -9,6 +9,7 @@ import 'field_executive_feedback.dart';
 import 'field_executive_personal_info.dart';
 import 'field_executive_privacy_policy.dart';
 import 'field_executive_stock_in_hand.dart';
+import '../reimbursement/reimbursement_screen.dart';
 import '../../widgets/placeholder.dart';
 
 class CombinedProfileScreen extends StatefulWidget {
@@ -33,9 +34,55 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
   bool _isLoggingOut = false;
   bool _isClockingIn = false;
   bool _isClockingOut = false;
+  late String _displayName;
 
   String loginTime = "00:00 AM";
   String logoutTime = "00:00 PM";
+
+  @override
+  void initState() {
+    super.initState();
+    _displayName = widget.userName.trim();
+    _loadProfileName();
+  }
+
+  String _readString(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return '';
+  }
+
+  Future<void> _loadProfileName() async {
+    try {
+      final profile = await ApiService.fetchFieldExecutivePersonalInfo(
+        roleId: widget.roleId,
+      );
+      if (!mounted) return;
+
+      final firstName = _readString(profile, const ['first_name']);
+      final lastName = _readString(profile, const ['last_name']);
+      final fullName = [firstName, lastName].where((part) => part.isNotEmpty).join(' ').trim();
+      final fallbackName = _readString(
+        profile,
+        const ['name', 'full_name', 'user_name', 'username'],
+      );
+      final resolvedName = fullName.isNotEmpty ? fullName : fallbackName;
+
+      if (resolvedName.isEmpty || resolvedName == _displayName) {
+        return;
+      }
+
+      setState(() {
+        _displayName = resolvedName;
+      });
+    } catch (_) {
+      // Keep the existing fallback name if the profile request fails.
+    }
+  }
 
   String _formatTime(DateTime dateTime) {
     return DateFormat('hh:mm a').format(dateTime.toLocal());
@@ -231,7 +278,7 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
       }
 
       await SecureStorageService.clearTokens();
-      if (!mounted) return;
+      if (!mounted) return; 
 
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -269,7 +316,7 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
         ),
         titleSpacing: 18,
         title: Text(
-          "Hi, ${widget.userName}",
+          "Hi, $_displayName",
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
@@ -329,8 +376,6 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-
               // All options (combined from both screenshots)
               _OptionTile(
                 icon: Icons.person,
@@ -343,6 +388,19 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         roleId: widget.roleId,
                         roleName: widget.roleName,
                       ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.account_balance_wallet_outlined,
+                label: "Reimbursement",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ReimbursementScreen(),
                     ),
                   );
                 },
