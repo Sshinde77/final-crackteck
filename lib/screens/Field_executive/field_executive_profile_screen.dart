@@ -257,7 +257,7 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
       },
     );
 
-    if (shouldLogout != true || !mounted) return;
+    if (shouldLogout != true || !mounted) return; 
 
     setState(() => _isLoggingOut = true);
 
