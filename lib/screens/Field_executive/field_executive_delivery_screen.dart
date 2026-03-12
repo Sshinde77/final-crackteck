@@ -85,6 +85,22 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 12),
+            _DeliveryOptionCard(
+              icon: Icons.inventory_2_outlined,
+              title: 'Product Delivery',
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.DeliveryRequestListScreen,
+                  arguments: deliveryrequestlistArguments(
+                    roleId: roleId,
+                    roleName: roleName,
+                    deliveryType: DeliveryRequestTypes.productDelivery,
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

@@ -11,6 +11,7 @@ import '../model/field executive/diagnosis_item.dart';
 import '../model/field executive/field_executive_service_request_detail.dart';
 import '../core/secure_storage_service.dart';
 import '../core/navigation_service.dart';
+import 'mock_product_delivery_service.dart';
 
 class _ServiceRequestAuthState {
   final int? userId;
@@ -1478,6 +1479,11 @@ class ApiService {
     required String deliveryType,
     int roleId = 1,
   }) async {
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.productDelivery) {
+      return MockProductDeliveryService.fetchRequests();
+    }
+
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 
@@ -1489,7 +1495,6 @@ class ApiService {
       throw Exception('Authentication error. Please log in again.');
     }
 
-    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
     final endpoint = DeliveryRequestTypes.endpointFor(normalizedType);
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
 
@@ -1562,6 +1567,11 @@ class ApiService {
     required String deliveryId,
     int roleId = 1,
   }) async {
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.productDelivery) {
+      return MockProductDeliveryService.fetchRequestDetail(deliveryId);
+    }
+
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 
@@ -2446,6 +2456,17 @@ class ApiService {
     required String deliveryId,
     int? roleId,
   }) async {
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.productDelivery) {
+      return ApiResponse(
+        success: true,
+        message: 'Product delivery accepted successfully',
+        data: <String, dynamic>{
+          'delivery_id': deliveryId.trim().replaceFirst(RegExp(r'^#'), ''),
+        },
+      );
+    }
+
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 
@@ -2566,6 +2587,18 @@ class ApiService {
     required String deliveryId,
     int? roleId,
   }) async {
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.productDelivery) {
+      return ApiResponse(
+        success: true,
+        message: 'OTP sent successfully. Use 1234 for product delivery.',
+        data: <String, dynamic>{
+          'delivery_id': deliveryId.trim().replaceFirst(RegExp(r'^#'), ''),
+          'otp': '1234',
+        },
+      );
+    }
+
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 
@@ -2814,6 +2847,18 @@ class ApiService {
     required String otp,
     int? roleId,
   }) async {
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.productDelivery) {
+      final normalizedOtp = otp.trim();
+      final isValidOtp = normalizedOtp == '1234';
+      return ApiResponse(
+        success: isValidOtp,
+        message: isValidOtp
+            ? 'Product delivery confirmed successfully'
+            : 'Invalid OTP. Use 1234 for product delivery.',
+      );
+    }
+
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 

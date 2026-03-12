@@ -44,6 +44,8 @@ class _FieldExecutiveDeliverySendOtpScreenState
         return DeliveryRequestTypes.pickup;
       case FieldExecutiveDeliveryTypes.requestPart:
         return DeliveryRequestTypes.part;
+      case FieldExecutiveDeliveryTypes.productDelivery:
+        return DeliveryRequestTypes.productDelivery;
       case FieldExecutiveDeliveryTypes.returnRequest:
       default:
         return DeliveryRequestTypes.returnRequest;

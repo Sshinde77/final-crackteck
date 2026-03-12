@@ -4,6 +4,7 @@ class FieldExecutiveDeliveryTypes {
   static const String returnRequest = 'return_request';
   static const String pickupRequest = 'pickup_request';
   static const String requestPart = 'request_part';
+  static const String productDelivery = 'product_delivery';
 
   static String normalize(String raw) {
     final value = raw.trim().toLowerCase();
@@ -12,6 +13,7 @@ class FieldExecutiveDeliveryTypes {
     if (value.contains('return')) return returnRequest;
     if (value.contains('pickup')) return pickupRequest;
     if (value.contains('part')) return requestPart;
+    if (value.contains('product')) return productDelivery;
 
     if (value == '1') return returnRequest;
     if (value == '2') return pickupRequest;
@@ -28,6 +30,8 @@ class FieldExecutiveDeliveryTypes {
         return 'Pickup Request';
       case requestPart:
         return 'Request Part';
+      case productDelivery:
+        return 'Product Delivery';
       default:
         return 'Delivery Request';
     }

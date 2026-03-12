@@ -165,6 +165,7 @@ class DeliveryRequestTypes {
   static const String pickup = 'pickup';
   static const String returnRequest = 'return';
   static const String part = 'part';
+  static const String productDelivery = 'product_delivery';
 
   static String normalize(String deliveryType) {
     return deliveryType.trim().toLowerCase();
@@ -178,6 +179,8 @@ class DeliveryRequestTypes {
         return 'Return Request';
       case part:
         return 'Part Request';
+      case productDelivery:
+        return 'Product Delivery';
       default:
         return 'Delivery Request';
     }
