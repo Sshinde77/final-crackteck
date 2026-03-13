@@ -152,6 +152,10 @@ class ApiConstants {
       "$baseUrl/orders/{id}";
   static const String fieldexecutivedeliveryproductacceptorder =
       "$baseUrl/accept-order/{id}";
+  static const String fieldexecutivedeliveryproductsendotp =
+      "$baseUrl/order/{id}/otp";
+  static const String fieldexecutivedeliveryproductverifyotp =
+      "$baseUrl/order/{id}/verify-otp";
 
 
 
@@ -246,6 +250,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliveryreturnrequestsendotp;
       case part:
         return ApiConstants.deliverypartrequestsendotp;
+      case productDelivery:
+        return ApiConstants.fieldexecutivedeliveryproductsendotp;
       default:
         throw ArgumentError('Invalid delivery type: $deliveryType');
     }
@@ -259,6 +265,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliveryreturnrequestverifyotp;
       case part:
         return ApiConstants.deliverypartrequestverifyotp;
+      case productDelivery:
+        return ApiConstants.fieldexecutivedeliveryproductverifyotp;
       default:
         throw ArgumentError('Invalid delivery type: $deliveryType');
     }

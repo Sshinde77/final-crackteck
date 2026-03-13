@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -60,6 +61,74 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildOtpField(int index) {
+    return SizedBox(
+      width: 58,
+      height: 132,
+      child: TextField(
+        controller: _controllers[index],
+        focusNode: _focusNodes[index],
+        maxLength: 1,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
+        decoration: InputDecoration(
+          counterText: '',
+          filled: true,
+          fillColor: const Color(0xFFE8E8E8),
+          contentPadding: EdgeInsets.zero,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(color: _primaryGreen, width: 2),
+          ),
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && index < _otpLength - 1) {
+            _focusNodes[index + 1].requestFocus();
+          } else if (value.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeroHeader() {
+    return Container(
+      color: _primaryGreen,
+      padding: const EdgeInsets.fromLTRB(8, 18, 8, 26),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 34),
+              onPressed: () => Navigator.pop(context),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'OTP verification',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _verifyOtp() async {
@@ -134,153 +203,128 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: _primaryGreen,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'OTP Verification',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 28),
-              Text(
-                'Enter OTP to confirm delivery for ${widget.requestId}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                'Enter code',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(_otpLength, (index) {
-                    return SizedBox(
-                      width: 48,
-                      height: 58,
-                      child: TextField(
-                        controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      maxLength: 1,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: _primaryGreen, width: 2),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        if (value.isNotEmpty && index < _otpLength - 1) {
-                          _focusNodes[index + 1].requestFocus();
-                        } else if (value.isEmpty && index > 0) {
-                          _focusNodes[index - 1].requestFocus();
-                        }
-                      },
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 36),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isVerifying ? null : _verifyOtp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryGreen,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isVerifying
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Verify OTP',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: const Color(0xFFF3F3F3),
+      body: Column(
+        children: [
+          _buildHeroHeader(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(32, 34, 32, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: _secondsRemaining == 0
-                        ? () {
-                            setState(() {
-                              _secondsRemaining = 80;
-                            });
-                            _startTimer();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('OTP resent (mock)'),
-                                backgroundColor: Colors.black87,
-                              ),
-                            );
-                          }
-                        : null,
-                    child: Text(
-                      'Resend code',
-                      style: TextStyle(
-                        color: _secondsRemaining == 0 ? Colors.black : Colors.grey,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  const Text(
+                    'We\'ve sent your verification code to',
+                    style: TextStyle(
+                      fontSize: 18,
+                      height: 1.3,
+                      color: Color(0xFFA7A7A7),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   Text(
-                    '${_formatTime(_secondsRemaining)} left',
-                    style: const TextStyle(color: Colors.grey),
+                    widget.requestId.isNotEmpty
+                        ? widget.requestId
+                        : '+91 **** ** ****',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFFA7A7A7),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  const Text(
+                    'Enter code',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFF5C5C5C),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(_otpLength, _buildOtpField),
+                  ),
+                  const SizedBox(height: 90),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 76,
+                    child: ElevatedButton(
+                      onPressed: _isVerifying ? null : _verifyOtp,
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: _primaryGreen,
+                        disabledBackgroundColor: _primaryGreen.withValues(alpha: 0.65),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: _isVerifying
+                          ? const SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.4,
+                              ),
+                            )
+                          : const Text(
+                              'Verify',
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 34),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: _secondsRemaining == 0
+                            ? () {
+                                setState(() {
+                                  _secondsRemaining = 80;
+                                });
+                                _startTimer();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('OTP resent (mock)'),
+                                    backgroundColor: Colors.black87,
+                                  ),
+                                );
+                              }
+                            : null,
+                        child: Text(
+                          'Resend code',
+                          style: TextStyle(
+                            color: _secondsRemaining == 0
+                                ? Colors.black
+                                : Colors.black.withValues(alpha: 0.9),
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${_formatTime(_secondsRemaining)} left',
+                        style: const TextStyle(
+                          color: Color(0xFF8B8B8B),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

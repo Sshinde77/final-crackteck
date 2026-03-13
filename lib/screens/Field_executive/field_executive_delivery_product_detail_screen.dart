@@ -52,7 +52,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String? _errorMessage;
   Map<String, dynamic>? _detail;
 
-  @override
+  @override 
   void initState() {
     super.initState();
     _fetchDetails();

@@ -2595,16 +2595,6 @@ class ApiService {
     int? roleId,
   }) async {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-    if (normalizedType == DeliveryRequestTypes.productDelivery) {
-      return ApiResponse(
-        success: true,
-        message: 'OTP sent successfully. Use 1234 for product delivery.',
-        data: <String, dynamic>{
-          'delivery_id': deliveryId.trim().replaceFirst(RegExp(r'^#'), ''),
-          'otp': '1234',
-        },
-      );
-    }
 
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
@@ -2642,7 +2632,8 @@ class ApiService {
 
     if (endpoint.contains('{id}')) {
       endpoint = endpoint.replaceAll('{id}', numericId.toString());
-    } else if (!endpoint.contains('/$numericId/send-otp')) {
+    } else if (normalizedType != DeliveryRequestTypes.productDelivery &&
+        !endpoint.contains('/$numericId/send-otp')) {
       var base = endpoint.trim();
       if (base.endsWith('/')) {
         base = base.substring(0, base.length - 1);
@@ -2855,16 +2846,6 @@ class ApiService {
     int? roleId,
   }) async {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-    if (normalizedType == DeliveryRequestTypes.productDelivery) {
-      final normalizedOtp = otp.trim();
-      final isValidOtp = normalizedOtp == '1234';
-      return ApiResponse(
-        success: isValidOtp,
-        message: isValidOtp
-            ? 'Product delivery confirmed successfully'
-            : 'Invalid OTP. Use 1234 for product delivery.',
-      );
-    }
 
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
@@ -2910,7 +2891,8 @@ class ApiService {
 
     if (endpoint.contains('{id}')) {
       endpoint = endpoint.replaceAll('{id}', numericId.toString());
-    } else if (!endpoint.contains('/$numericId/verify-otp')) {
+    } else if (normalizedType != DeliveryRequestTypes.productDelivery &&
+        !endpoint.contains('/$numericId/verify-otp')) {
       var base = endpoint.trim();
       if (base.endsWith('/')) {
         base = base.substring(0, base.length - 1);
