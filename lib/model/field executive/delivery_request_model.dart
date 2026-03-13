@@ -28,21 +28,84 @@ class DeliveryRequestModel {
   });
 
   factory DeliveryRequestModel.fromJson(Map<String, dynamic> json) {
-    final product = json['product'] is Map
-        ? Map<String, dynamic>.from(json['product'] as Map)
-        : const <String, dynamic>{};
+    final product = _asMap(
+          json['product'],
+        ) ??
+        _asMap(json['product_detail']) ??
+        _asMap(json['product_details']) ??
+        _asMap(json['service_request_product']) ??
+        const <String, dynamic>{};
+    final serviceRequest = _asMap(json['service_request']) ?? const <String, dynamic>{};
+    final customer = _asMap(serviceRequest['customer']) ??
+        _asMap(json['customer']) ??
+        const <String, dynamic>{};
+    final customerAddress = _asMap(serviceRequest['customer_address']) ??
+        _asMap(json['customer_address']) ??
+        const <String, dynamic>{};
 
-    final id = _toText(json['id']);
-    final requestId = _toText(json['request_id']);
-    final productName = _toText(product['product_name']);
-    final modelNo = _toText(product['model_no']);
-    final finalPrice = _toText(product['final_price']);
-    final mainProductImage = _toText(product['main_product_image']);
-    final status = _toText(json['status']);
-    final location = _toText(json['location']);
-    final customerName = _toText(json['customer_name']);
-    final customerPhone = _toText(json['customer_phone']);
-    final customerAddress = _toText(json['customer_address']);
+    final id = _firstText([
+      json['id'],
+      json['order_id'],
+      json['delivery_id'],
+    ]);
+    final requestId = _firstText([
+      json['request_id'],
+      json['order_no'],
+      json['order_number'],
+      serviceRequest['request_id'],
+      id,
+    ]);
+    final productName = _firstText([
+      product['product_name'],
+      product['name'],
+      json['product_name'],
+      json['name'],
+    ]);
+    final modelNo = _firstText([
+      product['model_no'],
+      product['model'],
+      json['model_no'],
+    ]);
+    final finalPrice = _firstText([
+      product['final_price'],
+      product['price'],
+      json['final_price'],
+      json['total_amount'],
+      json['amount'],
+    ]);
+    final mainProductImage = _firstText([
+      product['main_product_image'],
+      product['product_image'],
+      product['image'],
+      json['main_product_image'],
+      json['product_image'],
+    ]);
+    final status = _firstText([
+      json['status'],
+      json['delivery_status'],
+      json['order_status'],
+    ]);
+    final location = _firstText([
+      json['location'],
+      customerAddress['branch_name'],
+      customerAddress['city'],
+    ]);
+    final customerName = _firstText([
+      _joinName(customer),
+      json['customer_name'],
+      json['name'],
+    ]);
+    final customerPhone = _firstText([
+      customer['phone'],
+      customer['phone_number'],
+      json['customer_phone'],
+      json['phone'],
+    ]);
+    final customerAddressText = _firstText([
+      _formatAddress(customerAddress),
+      json['customer_address'],
+      json['address'],
+    ]);
 
     return DeliveryRequestModel(
       id: id,
@@ -55,7 +118,7 @@ class DeliveryRequestModel {
       location: location.isEmpty ? 'N/A' : location,
       customer_name: customerName.isEmpty ? 'N/A' : customerName,
       customer_phone: customerPhone.isEmpty ? 'N/A' : customerPhone,
-      customer_address: customerAddress.isEmpty ? 'N/A' : customerAddress,
+      customer_address: customerAddressText.isEmpty ? 'N/A' : customerAddressText,
     );
   }
 
@@ -64,5 +127,45 @@ class DeliveryRequestModel {
     if (value is String) return value.trim();
     if (value is num || value is bool) return value.toString();
     return '';
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  static String _firstText(List<dynamic> values) {
+    for (final value in values) {
+      final text = _toText(value);
+      if (text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return '';
+  }
+
+  static String _joinName(Map<String, dynamic> value) {
+    final first = _toText(value['first_name']);
+    final last = _toText(value['last_name']);
+    return [first, last].where((part) => part.isNotEmpty).join(' ').trim();
+  }
+
+  static String _formatAddress(Map<String, dynamic> value) {
+    final addressLine = [
+      _toText(value['address1']),
+      _toText(value['address_1']),
+      _toText(value['address2']),
+      _toText(value['address_2']),
+    ].where((part) => part.isNotEmpty).join(', ');
+    final locality = [
+      _toText(value['city']),
+      _toText(value['state']),
+      _toText(value['country']),
+      _toText(value['pincode']),
+      _toText(value['pin_code']),
+    ].where((part) => part.isNotEmpty).join(', ');
+
+    return [addressLine, locality].where((part) => part.isNotEmpty).join(', ');
   }
 }

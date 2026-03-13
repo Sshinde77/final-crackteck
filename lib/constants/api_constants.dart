@@ -146,6 +146,13 @@ class ApiConstants {
   static const String googlelogin =
       "$baseUrl/google-login";
 
+  static const String fieldexecutivedeliveryproductlist =
+      "$baseUrl/orders";
+  static const String fieldexecutivedeliveryproductdetail =
+      "$baseUrl/orders/{id}";
+  static const String fieldexecutivedeliveryproductacceptorder =
+      "$baseUrl/accept-order/{id}";
+
 
 
 
@@ -194,6 +201,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliveryreturnrequestlist;
       case part:
         return ApiConstants.deliverypartrequestlist;
+      case productDelivery:
+        return ApiConstants.fieldexecutivedeliveryproductlist;
       default:
         throw ArgumentError('Invalid delivery type: $deliveryType');
     }
@@ -207,6 +216,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliveryreturnrequestdetail;
       case part:
         return ApiConstants.deliverypartrequestdetail;
+      case productDelivery:
+        return ApiConstants.fieldexecutivedeliveryproductdetail;
       default:
         throw ArgumentError('Invalid delivery type: $deliveryType');
     }
@@ -220,6 +231,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliveryreturnrequestaccept;
       case part:
         return ApiConstants.deliverypartrequestaccept;
+      case productDelivery:
+        return ApiConstants.fieldexecutivedeliveryproductacceptorder;
       default:
         throw ArgumentError('Invalid delivery type: $deliveryType');
     }

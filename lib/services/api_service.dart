@@ -11,7 +11,6 @@ import '../model/field executive/diagnosis_item.dart';
 import '../model/field executive/field_executive_service_request_detail.dart';
 import '../core/secure_storage_service.dart';
 import '../core/navigation_service.dart';
-import 'mock_product_delivery_service.dart';
 
 class _ServiceRequestAuthState {
   final int? userId;
@@ -1480,9 +1479,6 @@ class ApiService {
     int roleId = 1,
   }) async {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-    if (normalizedType == DeliveryRequestTypes.productDelivery) {
-      return MockProductDeliveryService.fetchRequests();
-    }
 
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
@@ -1568,9 +1564,6 @@ class ApiService {
     int roleId = 1,
   }) async {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-    if (normalizedType == DeliveryRequestTypes.productDelivery) {
-      return MockProductDeliveryService.fetchRequestDetail(deliveryId);
-    }
 
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
@@ -1588,9 +1581,12 @@ class ApiService {
       throw Exception('Invalid delivery id: $deliveryId');
     }
 
-    final endpoint = DeliveryRequestTypes.detailEndpointFor(deliveryType);
+    final endpointTemplate = DeliveryRequestTypes.detailEndpointFor(deliveryType);
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
-    final url = Uri.parse('$endpoint/$sanitizedDeliveryId').replace(
+    final endpoint = endpointTemplate.contains('{id}')
+        ? endpointTemplate.replaceAll('{id}', sanitizedDeliveryId)
+        : '$endpointTemplate/$sanitizedDeliveryId';
+    final url = Uri.parse(endpoint).replace(
       queryParameters: {
         'role_id': effectiveRoleId,
         'user_id': storedUserId.toString(),
@@ -1687,9 +1683,11 @@ class ApiService {
     if (response is Map<String, dynamic>) {
       const mapKeys = <String>[
         'data',
+        'result',
         'pickup_request',
         'return_request',
         'part_request',
+        'order',
         'request',
       ];
       for (final key in mapKeys) {
@@ -1702,6 +1700,7 @@ class ApiService {
         'pickup_requests',
         'return_requests',
         'part_requests',
+        'orders',
         'requests',
         'items',
       ];
@@ -1712,6 +1711,14 @@ class ApiService {
           if (matchesRequest(item)) return item;
         }
         return items.first;
+      }
+
+      if (matchesRequest(response) ||
+          response.containsKey('product') ||
+          response.containsKey('service_request') ||
+          response.containsKey('order_no') ||
+          response.containsKey('order_number')) {
+        return Map<String, dynamic>.from(response);
       }
       return null;
     }
@@ -1752,6 +1759,7 @@ class ApiService {
         'returnRequests',
       ],
       DeliveryRequestTypes.part: const ['part_requests', 'partRequests'],
+      DeliveryRequestTypes.productDelivery: const ['orders', 'order_list', 'orderList'],
     };
 
     final genericKeys = <String>[
@@ -2457,15 +2465,6 @@ class ApiService {
     int? roleId,
   }) async {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-    if (normalizedType == DeliveryRequestTypes.productDelivery) {
-      return ApiResponse(
-        success: true,
-        message: 'Product delivery accepted successfully',
-        data: <String, dynamic>{
-          'delivery_id': deliveryId.trim().replaceFirst(RegExp(r'^#'), ''),
-        },
-      );
-    }
 
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
@@ -2492,12 +2491,14 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
 
-    String endpoint = DeliveryRequestTypes.acceptEndpointTemplateFor(deliveryType)
-        .replaceFirst('{id}', numericId.toString());
+    String endpoint = DeliveryRequestTypes.acceptEndpointTemplateFor(
+      deliveryType,
+    ).replaceFirst('{id}', numericId.toString());
 
     if (endpoint.contains('{id}')) {
       endpoint = endpoint.replaceAll('{id}', numericId.toString());
-    } else if (!endpoint.contains('/$numericId/accept')) {
+    } else if (normalizedType != DeliveryRequestTypes.productDelivery &&
+        !endpoint.contains('/$numericId/accept')) {
       var base = endpoint.trim();
       if (base.endsWith('/')) {
         base = base.substring(0, base.length - 1);
@@ -2516,8 +2517,14 @@ class ApiService {
     );
 
     try {
-      debugPrint('API Request: POST $url');
-      final response = await _performAuthenticatedPost(url);
+      final isProductDelivery =
+          normalizedType == DeliveryRequestTypes.productDelivery;
+      debugPrint(
+        'API Request: ${isProductDelivery ? 'GET' : 'POST'} $url',
+      );
+      final response = isProductDelivery
+          ? await _performAuthenticatedGet(url)
+          : await _performAuthenticatedPost(url);
       debugPrint('API Response Status: ${response.statusCode}');
       debugPrint('API Response Body: ${response.body}');
 

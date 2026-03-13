@@ -109,11 +109,21 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       'customer': customer,
       'customer_address': customerAddress,
       'request_type': _firstNonEmpty(
-        <dynamic>[payload['request_type'], serviceRequest['request_type']],
+        <dynamic>[
+          payload['request_type'],
+          serviceRequest['request_type'],
+          if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery)
+            DeliveryRequestTypes.productDelivery,
+        ],
         fallback: '',
       ),
       'request_id': _firstNonEmpty(
-        <dynamic>[payload['request_id'], serviceRequest['request_id'], payload['id']],
+        <dynamic>[
+          payload['request_id'],
+          payload['order_number'],
+          serviceRequest['request_id'],
+          payload['id'],
+        ],
         fallback: '',
       ),
       'id': _firstNonEmpty(
@@ -126,7 +136,11 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   Map<String, dynamic> _resolveRequestPayload(Map<String, dynamic> rawDetail) {
     switch (_normalizedDeliveryType) {
       case DeliveryRequestTypes.part:
+        final data = _mapFrom(rawDetail['data']);
+        return data.isNotEmpty ? data : rawDetail;
       case DeliveryRequestTypes.productDelivery:
+        final order = _mapFrom(rawDetail['order']);
+        if (order.isNotEmpty) return order;
         final data = _mapFrom(rawDetail['data']);
         return data.isNotEmpty ? data : rawDetail;
       case DeliveryRequestTypes.pickup:
@@ -141,14 +155,22 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   Map<String, dynamic> _resolveProduct(Map<String, dynamic> payload) {
-    if (_normalizedDeliveryType == DeliveryRequestTypes.part ||
-        _normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
+    if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
+      final orderItems = _listOfMaps(payload['order_items']);
+      if (orderItems.isNotEmpty) {
+        return orderItems.first;
+      }
+      return _mapFrom(payload['product']);
+    }
+
+    if (_normalizedDeliveryType == DeliveryRequestTypes.part) {
       return _mapFrom(payload['product']);
     }
     return _mapFrom(payload['service_request_product']);
   }
 
   bool get _hasDetail =>
+      _payload.isNotEmpty ||
       _product.isNotEmpty ||
       _serviceRequest.isNotEmpty ||
       _customer.isNotEmpty ||
@@ -160,6 +182,14 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value as Map);
     return const <String, dynamic>{};
+  }
+
+  List<Map<String, dynamic>> _listOfMaps(dynamic value) {
+    if (value is! List) return const <Map<String, dynamic>>[];
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   String _asText(dynamic value) {
@@ -312,6 +342,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayProductName => _firstNonEmpty(
         <dynamic>[
           _isPartDeliveryType ? _product['product_name'] : _product['name'],
+          _product['name'],
           widget.productName,
         ],
       );
@@ -329,27 +360,33 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
               ? _product['short_description']
               : _product['description'],
           _product['full_description'],
+          _product['product_sku'],
         ],
       );
 
   String get _displayPriceOrCharge => _normalizePrice(
         _firstNonEmpty(
           <dynamic>[
-            _isPartDeliveryType
+            _normalizedDeliveryType == DeliveryRequestTypes.productDelivery
+                ? _payload['total_amount']
+                : _isPartDeliveryType
                 ? _product['final_price']
                 : _product['service_charge'],
+            _product['line_total'],
             _payload['final_price'],
+            _payload['total_amount'],
           ],
         ),
       );
 
   String get _displayQuantity => _firstNonEmpty(
         <dynamic>[
+          _product['quantity'],
           _payload['requested_quantity'],
           _payload['quantity'],
           _product['requested_quantity'],
-          _product['quantity'],
           _product['qty'],
+          _payload['total_items'],
         ],
         fallback: '1',
       );
@@ -436,6 +473,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayStatus => _firstNonEmpty(
         <dynamic>[
           _payload['status'],
+          _product['item_status'],
           widget.status,
         ],
       );
@@ -471,6 +509,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   DateTime? get _displayDateTime {
     for (final key in const [
       'delivery_date',
+      'expected_delivery_date',
       'delivery_time',
       'scheduled_at',
       'scheduled_date',

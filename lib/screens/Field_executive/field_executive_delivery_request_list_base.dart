@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/secure_storage_service.dart';
 import '../../services/api_service.dart';
 import 'field_executive_delivery_part_request_detail_screen.dart';
+import 'field_executive_delivery_product_detail_screen.dart';
 import 'field_executive_delivery_flow_helpers.dart';
 import 'field_executive_delivery_pickup_detail_screen.dart';
 import 'field_executive_delivery_return_detail_screen.dart';
@@ -82,6 +83,29 @@ class _FieldExecutiveDeliveryRequestListBaseState
     final normalizedType = FieldExecutiveDeliveryTypes.normalize(
       widget.deliveryType,
     );
+
+    if (normalizedType == FieldExecutiveDeliveryTypes.productDelivery) {
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => DeliveryProductDetailScreen(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            deliveryType: widget.deliveryType,
+            deliveryId: request.id?.toString() ?? request.requestId,
+            requestType: FieldExecutiveDeliveryTypes.label(widget.deliveryType),
+            requestId: request.requestId,
+            productName: request.productName,
+            location: request.location,
+            status: request.status,
+            customerName: request.customerName,
+            customerPhone: request.customerPhone,
+            customerAddress: request.customerAddress,
+          ),
+        ),
+      );
+      return;
+    }
 
     Widget destination = FieldExecutiveDeliveryReturnDetailScreen(
       roleId: widget.roleId,
