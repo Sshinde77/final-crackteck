@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../model/reimbursement_model.dart';
+import '../../services/api_service.dart';
 import '../../services/media_picker_service.dart';
 
 class AddReimbursementScreen extends StatefulWidget {
@@ -122,17 +123,49 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
       _isSubmitting = true;
     });
 
-    final ReimbursementModel reimbursement = ReimbursementModel(
-      amount: double.parse(_amountController.text.trim()),
+    final response = await ApiService.addStaffReimbursement(
+      amount: _amountController.text.trim(),
       reason: _reasonController.text.trim(),
-      status: ReimbursementStatus.pending,
-      receiptImagePath: _selectedReceipt!.path,
-      createdAt: DateTime.now(),
+      receipt: _selectedReceipt!,
     );
 
     if (!mounted) {
       return;
     }
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (!response.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response.message ?? 'Failed to submit reimbursement request.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final reimbursement =
+        response.data != null && response.data!.isNotEmpty
+        ? ReimbursementModel.fromJson(response.data!)
+        : ReimbursementModel(
+            amount: double.tryParse(_amountController.text.trim()) ?? 0,
+            reason: _reasonController.text.trim(),
+            status: ReimbursementStatus.pending,
+            receiptImagePath: _selectedReceipt!.path,
+            createdAt: DateTime.now(),
+          );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          response.message ?? 'Reimbursement request added successfully.',
+        ),
+      ),
+    );
 
     Navigator.pop(context, reimbursement);
   }

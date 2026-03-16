@@ -156,6 +156,13 @@ class ApiConstants {
       "$baseUrl/order/{id}/otp";
   static const String fieldexecutivedeliveryproductverifyotp =
       "$baseUrl/order/{id}/verify-otp";
+  static const String staffreimbursements =
+      "$baseUrl/staff-reimbursements";
+  static const String staffreimbursementdetail =
+      "$baseUrl/staff-reimbursements/{id}";
+  static const String addstaffreimbursement =
+      "$baseUrl/staff-reimbursements/";
+
 
 
 

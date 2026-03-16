@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../constants/api_constants.dart';
 import '../model/api_response.dart';
@@ -6411,6 +6412,400 @@ class ApiService {
     } catch (e) {
       debugPrint('Error fetching field executive attendance: $e');
       throw Exception('Failed to load attendance: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchStaffReimbursements({
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchStaffReimbursements',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final url = Uri.parse(ApiConstants.staffreimbursements).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load reimbursements: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <String, dynamic>{};
+      }
+
+      return _extractStaffReimbursementsList(decoded);
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching reimbursements: $e');
+      throw Exception('Failed to load reimbursements: $e');
+    }
+  }
+
+  static List<Map<String, dynamic>> _extractStaffReimbursementsList(
+    dynamic decoded,
+  ) {
+    List<dynamic> rawList = const <dynamic>[];
+
+    if (decoded is List) {
+      rawList = decoded;
+    } else if (decoded is Map<String, dynamic>) {
+      if (decoded['reimbursements'] is List) {
+        rawList = decoded['reimbursements'] as List<dynamic>;
+      } else if (decoded['staff_reimbursements'] is List) {
+        rawList = decoded['staff_reimbursements'] as List<dynamic>;
+      } else if (decoded['items'] is List) {
+        rawList = decoded['items'] as List<dynamic>;
+      } else if (decoded['data'] is List) {
+        rawList = decoded['data'] as List<dynamic>;
+      } else if (decoded['data'] is Map<String, dynamic>) {
+        final dataMap = decoded['data'] as Map<String, dynamic>;
+        if (dataMap['reimbursements'] is List) {
+          rawList = dataMap['reimbursements'] as List<dynamic>;
+        } else if (dataMap['staff_reimbursements'] is List) {
+          rawList = dataMap['staff_reimbursements'] as List<dynamic>;
+        } else if (dataMap['items'] is List) {
+          rawList = dataMap['items'] as List<dynamic>;
+        } else if (dataMap['data'] is List) {
+          rawList = dataMap['data'] as List<dynamic>;
+        }
+      }
+    }
+
+    return rawList
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> fetchStaffReimbursementDetail({
+    required String reimbursementId,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+    final sanitizedId = reimbursementId.trim().replaceFirst(RegExp(r'^#'), '');
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchStaffReimbursementDetail',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    if (sanitizedId.isEmpty) {
+      throw Exception('Invalid reimbursement id: $reimbursementId');
+    }
+
+    final endpoint = ApiConstants.staffreimbursementdetail.replaceFirst(
+      '{id}',
+      sanitizedId,
+    );
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: {
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load reimbursement detail: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <String, dynamic>{};
+      }
+
+      final detail = _extractStaffReimbursementDetail(decoded, sanitizedId);
+      return detail ?? const <String, dynamic>{};
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching reimbursement detail: $e');
+      throw Exception('Failed to load reimbursement detail: $e');
+    }
+  }
+
+  static Map<String, dynamic>? _extractStaffReimbursementDetail(
+    dynamic decoded,
+    String reimbursementId,
+  ) {
+    final normalizedId = reimbursementId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+
+    bool matchesId(dynamic value) {
+      if (value == null) return false;
+      final text = value.toString().trim();
+      if (text.isEmpty) return false;
+      if (text == normalizedId) return true;
+      if (numericId == null) return false;
+      final parsed = int.tryParse(text);
+      return parsed != null && parsed == numericId;
+    }
+
+    Map<String, dynamic>? asMap(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(value);
+      }
+      if (value is Map) {
+        return Map<String, dynamic>.from(value as Map);
+      }
+      return null;
+    }
+
+    List<Map<String, dynamic>> asList(dynamic value) {
+      if (value is! List) return const <Map<String, dynamic>>[];
+      return value
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    }
+
+    bool looksLikeDetail(Map<String, dynamic> map) {
+      return map.containsKey('amount') ||
+          map.containsKey('reimbursement_amount') ||
+          map.containsKey('reason') ||
+          map.containsKey('description') ||
+          map.containsKey('receipt') ||
+          map.containsKey('receipt_image');
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      const directMapKeys = <String>[
+        'reimbursement',
+        'staff_reimbursement',
+        'item',
+        'details',
+        'data',
+      ];
+      for (final key in directMapKeys) {
+        final map = asMap(decoded[key]);
+        if (map != null && map.isNotEmpty) {
+          return map;
+        }
+      }
+
+      const directListKeys = <String>[
+        'reimbursements',
+        'staff_reimbursements',
+        'items',
+        'data',
+        'results',
+      ];
+      for (final key in directListKeys) {
+        final items = asList(decoded[key]);
+        for (final item in items) {
+          if (matchesId(item['id']) ||
+              matchesId(item['reimbursement_id']) ||
+              matchesId(item['staff_reimbursement_id'])) {
+            return item;
+          }
+        }
+        if (items.isNotEmpty) {
+          return items.first;
+        }
+      }
+
+      final nestedData = decoded['data'];
+      if (nestedData is Map<String, dynamic>) {
+        final nestedDetail = asMap(nestedData['reimbursement']) ??
+            asMap(nestedData['staff_reimbursement']) ??
+            asMap(nestedData['item']);
+        if (nestedDetail != null && nestedDetail.isNotEmpty) {
+          return nestedDetail;
+        }
+      }
+
+      if (looksLikeDetail(decoded)) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    }
+
+    if (decoded is List) {
+      final items = decoded
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      for (final item in items) {
+        if (matchesId(item['id']) ||
+            matchesId(item['reimbursement_id']) ||
+            matchesId(item['staff_reimbursement_id'])) {
+          return item;
+        }
+      }
+      if (items.isNotEmpty) {
+        return items.first;
+      }
+    }
+
+    return null;
+  }
+
+  static Future<ApiResponse<Map<String, dynamic>>> addStaffReimbursement({
+    required String amount,
+    required String reason,
+    required XFile receipt,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final accessToken = await SecureStorageService.getAccessToken();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+
+    if (storedUserId == null ||
+        effectiveRoleId == null ||
+        accessToken == null ||
+        accessToken.isEmpty) {
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(ApiConstants.addstaffreimbursement),
+    )..headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      });
+
+    request.fields.addAll({
+      'amount': amount.trim(),
+      'reason': reason.trim(),
+      'user_id': storedUserId.toString(),
+      'role_id': effectiveRoleId.toString(),
+    });
+
+    try {
+      final receiptBytes = await receipt.readAsBytes();
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'receipt',
+          receiptBytes,
+          filename: receipt.name,
+        ),
+      );
+
+      debugPrint('ADD Reimbursement API Request: POST ${request.url}');
+      debugPrint('ADD Reimbursement Request Fields: ${request.fields}');
+
+      final streamedResponse =
+          await request.send().timeout(ApiConstants.requestTimeout);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint(
+        'ADD Reimbursement API Response Status: ${response.statusCode}',
+      );
+      debugPrint('ADD Reimbursement API Response Body: ${response.body}');
+
+      final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
+      final bool isHtml = jsonResponse['isHtml'] == true;
+      final message =
+          jsonResponse['message'] ??
+          _extractFirstErrorMessage(jsonResponse['errors']) ??
+          (isHtml
+              ? 'Authentication error. Please log in again.'
+              : response.statusCode == 200 || response.statusCode == 201
+              ? 'Reimbursement submitted successfully.'
+              : 'Failed to submit reimbursement');
+
+      if (isHtml) {
+        await _handleAuthFailure();
+        return ApiResponse(success: false, message: message);
+      }
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          jsonResponse['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: message,
+        data: jsonResponse['data'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['data'] as Map)
+            : null,
+        errors: jsonResponse['errors'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(jsonResponse['errors'] as Map)
+            : null,
+      );
+    } on TimeoutException catch (e) {
+      debugPrint('ADD Reimbursement Timeout: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException catch (e) {
+      debugPrint('ADD Reimbursement No Internet: $e');
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      debugPrint('ADD Reimbursement Error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Failed to submit reimbursement: $e',
+      );
     }
   }
 

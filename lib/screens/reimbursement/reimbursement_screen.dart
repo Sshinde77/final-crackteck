@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../model/reimbursement_model.dart';
+import '../../services/api_service.dart';
 import 'add_reimbursement_screen.dart';
+import 'reimbursement_detail_screen.dart';
 
 enum ReimbursementFilter {
   all('All'),
@@ -28,26 +30,17 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     symbol: '\u20B9',
     decimalDigits: 0,
   );
-
-  late final List<ReimbursementModel> _reimbursements = [
-    ReimbursementModel.dummy(
-      amount: 500,
-      reason: 'Petrol Expense',
-      status: ReimbursementStatus.pending,
-    ),
-    ReimbursementModel.dummy(
-      amount: 1200,
-      reason: 'Client Meeting Travel',
-      status: ReimbursementStatus.approved,
-    ),
-    ReimbursementModel.dummy(
-      amount: 300,
-      reason: 'Office Supplies',
-      status: ReimbursementStatus.rejected,
-    ),
-  ];
+  final List<ReimbursementModel> _reimbursements = <ReimbursementModel>[];
 
   ReimbursementFilter _selectedFilter = ReimbursementFilter.all;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReimbursements();
+  }
 
   List<ReimbursementModel> get _filteredReimbursements {
     if (_selectedFilter == ReimbursementFilter.all) {
@@ -64,6 +57,47 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     return _reimbursements
         .where((reimbursement) => reimbursement.status == status)
         .toList();
+  }
+
+  Future<void> _loadReimbursements({bool showLoader = true}) async {
+    if (showLoader) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    } else {
+      setState(() {
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      final response = await ApiService.fetchStaffReimbursements();
+      final reimbursements = response
+          .map(ReimbursementModel.fromJson)
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _reimbursements
+          ..clear()
+          ..addAll(reimbursements);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   Future<void> _openAddReimbursementForm() async {
@@ -86,6 +120,17 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Reimbursement request added successfully.'),
+      ),
+    );
+  }
+
+  Future<void> _openReimbursementDetail(ReimbursementModel reimbursement) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReimbursementDetailScreen(
+          reimbursement: reimbursement,
+        ),
       ),
     );
   }
@@ -186,25 +231,51 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
               ),
             ),
             Expanded(
-              child: filteredReimbursements.isEmpty
-                  ? const _EmptyState()
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                      itemCount: filteredReimbursements.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final ReimbursementModel reimbursement =
-                            filteredReimbursements[index];
-                        return ReimbursementListCard(
-                          reimbursement: reimbursement,
-                          currencyFormat: _currencyFormat,
-                        );
-                      },
-                    ),
+              child: _buildBody(filteredReimbursements),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBody(List<ReimbursementModel> filteredReimbursements) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF145A00)),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return _ErrorState(
+        message: _errorMessage!,
+        onRetry: _loadReimbursements,
+      );
+    }
+
+    return RefreshIndicator(
+      color: const Color(0xFF145A00),
+      onRefresh: () => _loadReimbursements(showLoader: false),
+      child: filteredReimbursements.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [_EmptyState()],
+            )
+          : ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+              itemCount: filteredReimbursements.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final ReimbursementModel reimbursement =
+                    filteredReimbursements[index];
+                return ReimbursementListCard(
+                  reimbursement: reimbursement,
+                  currencyFormat: _currencyFormat,
+                  onTap: () => _openReimbursementDetail(reimbursement),
+                );
+              },
+            ),
     );
   }
 }
@@ -287,126 +358,147 @@ class _ReimbursementOverviewCard extends StatelessWidget {
 class ReimbursementListCard extends StatelessWidget {
   final ReimbursementModel reimbursement;
   final NumberFormat currencyFormat;
+  final VoidCallback? onTap;
 
   const ReimbursementListCard({
     super.key,
     required this.reimbursement,
     required this.currencyFormat,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 16,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currencyFormat.format(reimbursement.amount),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Reimbursement Amount',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              StatusBadge(status: reimbursement.status),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 2),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.description_outlined,
-                  size: 18,
-                  color: Color(0xFF145A00),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  reimbursement.reason,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0D000000),
+                blurRadius: 16,
+                offset: Offset(0, 8),
               ),
             ],
           ),
-          if (reimbursement.receiptImagePath != null &&
-              reimbursement.receiptImagePath!.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.attach_file_rounded,
-                    size: 16,
-                    color: Color(0xFF145A00),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currencyFormat.format(reimbursement.amount),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Reimbursement Amount',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Receipt attached',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      StatusBadge(status: reimbursement.status),
+                      const SizedBox(height: 10),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.description_outlined,
+                      size: 18,
                       color: Color(0xFF145A00),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      reimbursement.reason,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ],
+              if (reimbursement.receiptImagePath != null &&
+                  reimbursement.receiptImagePath!.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.attach_file_rounded,
+                        size: 16,
+                        color: Color(0xFF145A00),
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Receipt attached',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF145A00),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -483,6 +575,70 @@ class _EmptyState extends StatelessWidget {
                 fontSize: 13,
                 color: Color(0xFF6B7280),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final Future<void> Function() onRetry;
+
+  const _ErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 72,
+              width: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDECEC),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                size: 34,
+                color: Color(0xFFC62828),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Unable to load reimbursements',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF145A00),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
             ),
           ],
         ),
