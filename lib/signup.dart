@@ -21,6 +21,8 @@ enum _DocumentType {
   panBack,
   licenceFront,
   licenceBack,
+  addressProof,
+  educationResult,
 }
 
 class SignupScreen extends StatefulWidget {
@@ -34,6 +36,7 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _personalFormKey = GlobalKey<FormState>();
   final _documentFormKey = GlobalKey<FormState>();
+  final _educationFormKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService.instance;
 
   final firstNameCtrl = TextEditingController();
@@ -49,6 +52,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final aadharCtrl = TextEditingController();
   final panCtrl = TextEditingController();
   final licenceNumberCtrl = TextEditingController();
+  final educationCtrl = TextEditingController();
 
   File? aadharFrontFile;
   File? aadharBackFile;
@@ -56,6 +60,8 @@ class _SignupScreenState extends State<SignupScreen> {
   File? panBackFile;
   File? licenceFrontFile;
   File? licenceBackFile;
+  File? addressProofFile;
+  File? resultFile;
 
   List<csc_picker.StatusModel> _countries = <csc_picker.StatusModel>[];
   List<csc_picker.State> _states = <csc_picker.State>[];
@@ -92,6 +98,7 @@ class _SignupScreenState extends State<SignupScreen> {
     aadharCtrl.dispose();
     panCtrl.dispose();
     licenceNumberCtrl.dispose();
+    educationCtrl.dispose();
     super.dispose();
   }
 
@@ -228,6 +235,12 @@ class _SignupScreenState extends State<SignupScreen> {
         case _DocumentType.licenceBack:
           licenceBackFile = file;
           break;
+        case _DocumentType.addressProof:
+          addressProofFile = file;
+          break;
+        case _DocumentType.educationResult:
+          resultFile = file;
+          break;
       }
     });
   }
@@ -250,8 +263,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  Future<void> signup() async {
-    final isDelivery = _isDeliveryPerson;
+  void _goToEducationStep() {
     if (!_documentFormKey.currentState!.validate()) return;
 
     if (!agree) {
@@ -267,8 +279,58 @@ class _SignupScreenState extends State<SignupScreen> {
       _snack('Please upload PAN front and back images');
       return;
     }
+    if (addressProofFile == null) {
+      _snack('Please upload address proof');
+      return;
+    }
+    if (_isDeliveryPerson &&
+        (licenceFrontFile == null || licenceBackFile == null)) {
+      _snack('Please upload licence front and back files');
+      return;
+    }
+
+    setState(() {
+      _currentStep = 2;
+    });
+  }
+
+  void _goBackToDocumentsStep() {
+    setState(() {
+      _currentStep = 1;
+    });
+  }
+
+  Future<void> signup() async {
+    final isDelivery = _isDeliveryPerson;
+    if (!_educationFormKey.currentState!.validate()) return;
+
+    if (!agree) {
+      _snack('Please accept terms and conditions');
+      return;
+    }
+
+    if (aadharFrontFile == null || aadharBackFile == null) {
+      _snack('Please upload Aadhar front and back images');
+      return;
+    }
+    if (panFrontFile == null || panBackFile == null) {
+      _snack('Please upload PAN front and back images');
+      return;
+    }
+    if (addressProofFile == null) {
+      _snack('Please upload address proof');
+      return;
+    }
     if (isDelivery && (licenceFrontFile == null || licenceBackFile == null)) {
       _snack('Please upload licence front and back files');
+      return;
+    }
+    if (educationCtrl.text.trim().isEmpty) {
+      _snack('Please select education');
+      return;
+    }
+    if (resultFile == null) {
+      _snack('Please upload result document');
       return;
     }
 
@@ -307,6 +369,9 @@ class _SignupScreenState extends State<SignupScreen> {
       drivingLicenceNumber: isDelivery ? licenceNumberCtrl.text.trim() : null,
       licenceFrontFile: isDelivery ? licenceFrontFile : null,
       licenceBackFile: isDelivery ? licenceBackFile : null,
+      education: educationCtrl.text.trim(),
+      resultFile: resultFile,
+      addressProofFile: addressProofFile,
     );
 
     if (!mounted) return;
@@ -382,8 +447,10 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 16),
               if (_currentStep == 0)
                 _buildPersonalDetailsForm()
+              else if (_currentStep == 1)
+                _buildDocumentsForm(isDelivery)
               else
-                _buildDocumentsForm(isDelivery),
+                _buildEducationForm(),
               const SizedBox(height: 15),
               Center(
                 child: RichText(
@@ -427,6 +494,14 @@ class _SignupScreenState extends State<SignupScreen> {
           child: _stepChip(
             title: '2. Documents',
             isActive: _currentStep == 1,
+            isCompleted: _currentStep > 1,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _stepChip(
+            title: '3. Education',
+            isActive: _currentStep == 2,
             isCompleted: false,
           ),
         ),
@@ -755,6 +830,14 @@ class _SignupScreenState extends State<SignupScreen> {
             file: panBackFile,
             onTap: () => _pickFile(_DocumentType.panBack),
           ),
+          const SizedBox(height: 10),
+          _uploadBox(
+            title: 'Address Proof',
+            subtitle:
+                'Electricity Bill, Water Bill, Rent Agreement (PNG, JPG, PDF max 2MB)',
+            file: addressProofFile,
+            onTap: () => _pickFile(_DocumentType.addressProof),
+          ),
           if (isDelivery) ...[
             const SizedBox(height: 10),
             _input('Driving Licence Number', licenceNumberCtrl),
@@ -794,6 +877,100 @@ class _SignupScreenState extends State<SignupScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: loading ? null : _goToPersonalStep,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Back',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: loading ? null : _goToEducationStep,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                       : const Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationForm() {
+    const educationOptions = [
+      'Post Graduate',
+      'Graduate',
+      '12',
+      '10',
+      'Under 10',
+    ];
+
+    final selectedEducation = educationOptions.contains(educationCtrl.text.trim())
+        ? educationCtrl.text.trim()
+        : null;
+
+    return Form(
+      key: _educationFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _dropdown(
+            hint: 'Education',
+            value: selectedEducation,
+            items: educationOptions,
+            onChanged: (value) {
+              setState(() {
+                educationCtrl.text = value ?? '';
+              });
+            },
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Select education' : null,
+          ),
+          _uploadBox(
+            title: 'Upload Result',
+            subtitle: 'Marksheet / Certificate (PNG, JPG, PDF max 2MB)',
+            file: resultFile,
+            onTap: () => _pickFile(_DocumentType.educationResult),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: loading ? null : _goBackToDocumentsStep,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     side: const BorderSide(color: AppColors.primary),

@@ -500,6 +500,9 @@ class ApiService {
     String? drivingLicenceNumber,
     File? licenceFrontFile,
     File? licenceBackFile,
+    required String education,
+    File? resultFile,
+    File? addressProofFile,
   }) async {
     try {
       final uri = Uri.parse(ApiConstants.signup);
@@ -511,6 +514,7 @@ class ApiService {
         "address": address,
         "aadhar_no": aadhar,
         "pan_no": pan,
+        "education": education,
       };
 
       if (firstName != null && firstName.trim().isNotEmpty) {
@@ -583,6 +587,21 @@ class ApiService {
           await http.MultipartFile.fromPath(
             "licence_back_image",
             licenceBackFile.path,
+          ),
+        );
+      }
+
+      if (resultFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath("result_file", resultFile.path),
+        );
+      }
+
+      if (addressProofFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            "address_proof_file",
+            addressProofFile.path,
           ),
         );
       }
