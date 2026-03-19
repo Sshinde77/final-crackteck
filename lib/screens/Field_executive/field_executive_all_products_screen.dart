@@ -34,6 +34,7 @@ class _FieldExecutiveAllProductsScreenState
   bool _isLoadingFromApi = false;
   bool _didLoadFromApi = false;
   String? _apiError;
+  String _serviceRequestStatus = '';
 
   @override
   void initState() {
@@ -102,6 +103,19 @@ class _FieldExecutiveAllProductsScreenState
     return '';
   }
 
+  String _extractServiceRequestStatus(Map<String, dynamic>? raw) {
+    if (raw == null) return '';
+
+    final rootStatus = _readFromProduct(raw, const ['service_status', 'status']);
+    if (rootStatus.isNotEmpty) {
+      return rootStatus;
+    }
+
+    final requestMap =
+        _asMap(raw['service_request']) ?? _asMap(raw['request']) ?? _asMap(raw['service']);
+    return _readFromProduct(requestMap ?? const {}, const ['service_status', 'status']);
+  }
+
   bool _isCompletedStatus(String rawStatus) {
     final value = rawStatus.trim().toLowerCase();
     return value == 'completed' ||
@@ -109,6 +123,11 @@ class _FieldExecutiveAllProductsScreenState
         value == 'done' ||
         value == 'closed' ||
         value == 'resolved';
+  }
+
+  bool _isInProgressStatus(String rawStatus) {
+    final value = rawStatus.trim().toLowerCase();
+    return value == 'in_progress' || value == 'in progress';
   }
 
   String _toLabelCase(String raw) {
@@ -397,12 +416,14 @@ class _FieldExecutiveAllProductsScreenState
 
       final productMaps = _extractProductMaps(detail);
       final requestId = _extractRequestId(detail);
+      final serviceRequestStatus = _extractServiceRequestStatus(detail);
       final apiItems = _mapToControllerItems(productMaps, requestId);
       if (apiItems.isEmpty) {
         setState(() {
           _didLoadFromApi = true;
           _isLoadingFromApi = false;
           _apiError = 'No products found for this service request.';
+          _serviceRequestStatus = serviceRequestStatus;
         });
         return;
       }
@@ -412,6 +433,7 @@ class _FieldExecutiveAllProductsScreenState
         _didLoadFromApi = true;
         _isLoadingFromApi = false;
         _apiError = null;
+        _serviceRequestStatus = serviceRequestStatus;
       });
     } catch (error) {
       if (!mounted) {
@@ -423,6 +445,19 @@ class _FieldExecutiveAllProductsScreenState
         _apiError = _cleanError(error);
       });
     }
+  }
+
+  void _goToHomeTab() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.FieldExecutiveDashboard,
+      (route) => false,
+      arguments: fieldexecutivedashboardArguments(
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        initialIndex: 0,
+      ),
+    );
   }
 
   String _subtitleFor(FieldExecutiveProductService item) {
@@ -550,6 +585,37 @@ class _FieldExecutiveAllProductsScreenState
           },
         ),
       ),
+      bottomNavigationBar: _isInProgressStatus(_serviceRequestStatus)
+          ? SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 80,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 52,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _goToHomeTab,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: FieldExecutiveAllProductsScreen.primaryGreen,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Icon(Icons.home, color: Colors.white, size: 26),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 

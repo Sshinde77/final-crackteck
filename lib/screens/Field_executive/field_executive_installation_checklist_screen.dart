@@ -1638,7 +1638,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       case 'request a part':
         return 'request_part';
       default:
-        return 'working';
+        return '';
     }
   }
 
@@ -1656,12 +1656,8 @@ class _FieldExecutiveInstallationChecklistScreenState
     return List<Map<String, dynamic>>.generate(items.length, (index) {
       final String name = items[index];
       final DiagnosisItem? diagnosis = diagnosisByName[name];
-      final String selectedStatus = _normalizeStatusLabel(
-        _itemStatus[name] ?? diagnosis?.statusLabel,
-      );
-      final String apiStatus = _statusToApiValue(
-        selectedStatus.isEmpty ? 'Working' : selectedStatus,
-      );
+      final String selectedStatus = _normalizeStatusLabel(_itemStatus[name]);
+      final String apiStatus = _statusToApiValue(selectedStatus);
       final String partStatus = _normalizePartStatus(diagnosis?.partStatus);
       final bool markPartUsedOnSubmit =
           (partStatus == 'customer_approved' || partStatus == 'delivered') &&
@@ -1672,8 +1668,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       final int? approvedQuantity = int.tryParse(
         (diagnosis?.quantityFromApi ?? '').trim(),
       );
-      final String report =
-          (_itemProblemSolution[name] ?? diagnosis?.report ?? '').trim();
+      final String report = (_itemProblemSolution[name] ?? '').trim();
       final File? issueImage = _itemIssueImage[name];
       final List<SelectedStockItem> selectedStockItems =
           _sanitizeSelectedStockItems(
@@ -1688,11 +1683,6 @@ class _FieldExecutiveInstallationChecklistScreenState
       final int? selectedQuantity = selectedStockItem == null
           ? null
           : (selectedStockItem.quantity > 0 ? selectedStockItem.quantity : null);
-      final int? rehydratedPartId = int.tryParse(_normalizeId(diagnosis?.partId ?? ''));
-      final int? rehydratedQuantity = int.tryParse((diagnosis?.quantity ?? '').trim());
-      final int? resolvedPartId = selectedPartId ?? rehydratedPartId;
-      final int? resolvedQuantity =
-          selectedQuantity ?? ((rehydratedQuantity ?? 0) > 0 ? rehydratedQuantity : null);
       final SelectedStockItem? requestedPartSelection =
           _resolvedRequestedPartSelection(name, diagnosis: diagnosis);
       final int? requestedPartId = requestedPartSelection == null
@@ -1725,15 +1715,15 @@ class _FieldExecutiveInstallationChecklistScreenState
 
       final Map<String, dynamic> payload = <String, dynamic>{
         'name': name,
-        'status': apiStatus,
+        if (apiStatus.isNotEmpty) 'status': apiStatus,
         if (report.isNotEmpty) 'report': report,
         if (issueImage != null) 'images': <File>[issueImage],
       };
 
       if (apiStatus == 'stock_in_hand') {
-        if (resolvedPartId != null && resolvedQuantity != null) {
-          payload['part_id'] = resolvedPartId.toString();
-          payload['quantity'] = resolvedQuantity.toString();
+        if (selectedPartId != null && selectedQuantity != null) {
+          payload['part_id'] = selectedPartId.toString();
+          payload['quantity'] = selectedQuantity.toString();
         }
       } else if (apiStatus == 'request_part') {
         if (requestedPartId != null && requestedQuantity != null) {

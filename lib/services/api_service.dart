@@ -4012,7 +4012,15 @@ class ApiService {
         final report = (item['report'] ?? '').toString().trim();
         final partIdRaw = item['part_id'];
         final quantityRaw = item['quantity'];
-        final reportToSend = report.isNotEmpty ? report : defaultReport.trim();
+        final bool hasStructuredDiagnosisData =
+            status.isNotEmpty ||
+            partStatus.isNotEmpty ||
+            partIdRaw != null ||
+            quantityRaw != null ||
+            item['images'] != null;
+        final reportToSend = report.isNotEmpty
+            ? report
+            : (hasStructuredDiagnosisData ? defaultReport.trim() : '');
 
         if (name.isNotEmpty) {
           request.fields['diagnosis_list[$index][name]'] = name;
