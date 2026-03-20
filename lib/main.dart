@@ -7,8 +7,9 @@ import 'model/sales_person/dashboard_provider.dart';
 
 import 'constants/app_strings.dart';
 import 'core/navigation_service.dart';
+import 'services/notification_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
@@ -16,8 +17,28 @@ void main() {
   runApp(const CrackTechApp());
 }
 
-class CrackTechApp extends StatelessWidget {
+class CrackTechApp extends StatefulWidget {
   const CrackTechApp({super.key});
+
+  @override
+  State<CrackTechApp> createState() => _CrackTechAppState();
+}
+
+class _CrackTechAppState extends State<CrackTechApp> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    try {
+      await NotificationService.instance.initialize();
+    } catch (error, stackTrace) {
+      debugPrint('Notification initialization failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

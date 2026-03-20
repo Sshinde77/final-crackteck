@@ -15,12 +15,16 @@ class SecureStorageService {
   static const String _roleIdKey = 'role_id';
   static const String _userIdKey = 'user_id';
   static const String _userProfileKey = 'user_profile';
+  static const String _fcmTokenKey = 'fcm_token';
+  static const String _lastSyncedFcmTokenKey = 'last_synced_fcm_token';
 
   static String? _accessToken;
   static String? _refreshToken;
   static int? _roleId;
   static int? _userId;
   static Map<String, dynamic>? _userProfile;
+  static String? _fcmToken;
+  static String? _lastSyncedFcmToken;
 
   /// Tracks which userIds have completed vehicle registration during this
   /// app session. This lets us treat vehicle registration as a one-time
@@ -156,6 +160,59 @@ class SecureStorageService {
     await _storage.delete(key: _userProfileKey);
   }
 
+  static Future<String?> getFcmToken({bool forceReload = false}) async {
+    if (!forceReload && _fcmToken != null && _fcmToken!.isNotEmpty) {
+      return _fcmToken;
+    }
+    _fcmToken = _normalizeToken(await _storage.read(key: _fcmTokenKey));
+    return _fcmToken;
+  }
+
+  static Future<void> saveFcmToken(String token) async {
+    final normalizedToken = _normalizeToken(token);
+    if (normalizedToken == null) {
+      _fcmToken = null;
+      await _storage.delete(key: _fcmTokenKey);
+      return;
+    }
+
+    await _storage.write(key: _fcmTokenKey, value: normalizedToken);
+    _fcmToken = normalizedToken;
+  }
+
+  static Future<String?> getLastSyncedFcmToken({bool forceReload = false}) async {
+    if (!forceReload &&
+        _lastSyncedFcmToken != null &&
+        _lastSyncedFcmToken!.isNotEmpty) {
+      return _lastSyncedFcmToken;
+    }
+    _lastSyncedFcmToken = _normalizeToken(
+      await _storage.read(key: _lastSyncedFcmTokenKey),
+    );
+    return _lastSyncedFcmToken;
+  }
+
+  static Future<void> saveLastSyncedFcmToken(String token) async {
+    final normalizedToken = _normalizeToken(token);
+    if (normalizedToken == null) {
+      _lastSyncedFcmToken = null;
+      await _storage.delete(key: _lastSyncedFcmTokenKey);
+      return;
+    }
+
+    await _storage.write(key: _lastSyncedFcmTokenKey, value: normalizedToken);
+    _lastSyncedFcmToken = normalizedToken;
+  }
+
+  static Future<void> clearFcmTokens() async {
+    _fcmToken = null;
+    _lastSyncedFcmToken = null;
+    await Future.wait([
+      _storage.delete(key: _fcmTokenKey),
+      _storage.delete(key: _lastSyncedFcmTokenKey),
+    ]);
+  }
+
   /// Returns `true` if the in-memory current user has already completed the
   /// vehicle registration flow in this app session.
   static Future<bool> isVehicleRegisteredForCurrentUser() async {
@@ -187,12 +244,16 @@ class SecureStorageService {
     _roleId = null;
     _userId = null;
     _userProfile = null;
+    _fcmToken = null;
+    _lastSyncedFcmToken = null;
     await Future.wait([
       _storage.delete(key: _accessTokenKey),
       _storage.delete(key: _refreshTokenKey),
       _storage.delete(key: _roleIdKey),
       _storage.delete(key: _userIdKey),
       _storage.delete(key: _userProfileKey),
+      _storage.delete(key: _fcmTokenKey),
+      _storage.delete(key: _lastSyncedFcmTokenKey),
     ]);
   }
 }

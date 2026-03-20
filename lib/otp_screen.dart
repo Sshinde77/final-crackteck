@@ -276,6 +276,7 @@ import 'package:final_crackteck/constants/app_spacing.dart';
 import 'package:final_crackteck/core/secure_storage_service.dart';
 import 'package:final_crackteck/routes/app_routes.dart';
 import 'package:final_crackteck/services/api_service.dart';
+import 'package:final_crackteck/services/notification_service.dart';
 import 'package:final_crackteck/widgets/custom_button.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
@@ -364,6 +365,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       if (!mounted) return;
 
       if (res.success) {
+        try {
+          await NotificationService.instance.syncTokenWithBackendIfPossible(
+            forceRefresh: true,
+          );
+        } catch (error) {
+          debugPrint('FCM sync skipped after OTP verification: $error');
+        }
         if (widget.args.roleId == 2) {
           await _maybeMarkVehicleRegisteredFromOtpResponse(res.data);
         }
@@ -371,7 +379,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       } else {
         _showSnack(res.message ?? "Invalid OTP");
       }
-    } catch (_) {
+    } catch (error) {
+      debugPrint('OTP verification flow error: $error');
       _showSnack("Network error");
     } finally {
       if (mounted) setState(() => _isVerifying = false);

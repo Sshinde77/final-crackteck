@@ -145,6 +145,14 @@ class ApiConstants {
 
   static const String googlelogin =
       "$baseUrl/google-login";
+  static const String fcmTokenSyncUrl = String.fromEnvironment(
+    'FCM_TOKEN_SYNC_URL',
+    defaultValue: '',
+  );
+  static const String fcmTokenSyncField = String.fromEnvironment(
+    'FCM_TOKEN_SYNC_FIELD',
+    defaultValue: 'fcm_token',
+  );
 
   static const String fieldexecutivedeliveryproductlist =
       "$baseUrl/orders";

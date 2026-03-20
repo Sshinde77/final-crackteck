@@ -1,4 +1,4 @@
-package com.example.app
+package com.crackteck.field
 
 import io.flutter.embedding.android.FlutterActivity
 
