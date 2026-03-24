@@ -1,19 +1,18 @@
-
 import 'package:final_crackteck/screens/Delivery_person/product_to_be_deliveried_screen.dart';
 import 'package:flutter/material.dart';
 
+import '../../routes/app_routes.dart';
+import '../../services/delivery_man_service.dart';
 
 class DeliveryPersonHomeTab extends StatefulWidget {
   final int roleId;
   final String roleName;
 
-
   const DeliveryPersonHomeTab({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
-
-  }) : super(key: key);
+  });
 
   @override
   State<DeliveryPersonHomeTab> createState() => _DeliveryPersonHomeTabState();
@@ -21,63 +20,21 @@ class DeliveryPersonHomeTab extends StatefulWidget {
 
 class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   final TextEditingController _searchCtrl = TextEditingController();
+  final DeliveryManService _deliveryService = DeliveryManService.instance;
 
   DateTime? _loginAt;
   DateTime? _logoutAt;
-
-
   OrdersTab _activeTab = OrdersTab.total;
+  bool _isLoading = true;
+  bool _isAttendanceLoading = false;
+  String? _errorText;
+  List<OrderItem> _orders = <OrderItem>[];
 
-  final List<OrderItem> _orders = [
-    OrderItem(
-      id: '#HWDSF776567DS',
-      date: '28-5-2525',
-      time: '5:30Pm',
-      from: 'Vasai Warehouse',
-      to: '101, A wing Borivali west\n400062',
-      status: OrdersTab.pending,
-    ),
-    OrderItem(
-      id: '#HWDSF776567DS2',
-      date: '28-5-2525',
-      time: '6:30Pm',
-      from: 'Vasai Warehouse',
-      to: '202,kandivali west 4000023',
-      status: OrdersTab.pending,
-    ),
-    OrderItem(
-      id: '#HWDSF776567DS',
-      date: '28-5-2525',
-      time: '5:30Pm',
-      from: 'Vasai Warehouse',
-      to: '101, A wing Borivali west\n400062',
-      status: OrdersTab.cancelled,
-    ),
-    OrderItem(
-      id: '#HWDSF776567DS',
-      date: '28-5-2525',
-      time: '6:30Pm',
-      from: 'Vasai Warehouse',
-      to: '202,kandivali west 4000023',
-      status: OrdersTab.cancelled,
-    ),
-    OrderItem(
-      id: '#HWDSF776567DS',
-      date: '28-5-2525',
-      time: '6:40Pm',
-      from: 'Vasai Warehouse',
-      to: '101, A wing Borivali west\n400062',
-      status: OrdersTab.cancelled,
-    ),
-    OrderItem(
-      id: '#12378678',
-      date: '28-5-2525',
-      time: '6:50Pm',
-      from: 'Vasai Warehouse',
-      to: 'Somewhere, Mumbai 4000XX',
-      status: OrdersTab.pending,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadHomeData();
+  }
 
   @override
   void dispose() {
@@ -85,40 +42,131 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     super.dispose();
   }
 
-  void _toast(String msg) {
+  Future<void> _loadHomeData() async {
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    try {
+      final results = await Future.wait<dynamic>(<Future<dynamic>>[
+        _deliveryService.fetchOrders(),
+        _deliveryService.fetchAttendance(),
+      ]);
+      final orderMaps = results[0] as List<Map<String, dynamic>>;
+      final attendanceMap = results[1] as Map<String, dynamic>;
+
+      if (!mounted) return;
+      setState(() {
+        _orders = orderMaps.map(OrderItem.fromApi).toList();
+        _hydrateAttendance(attendanceMap);
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorText = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _hydrateAttendance(Map<String, dynamic> attendance) {
+    _loginAt = _parseDateTime(
+      attendance['login_at'] ??
+          attendance['check_in'] ??
+          attendance['clock_in'] ??
+          attendance['auth_log']?['login_at'],
+    );
+    _logoutAt = _parseDateTime(
+      attendance['logout_at'] ??
+          attendance['check_out'] ??
+          attendance['clock_out'] ??
+          attendance['auth_log']?['logout_at'],
+    );
+  }
+
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    return DateTime.tryParse(text);
+  }
+
+  void _toast(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
   String _fmtTime(DateTime? dt) {
     if (dt == null) return '--:-- --';
-    int h = dt.hour;
-    final m = dt.minute.toString().padLeft(2, '0');
-    final isPm = h >= 12;
-    final suffix = isPm ? 'PM' : 'AM';
-    h = h % 12;
-    if (h == 0) h = 12;
-    return '${h.toString().padLeft(2, '0')}:$m $suffix';
+    return OrderItem.formatTime(dt);
   }
 
-  // ✅ MAIN FIX: Only mark accepted if Product screen returns true
   Future<void> _openProductScreen(OrderItem order) async {
-    final bool? accepted = await Navigator.push<bool>(
+    final accepted = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => ProductToBeDeliveredScreen(
           roleId: widget.roleId,
           roleName: widget.roleName,
-          orderId: order.id, // ✅ pass order id
+          orderId: order.id,
         ),
       ),
     );
 
-    if (accepted == true) {
+    if (accepted == true && mounted) {
       setState(() => order.accepted = true);
       _toast('Accepted ${order.id}');
+    }
+  }
+
+  Future<void> _handleAttendance({required bool login}) async {
+    setState(() => _isAttendanceLoading = true);
+    try {
+      final response = login
+          ? await _deliveryService.attendanceLogin()
+          : await _deliveryService.attendanceLogout();
+
+      if (!mounted) return;
+
+      if (response.success) {
+        final data = response.data ?? <String, dynamic>{};
+        setState(() {
+          if (login) {
+            _loginAt =
+                _parseDateTime(
+                  data['login_at'] ??
+                      data['check_in'] ??
+                      data['auth_log']?['login_at'],
+                ) ??
+                DateTime.now();
+          } else {
+            _logoutAt =
+                _parseDateTime(
+                  data['logout_at'] ??
+                      data['check_out'] ??
+                      data['auth_log']?['logout_at'],
+                ) ??
+                DateTime.now();
+          }
+        });
+        _toast(response.message ?? (login ? 'Checked in' : 'Checked out'));
+      } else {
+        _toast(response.message ?? 'Attendance action failed');
+      }
+    } catch (error) {
+      if (!mounted) return;
+      _toast(error.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) {
+        setState(() => _isAttendanceLoading = false);
+      }
     }
   }
 
@@ -127,24 +175,20 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     const green = Color(0xFF1E7C10);
 
     final q = _searchCtrl.text.trim().toLowerCase();
-
-    // ✅ Counts: pending excludes accepted
     final totalCount = _orders.length;
     final pendingCount =
         _orders.where((o) => o.status == OrdersTab.pending && !o.accepted).length;
     final cancelledCount =
         _orders.where((o) => o.status == OrdersTab.cancelled).length;
 
-    // ✅ Filter orders based on tabs + search
     final visibleOrders = _orders.where((o) {
       final matchesTab = _activeTab == OrdersTab.total
           ? true
           : _activeTab == OrdersTab.pending
-          ? (o.status == OrdersTab.pending && !o.accepted)
-          : (o.status == OrdersTab.cancelled);
+              ? (o.status == OrdersTab.pending && !o.accepted)
+              : o.status == OrdersTab.cancelled;
 
       if (!matchesTab) return false;
-
       if (q.isEmpty) return true;
 
       return o.id.toLowerCase().contains(q) ||
@@ -153,84 +197,91 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     }).toList();
 
     final ordersTitle = _activeTab == OrdersTab.total
-        ? "Total Delivery"
+        ? 'Total Delivery'
         : _activeTab == OrdersTab.pending
-        ? "Delivery Pending"
-        : "Cancelled Order";
+            ? 'Delivery Pending'
+            : 'Cancelled Order';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              HeaderWithSearch(
-                green: green,
-                controller: _searchCtrl,
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (_) => _toast('Searching: "${_searchCtrl.text}"'),
-                onNotificationTap: () {
-                  // Navigator.of(context, rootNavigator: true).pushNamed(
-                  //   AppRoutes.DeliveryNotificationScreen,
-                  //   arguments: deliverynotificationArguments(
-                  //     roleId: widget.roleId,
-                  //     roleName: widget.roleName,
-                  //   ),
-                  // );
-                },
-              ),
-              const SizedBox(height: 2),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    AttendanceSection(
-                      loginTimeText: _fmtTime(_loginAt),
-                      logoutTimeText: _fmtTime(_logoutAt),
-                      onLogin: () {
-                        setState(() => _loginAt = DateTime.now());
-                        _toast('Logged in at ${_fmtTime(_loginAt)}');
-                      },
-                      onLogout: () {
-                        setState(() => _logoutAt = DateTime.now());
-                        _toast('Logged out at ${_fmtTime(_logoutAt)}');
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    StatsTabsSection(
-                      totalDelivery: totalCount,
-                      deliveryPending: pendingCount,
-                      cancelledOrder: cancelledCount,
-                      activeTab: _activeTab,
-                      onTabChanged: (tab) => setState(() => _activeTab = tab),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    OrdersSection(
-                      title: ordersTitle,
-                      orders: visibleOrders,
-                      onAccept: (order) {
-                        // Allow clicking even if accepted to go back to product screen
-                        _openProductScreen(order);
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-                  ],
+        child: RefreshIndicator(
+          onRefresh: _loadHomeData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                HeaderWithSearch(
+                  green: green,
+                  controller: _searchCtrl,
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _toast('Searching: "${_searchCtrl.text}"'),
+                  onNotificationTap: () {
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.DeliveryNotificationScreen,
+                      arguments: deliverynotificationArguments(
+                        roleId: widget.roleId,
+                        roleName: widget.roleName,
+                      ),
+                    );
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      AttendanceSection(
+                        loginTimeText: _fmtTime(_loginAt),
+                        logoutTimeText: _fmtTime(_logoutAt),
+                        isBusy: _isAttendanceLoading,
+                        onLogin: () => _handleAttendance(login: true),
+                        onLogout: () => _handleAttendance(login: false),
+                      ),
+                      const SizedBox(height: 12),
+                      StatsTabsSection(
+                        totalDelivery: totalCount,
+                        deliveryPending: pendingCount,
+                        cancelledOrder: cancelledCount,
+                        activeTab: _activeTab,
+                        onTabChanged: (tab) => setState(() => _activeTab = tab),
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: CircularProgressIndicator(),
+                        )
+                      else if (_errorText != null)
+                        _HomeStateCard(
+                          message: _errorText!,
+                          actionLabel: 'Retry',
+                          onTap: _loadHomeData,
+                        )
+                      else if (visibleOrders.isEmpty)
+                        _HomeStateCard(
+                          message: 'No orders available right now.',
+                          actionLabel: 'Refresh',
+                          onTap: _loadHomeData,
+                        )
+                      else
+                        OrdersSection(
+                          title: ordersTitle,
+                          orders: visibleOrders,
+                          onAccept: _openProductScreen,
+                        ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-
     );
   }
 }
-
-/// ---------- SECTION WIDGETS BELOW ----------
 
 class HeaderWithSearch extends StatelessWidget {
   const HeaderWithSearch({
@@ -300,15 +351,17 @@ class HeaderWithSearch extends StatelessWidget {
               onSubmitted: onSubmitted,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: "Search Today’s Order",
+                hintText: "Search Today's Order",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -324,12 +377,14 @@ class AttendanceSection extends StatelessWidget {
     super.key,
     required this.loginTimeText,
     required this.logoutTimeText,
+    required this.isBusy,
     required this.onLogin,
     required this.onLogout,
   });
 
   final String loginTimeText;
   final String logoutTimeText;
+  final bool isBusy;
   final VoidCallback onLogin;
   final VoidCallback onLogout;
 
@@ -352,8 +407,11 @@ class AttendanceSection extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
               SizedBox(width: 6),
-              Icon(Icons.arrow_forward_ios_outlined,
-                  size: 14, color: Colors.black54),
+              Icon(
+                Icons.arrow_forward_ios_outlined,
+                size: 14,
+                color: Colors.black54,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -366,7 +424,7 @@ class AttendanceSection extends StatelessWidget {
                   pillColor: const Color(0xFF1E7C10),
                   bg: const Color(0xFFEFF7EE),
                   timeText: loginTimeText,
-                  onTap: onLogin,
+                  onTap: isBusy ? null : onLogin,
                 ),
               ),
               const SizedBox(width: 10),
@@ -377,7 +435,7 @@ class AttendanceSection extends StatelessWidget {
                   pillColor: const Color(0xFFD32F2F),
                   bg: const Color(0xFFFFEFEF),
                   timeText: logoutTimeText,
-                  onTap: onLogout,
+                  onTap: isBusy ? null : onLogout,
                 ),
               ),
             ],
@@ -403,7 +461,7 @@ class _AttendanceTile extends StatelessWidget {
   final Color pillColor;
   final Color bg;
   final String timeText;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +515,6 @@ class _AttendanceTile extends StatelessWidget {
   }
 }
 
-/// ✅ TAB ENUM
 enum OrdersTab { total, pending, cancelled }
 
 class StatsTabsSection extends StatelessWidget {
@@ -473,7 +530,6 @@ class StatsTabsSection extends StatelessWidget {
   final int totalDelivery;
   final int deliveryPending;
   final int cancelledOrder;
-
   final OrdersTab activeTab;
   final ValueChanged<OrdersTab> onTabChanged;
 
@@ -607,10 +663,12 @@ class OrdersSection extends StatelessWidget {
         const SizedBox(height: 10),
         Column(
           children: orders
-              .map((o) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: OrderCard(order: o, onAccept: () => onAccept(o)),
-          ))
+              .map(
+                (o) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: OrderCard(order: o, onAccept: () => onAccept(o)),
+                ),
+              )
               .toList(),
         ),
       ],
@@ -630,7 +688,6 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ CANCELLED UI (as per image)
     if (order.status == OrdersTab.cancelled) {
       return Container(
         decoration: BoxDecoration(
@@ -642,7 +699,6 @@ class OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: ID + Date/Time
             Row(
               children: [
                 Expanded(
@@ -666,12 +722,9 @@ class OrderCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 8),
             const Divider(height: 1, thickness: 1, color: Color(0x22000000)),
             const SizedBox(height: 8),
-
-            // From Row
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -697,10 +750,7 @@ class OrderCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 10),
-
-            // To Row
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -731,7 +781,6 @@ class OrderCard extends StatelessWidget {
       );
     }
 
-    // ✅ ORIGINAL UI for Pending/Total (UNCHANGED)
     const green = Color(0xFF1E7C10);
     return Container(
       decoration: BoxDecoration(
@@ -779,7 +828,7 @@ class OrderCard extends StatelessWidget {
             child: SizedBox(
               height: 34,
               child: ElevatedButton(
-                onPressed: onAccept, // Always clickable as requested
+                onPressed: onAccept,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: green,
                   shape: RoundedRectangleBorder(
@@ -803,7 +852,6 @@ class OrderCard extends StatelessWidget {
   }
 }
 
-/// ---------- MODEL ----------
 class OrderItem {
   OrderItem({
     required this.id,
@@ -820,7 +868,114 @@ class OrderItem {
   final String time;
   final String from;
   final String to;
-
   bool accepted;
   final OrdersTab status;
+
+  factory OrderItem.fromApi(Map<String, dynamic> json) {
+    final statusText = (
+      json['status'] ??
+      json['order_status'] ??
+      json['delivery_status'] ??
+      json['state'] ??
+      ''
+    ).toString().toLowerCase();
+
+    final from = (json['from_address'] ??
+            json['pickup_address'] ??
+            json['warehouse_address'] ??
+            json['from'] ??
+            json['source'] ??
+            'Warehouse')
+        .toString();
+    final to = (json['to_address'] ??
+            json['delivery_address'] ??
+            json['customer_address'] ??
+            json['address'] ??
+            json['to'] ??
+            'Customer address not available')
+        .toString();
+    final rawDate = json['date'] ??
+        json['order_date'] ??
+        json['created_at'] ??
+        json['updated_at'] ??
+        '';
+    final parsed = DateTime.tryParse(rawDate.toString());
+    final id = (json['display_id'] ??
+            json['order_id'] ??
+            json['id'] ??
+            json['request_id'] ??
+            'NA')
+        .toString();
+
+    return OrderItem(
+      id: id.startsWith('#') ? id : '#$id',
+      date: parsed == null
+          ? (rawDate.toString().isEmpty ? '--' : rawDate.toString())
+          : '${parsed.day}-${parsed.month}-${parsed.year}',
+      time: parsed == null
+          ? (json['time']?.toString() ?? '--')
+          : formatTime(parsed),
+      from: from,
+      to: to,
+      accepted: statusText.contains('accept') ||
+          statusText.contains('assigned') ||
+          statusText.contains('picked') ||
+          statusText.contains('in_progress'),
+      status: statusText.contains('cancel')
+          ? OrdersTab.cancelled
+          : OrdersTab.pending,
+    );
+  }
+
+  static String formatTime(DateTime dateTime) {
+    int hour = dateTime.hour % 12;
+    if (hour == 0) hour = 12;
+    final suffix = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $suffix';
+  }
+}
+
+class _HomeStateCard extends StatelessWidget {
+  const _HomeStateCard({
+    required this.message,
+    required this.actionLabel,
+    required this.onTap,
+  });
+
+  final String message;
+  final String actionLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E7C10),
+            ),
+            child: Text(
+              actionLabel,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

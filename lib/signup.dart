@@ -7,12 +7,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'constants/app_colors.dart';
 import 'constants/app_spacing.dart';
 import 'constants/app_strings.dart';
 import 'routes/app_routes.dart';
 import 'services/api_service.dart';
+import 'services/delivery_man_service.dart';
 
 enum _DocumentType {
   aadharFront,
@@ -38,6 +40,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _documentFormKey = GlobalKey<FormState>();
   final _educationFormKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService.instance;
+  final DeliveryManService _deliveryManService = DeliveryManService.instance;
 
   final firstNameCtrl = TextEditingController();
   final lastNameCtrl = TextEditingController();
@@ -49,8 +52,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final stateCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
   final pincodeCtrl = TextEditingController();
+  final dobCtrl = TextEditingController();
   final aadharCtrl = TextEditingController();
   final panCtrl = TextEditingController();
+  final vehicleTypeCtrl = TextEditingController();
+  final vehicleNumberCtrl = TextEditingController();
   final licenceNumberCtrl = TextEditingController();
   final educationCtrl = TextEditingController();
 
@@ -70,6 +76,7 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _selectedState;
   String? _selectedCity;
   bool _locationLoading = true;
+  String? _selectedGender;
 
   int _currentStep = 0;
   bool agree = false;
@@ -95,8 +102,11 @@ class _SignupScreenState extends State<SignupScreen> {
     stateCtrl.dispose();
     cityCtrl.dispose();
     pincodeCtrl.dispose();
+    dobCtrl.dispose();
     aadharCtrl.dispose();
     panCtrl.dispose();
+    vehicleTypeCtrl.dispose();
+    vehicleNumberCtrl.dispose();
     licenceNumberCtrl.dispose();
     educationCtrl.dispose();
     super.dispose();
@@ -279,7 +289,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _snack('Please upload PAN front and back images');
       return;
     }
-    if (addressProofFile == null) {
+    if (!_isDeliveryPerson && addressProofFile == null) {
       _snack('Please upload address proof');
       return;
     }
@@ -302,7 +312,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> signup() async {
     final isDelivery = _isDeliveryPerson;
-    if (!_educationFormKey.currentState!.validate()) return;
+    if (!isDelivery && !_educationFormKey.currentState!.validate()) return;
 
     if (!agree) {
       _snack('Please accept terms and conditions');
@@ -317,7 +327,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _snack('Please upload PAN front and back images');
       return;
     }
-    if (addressProofFile == null) {
+    if (!isDelivery && addressProofFile == null) {
       _snack('Please upload address proof');
       return;
     }
@@ -325,11 +335,11 @@ class _SignupScreenState extends State<SignupScreen> {
       _snack('Please upload licence front and back files');
       return;
     }
-    if (educationCtrl.text.trim().isEmpty) {
+    if (!isDelivery && educationCtrl.text.trim().isEmpty) {
       _snack('Please select education');
       return;
     }
-    if (resultFile == null) {
+    if (!isDelivery && resultFile == null) {
       _snack('Please upload result document');
       return;
     }
@@ -347,32 +357,58 @@ class _SignupScreenState extends State<SignupScreen> {
 
     setState(() => loading = true);
 
-    final res = await _apiService.signup(
-      name: fullName,
-      phone: numberCtrl.text.trim(),
-      email: emailCtrl.text.trim(),
-      address: fullAddress,
-      aadhar: aadharCtrl.text.trim(),
-      pan: panCtrl.text.trim(),
-      aadharFile: aadharFrontFile!,
-      panFile: panFrontFile!,
-      firstName: firstNameCtrl.text.trim(),
-      lastName: lastNameCtrl.text.trim(),
-      addressLine1: addressLine1Ctrl.text.trim(),
-      addressLine2: addressLine2Ctrl.text.trim(),
-      country: countryCtrl.text.trim(),
-      state: stateCtrl.text.trim(),
-      city: cityCtrl.text.trim(),
-      pincode: pincodeCtrl.text.trim(),
-      aadharBackFile: aadharBackFile,
-      panBackFile: panBackFile,
-      drivingLicenceNumber: isDelivery ? licenceNumberCtrl.text.trim() : null,
-      licenceFrontFile: isDelivery ? licenceFrontFile : null,
-      licenceBackFile: isDelivery ? licenceBackFile : null,
-      education: educationCtrl.text.trim(),
-      resultFile: resultFile,
-      addressProofFile: addressProofFile,
-    );
+    final res = isDelivery
+        ? await _deliveryManService.signupDeliveryMan(
+            name: fullName,
+            phone: numberCtrl.text.trim(),
+            email: emailCtrl.text.trim(),
+            dob: dobCtrl.text.trim(),
+            gender: (_selectedGender ?? '').trim(),
+            address1: addressLine1Ctrl.text.trim(),
+            address2: addressLine2Ctrl.text.trim(),
+            city: cityCtrl.text.trim(),
+            state: stateCtrl.text.trim(),
+            country: countryCtrl.text.trim(),
+            pincode: pincodeCtrl.text.trim(),
+            aadharNumber: aadharCtrl.text.trim(),
+            aadharFrontFile: XFile(aadharFrontFile!.path),
+            aadharBackFile: XFile(aadharBackFile!.path),
+            panNumber: panCtrl.text.trim(),
+            panFrontFile: XFile(panFrontFile!.path),
+            panBackFile: XFile(panBackFile!.path),
+            vehicleType: vehicleTypeCtrl.text.trim(),
+            vehicleNumber: vehicleNumberCtrl.text.trim(),
+            drivingLicenseNo: licenceNumberCtrl.text.trim(),
+            drivingLicenseFrontFile: XFile(licenceFrontFile!.path),
+            drivingLicenseBackFile: XFile(licenceBackFile!.path),
+            roleId: widget.arg.roleId,
+          )
+        : await _apiService.signup(
+            name: fullName,
+            phone: numberCtrl.text.trim(),
+            email: emailCtrl.text.trim(),
+            address: fullAddress,
+            aadhar: aadharCtrl.text.trim(),
+            pan: panCtrl.text.trim(),
+            aadharFile: aadharFrontFile!,
+            panFile: panFrontFile!,
+            firstName: firstNameCtrl.text.trim(),
+            lastName: lastNameCtrl.text.trim(),
+            addressLine1: addressLine1Ctrl.text.trim(),
+            addressLine2: addressLine2Ctrl.text.trim(),
+            country: countryCtrl.text.trim(),
+            state: stateCtrl.text.trim(),
+            city: cityCtrl.text.trim(),
+            pincode: pincodeCtrl.text.trim(),
+            aadharBackFile: aadharBackFile,
+            panBackFile: panBackFile,
+            drivingLicenceNumber: null,
+            licenceFrontFile: null,
+            licenceBackFile: null,
+            education: educationCtrl.text.trim(),
+            resultFile: resultFile,
+            addressProofFile: addressProofFile,
+          );
 
     if (!mounted) return;
     setState(() => loading = false);
@@ -588,6 +624,31 @@ class _SignupScreenState extends State<SignupScreen> {
               return null;
             },
           ),
+          if (_isDeliveryPerson) ...[
+            _input(
+              'Date of Birth (YYYY-MM-DD)',
+              dobCtrl,
+              keyboard: TextInputType.datetime,
+              validator: (v) {
+                final value = (v ?? '').trim();
+                if (value.isEmpty) return 'Required';
+                if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
+                  return 'Use YYYY-MM-DD format';
+                }
+                return null;
+              },
+            ),
+            _dropdown(
+              hint: 'Gender',
+              value: _selectedGender,
+              items: const ['Male', 'Female', 'Other'],
+              onChanged: (value) {
+                setState(() => _selectedGender = value);
+              },
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Select gender' : null,
+            ),
+          ],
           _input(
             'Address Line 1',
             addressLine1Ctrl,
@@ -831,15 +892,22 @@ class _SignupScreenState extends State<SignupScreen> {
             onTap: () => _pickFile(_DocumentType.panBack),
           ),
           const SizedBox(height: 10),
-          _uploadBox(
-            title: 'Address Proof',
-            subtitle:
-                'Electricity Bill, Water Bill, Rent Agreement (PNG, JPG, PDF max 2MB)',
-            file: addressProofFile,
-            onTap: () => _pickFile(_DocumentType.addressProof),
-          ),
+          if (!isDelivery)
+            _uploadBox(
+              title: 'Address Proof',
+              subtitle:
+                  'Electricity Bill, Water Bill, Rent Agreement (PNG, JPG, PDF max 2MB)',
+              file: addressProofFile,
+              onTap: () => _pickFile(_DocumentType.addressProof),
+            ),
           if (isDelivery) ...[
             const SizedBox(height: 10),
+            _input('Vehicle Type', vehicleTypeCtrl),
+            _input(
+              'Vehicle Number',
+              vehicleNumberCtrl,
+              textCapitalization: TextCapitalization.characters,
+            ),
             _input('Driving Licence Number', licenceNumberCtrl),
             _uploadBox(
               title: 'Licence Front Image',
@@ -930,6 +998,82 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildEducationForm() {
+    if (_isDeliveryPerson) {
+      return Form(
+        key: _educationFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Review your details and submit the delivery partner signup form. Vehicle, Aadhaar, PAN, and licence documents will be uploaded with this request.',
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: loading ? null : _goBackToDocumentsStep,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Back',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: loading ? null : signup,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Submit',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     const educationOptions = [
       'Post Graduate',
       'Graduate',

@@ -63,6 +63,41 @@ class ApiConstants {
   // Delivery Person Endpoints
   static const String registervehicle = "$baseUrl/vehicle-registration";
   static const String deliveryPersonDashboard = "$baseUrl/delivery-person-dashboard";
+  static const String deliveryManOrders = "$baseUrl/orders";
+  static const String deliveryManOrderDetail = "$baseUrl/orders/{id}";
+  static const String deliveryManAcceptOrder = "$baseUrl/accept-order/{id}";
+  static const String deliveryManSendOrderOtp = "$baseUrl/order/{id}/otp";
+  static const String deliveryManVerifyOrderOtp =
+      "$baseUrl/order/{id}/verify-otp";
+  static const String deliveryManUploadSelfie = "$baseUrl/order/profile/{id}";
+  static const String deliveryManDeliveredOrder =
+      "$baseUrl/delivered-order/{id}";
+  static const String deliveryManKycStatus = "$baseUrl/kyc/status";
+  static const String deliveryManKycSubmit = "$baseUrl/kyc/submit";
+  static const String deliveryManUpdateVehicle =
+      "$baseUrl/update-vehicle-details";
+  static const String deliveryManAadhar = "$baseUrl/aadhar";
+  static const String deliveryManStoreAadhar = "$baseUrl/store-aadhar";
+  static const String deliveryManUpdateAadhar = "$baseUrl/update-aadhar";
+  static const String deliveryManPanCard = "$baseUrl/pan-card";
+  static const String deliveryManStorePanCard = "$baseUrl/store-pan-card";
+  static const String deliveryManUpdatePanCard = "$baseUrl/update-pan-card";
+  static const String deliveryManAttendance = "$baseUrl/attendance-dm";
+  static const String deliveryManAttendanceLogin =
+      "$baseUrl/attendance-login";
+  static const String deliveryManAttendanceLogout =
+      "$baseUrl/attendance-logout";
+  static const String deliveryManReturnOrders = "$baseUrl/return-orders";
+  static const String deliveryManReturnOrderDetail =
+      "$baseUrl/return-orders/{id}";
+  static const String deliveryManAcceptReturnOrder =
+      "$baseUrl/accept-return-order/{id}";
+  static const String deliveryManSendReturnOrderOtp =
+      "$baseUrl/return-order/{id}/otp";
+  static const String deliveryManVerifyReturnOrderOtp =
+      "$baseUrl/return-order/{id}/verify-otp";
+  static const String deliveryManReturnOrderPicked =
+      "$baseUrl/return-order-picked/{id}";
   
   //field executive 
   static const String serviceRequests = "$baseUrl/service-requests";

@@ -1,8 +1,11 @@
-import 'package:final_crackteck/screens/Delivery_person/delivery_home_tab.dart';
-import 'package:final_crackteck/screens/Delivery_person/delivery_profile_tab.dart';
-import 'package:final_crackteck/widgets/delivery_man_bottom_navigation.dart';
-import 'package:final_crackteck/widgets/placeholder.dart';
 import 'package:flutter/material.dart';
+
+import 'package:final_crackteck/widgets/delivery_man_bottom_navigation.dart';
+
+import '../../widgets/placeholder.dart';
+import 'delivery_home_tab.dart';
+import 'delivery_profile_tab.dart';
+
 class DeliveryDashboard extends StatefulWidget {
   final int roleId;
   final String roleName;

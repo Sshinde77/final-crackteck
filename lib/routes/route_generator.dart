@@ -24,6 +24,7 @@ import '../constants/app_strings.dart';
 import '../login_screen.dart';
 import '../role_screen.dart';
 import '../screens/Delivery_person/delivery_dashboard.dart';
+import '../screens/Delivery_person/delivery_detail_screen.dart';
 import '../screens/Field_executive/field_excutive_attendance.dart';
 import '../screens/Field_executive/field_executive_add_product.dart';
 import '../screens/Field_executive/field_executive_all_products_screen.dart';
@@ -57,6 +58,14 @@ import '../screens/Field_executive/field_executive_upload_before_images_screen.d
 import '../screens/Field_executive/field_executive_work.dart';
 import '../screens/Field_executive/field_executive_work_call.dart';
 import '../screens/Field_executive/field_executive_write_report_screen.dart';
+import '../screens/Delivery_person/delivery_done_screen.dart';
+import '../screens/Delivery_person/delivery_notification.dart';
+import '../screens/Delivery_person/delivery_otp_screen.dart';
+import '../screens/Delivery_person/delivery_privacy_policy.dart';
+import '../screens/Delivery_person/delivery_terms_condition.dart';
+import '../screens/Delivery_person/delivery_otp_verification_screen.dart'
+    as delivery_person;
+import '../screens/Delivery_person/map_with-start.dart';
 import '../temp_placeholder_screen.dart';
 import 'app_routes.dart';
 import 'package:final_crackteck/otp_screen.dart';
@@ -245,11 +254,105 @@ class RouteGenerator {
         );
 
       case AppRoutes.Deliverypersondashbord:
-        // Delivery Person main dashboard (roleId = 2)
+        final args = settings.arguments as deliverydasboardArguments?;
         return MaterialPageRoute(
-          builder: (_) => const DeliveryDashboard(
-            roleId: 2,
-            roleName: AppStrings.deliveryMan,
+          builder: (_) => DeliveryDashboard(
+            roleId: args?.roleId ?? 2,
+            roleName: args?.roleName ?? AppStrings.deliveryMan,
+            initialIndex: args?.initialIndex ?? 0,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryNotificationScreen:
+        final args = settings.arguments as deliverynotificationArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryNotificationScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryTermsConditionScreen:
+        final args = settings.arguments as deliverytermsArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryTermsConditionScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryPrivacyPolicyScreen:
+        final args = settings.arguments as deliverypolicyArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryPrivacyPolicyScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliverypickupparcelScreen:
+        final args = settings.arguments as deliverypickupparcelArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliverypickupparcelScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            orderId: args.orderId,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryOtpScreen:
+        final args = settings.arguments as deliveryotpArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryOtpScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            orderId: args.orderId,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryDoneScreen:
+        final args = settings.arguments as deliverydoneArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryDoneScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.DeliveryDetailScreen:
+        final args = settings.arguments as deliverydetailArguments?;
+        if (args == null) {
+          return _errorRoute('Arguments missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => DeliveryDetailsScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
           ),
           settings: settings,
         );
@@ -503,7 +606,20 @@ class RouteGenerator {
         );
 
       case AppRoutes.DeliveryOtpVerificationScreen:
-        final args = settings.arguments as deliveryotpverificationArguments?;
+        final rawArgs = settings.arguments;
+        if (rawArgs is deliveryotpverificationArguments &&
+            (rawArgs.deliveryId.isEmpty && rawArgs.requestId.isEmpty)) {
+          return MaterialPageRoute(
+            builder: (_) => delivery_person.DeliveryOtpVerificationScreen(
+              roleId: rawArgs.roleId,
+              roleName: rawArgs.roleName,
+              orderId: rawArgs.orderId,
+            ),
+            settings: settings,
+          );
+        }
+
+        final args = rawArgs as deliveryotpverificationArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
