@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../services/delivery_person/delivery_dashboard_service.dart';
+import '../../services/delivery_person/delivery_orders_service.dart';
 import 'delivery_notification.dart';
 
 class TotalDeliveryScreen extends StatefulWidget {
@@ -20,7 +21,8 @@ class TotalDeliveryScreen extends StatefulWidget {
 class _TotalDeliveryScreenState extends State<TotalDeliveryScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
+  final DeliveryDashboardService _dashboardService = DeliveryDashboardService();
+  final DeliveryOrdersService _ordersService = DeliveryOrdersService();
   bool _isLoading = true;
   String? _errorText;
   Map<String, dynamic> _dashboard = <String, dynamic>{};
@@ -39,8 +41,8 @@ class _TotalDeliveryScreenState extends State<TotalDeliveryScreen> {
     });
     try {
       final results = await Future.wait<dynamic>([
-        _deliveryService.fetchDashboard(),
-        _deliveryService.fetchOrders(),
+        _dashboardService.fetchDashboard(),
+        _ordersService.fetchOrders(),
       ]);
       if (!mounted) return;
       setState(() {

@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../provider/delivery_person/delivery_documents_provider.dart';
 
 class LicenseEditScreen extends StatefulWidget {
   const LicenseEditScreen({super.key});
@@ -15,7 +16,6 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
   final _formKey = GlobalKey<FormState>();
-  final _service = DeliveryManService.instance;
   final _picker = ImagePicker();
   final TextEditingController licenceCtrl = TextEditingController();
 
@@ -25,39 +25,19 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
   String? _backLabel;
   String _vehicleType = '';
   String _vehicleNumber = '';
-  bool _isLoading = true;
-  bool _isSaving = false;
-
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryDocumentsProvider>().loadVehicle();
+    });
   }
 
   @override
   void dispose() {
     licenceCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _service.fetchVehicleDetails();
-      licenceCtrl.text =
-          (data['driving_license_no'] ?? data['licence_no'] ?? '').toString();
-      _vehicleType = (data['vehicle_type'] ?? data['brand'] ?? 'Bike').toString();
-      _vehicleNumber =
-          (data['vehicle_number'] ?? data['registration_number'] ?? '').toString();
-      _frontLabel = (data['driving_license_front_path'] ?? data['licence_front_image'])?.toString();
-      _backLabel = (data['driving_license_back_path'] ?? data['licence_back_image'])?.toString();
-    } catch (_) {
-      _vehicleType = 'Bike';
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   Future<void> _pick(bool front) async {
@@ -136,36 +116,36 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
-    try {
-      final response = await _service.updateVehicleDetails(
-        vehicleType: _vehicleType,
-        vehicleNumber: _vehicleNumber,
-        drivingLicenseNo: licenceCtrl.text.trim(),
-        frontFile: _frontFile,
-        backFile: _backFile,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? 'License updated')),
-      );
-      if (response.success) {
-        Navigator.pop(context);
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+    final provider = context.read<DeliveryDocumentsProvider>();
+    final message = await provider.saveVehicle(
+      vehicleType: _vehicleType,
+      vehicleNumber: _vehicleNumber,
+      drivingLicenseNo: licenceCtrl.text.trim(),
+      frontFile: _frontFile,
+      backFile: _backFile,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (provider.lastSaveSucceeded) {
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryDocumentsProvider>();
+    final vehicle = provider.vehicle;
+    if (!provider.isLoading && licenceCtrl.text.isEmpty) {
+      licenceCtrl.text =
+          (vehicle['driving_license_no'] ?? vehicle['licence_no'] ?? '').toString();
+      _vehicleType = (vehicle['vehicle_type'] ?? vehicle['brand'] ?? 'Bike').toString();
+      _vehicleNumber =
+          (vehicle['vehicle_number'] ?? vehicle['registration_number'] ?? '').toString();
+      _frontLabel ??=
+          (vehicle['driving_license_front_path'] ?? vehicle['licence_front_image'])?.toString();
+      _backLabel ??=
+          (vehicle['driving_license_back_path'] ?? vehicle['licence_back_image'])?.toString();
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -180,7 +160,7 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
           style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
         ),
       ),
-      body: _isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
@@ -211,14 +191,14 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isSaving ? null : _save,
+                        onPressed: provider.isSaving ? null : _save,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: darkGreen,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: _isSaving
+                        child: provider.isSaving
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,

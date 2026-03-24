@@ -17,6 +17,10 @@ import 'package:final_crackteck/model/sales_person/followup_provider.dart';
 import 'package:final_crackteck/model/sales_person/meetings_provider.dart';
 import 'package:final_crackteck/model/sales_person/quotations_provider.dart';
 import 'package:final_crackteck/model/sales_person/profile_provider.dart';
+import 'package:final_crackteck/provider/delivery_person/delivery_home_provider.dart';
+import 'package:final_crackteck/provider/delivery_person/delivery_order_action_provider.dart';
+import 'package:final_crackteck/provider/delivery_person/delivery_profile_provider.dart';
+import 'package:final_crackteck/provider/signup/signup_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -110,7 +114,10 @@ class RouteGenerator {
           return _errorRoute('Sign Up arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => SignupScreen(arg: args),
+          builder: (_) => ChangeNotifierProvider<SignupProvider>(
+            create: (_) => SignupProvider(),
+            child: SignupScreen(arg: args),
+          ),
           settings: settings,
         );
 
@@ -256,10 +263,20 @@ class RouteGenerator {
       case AppRoutes.Deliverypersondashbord:
         final args = settings.arguments as deliverydasboardArguments?;
         return MaterialPageRoute(
-          builder: (_) => DeliveryDashboard(
-            roleId: args?.roleId ?? 2,
-            roleName: args?.roleName ?? AppStrings.deliveryMan,
-            initialIndex: args?.initialIndex ?? 0,
+          builder: (_) => MultiProvider(
+            providers: [
+              ChangeNotifierProvider<DeliveryHomeProvider>(
+                create: (_) => DeliveryHomeProvider(),
+              ),
+              ChangeNotifierProvider<DeliveryProfileProvider>(
+                create: (_) => DeliveryProfileProvider(),
+              ),
+            ],
+            child: DeliveryDashboard(
+              roleId: args?.roleId ?? 2,
+              roleName: args?.roleName ?? AppStrings.deliveryMan,
+              initialIndex: args?.initialIndex ?? 0,
+            ),
           ),
           settings: settings,
         );
@@ -309,10 +326,13 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => DeliverypickupparcelScreen(
-            roleId: args.roleId,
-            roleName: args.roleName,
-            orderId: args.orderId,
+          builder: (_) => ChangeNotifierProvider<DeliveryOrderActionProvider>(
+            create: (_) => DeliveryOrderActionProvider(orderId: args.orderId),
+            child: DeliverypickupparcelScreen(
+              roleId: args.roleId,
+              roleName: args.roleName,
+              orderId: args.orderId,
+            ),
           ),
           settings: settings,
         );
@@ -323,10 +343,13 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => DeliveryOtpScreen(
-            roleId: args.roleId,
-            roleName: args.roleName,
-            orderId: args.orderId,
+          builder: (_) => ChangeNotifierProvider<DeliveryOrderActionProvider>(
+            create: (_) => DeliveryOrderActionProvider(orderId: args.orderId),
+            child: DeliveryOtpScreen(
+              roleId: args.roleId,
+              roleName: args.roleName,
+              orderId: args.orderId,
+            ),
           ),
           settings: settings,
         );
@@ -556,7 +579,7 @@ class RouteGenerator {
           builder: (_) => DeliveryRequestListScreen(
             roleId: safeRoleId,
             roleName: safeRoleName,
-            deliveryType: safeDeliveryType!,
+            deliveryType: safeDeliveryType,
             showCompletedOnly: safeShowCompletedOnly,
           ),
           settings: settings,
@@ -610,11 +633,16 @@ class RouteGenerator {
         if (rawArgs is deliveryotpverificationArguments &&
             (rawArgs.deliveryId.isEmpty && rawArgs.requestId.isEmpty)) {
           return MaterialPageRoute(
-            builder: (_) => delivery_person.DeliveryOtpVerificationScreen(
-              roleId: rawArgs.roleId,
-              roleName: rawArgs.roleName,
-              orderId: rawArgs.orderId,
-            ),
+            builder: (_) =>
+                ChangeNotifierProvider<DeliveryOrderActionProvider>(
+                  create: (_) =>
+                      DeliveryOrderActionProvider(orderId: rawArgs.orderId),
+                  child: delivery_person.DeliveryOtpVerificationScreen(
+                    roleId: rawArgs.roleId,
+                    roleName: rawArgs.roleName,
+                    orderId: rawArgs.orderId,
+                  ),
+                ),
             settings: settings,
           );
         }

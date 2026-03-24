@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../provider/delivery_person/delivery_personal_info_provider.dart';
 
 class DeliveryPersonalInfoScreen extends StatefulWidget {
   const DeliveryPersonalInfoScreen({
@@ -20,7 +21,6 @@ class DeliveryPersonalInfoScreen extends StatefulWidget {
 class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen> {
   static const Color green = Color(0xFF1E7C10);
 
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
   final _formKey = GlobalKey<FormState>();
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
@@ -30,14 +30,13 @@ class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen>
   final _joiningDateCtrl = TextEditingController();
   final _assignedAreaCtrl = TextEditingController();
   String? _gender;
-  bool _isLoading = true;
-  bool _isSaving = false;
-  String? _errorText;
-
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryPersonalInfoProvider>().load();
+    });
   }
 
   @override
@@ -52,71 +51,41 @@ class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen>
     super.dispose();
   }
 
-  Future<void> _loadProfile() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
-    });
-    try {
-      final profile = await _deliveryService.fetchProfile();
-      if (!mounted) return;
-      setState(() {
-        _firstNameCtrl.text = _read(profile, 'first_name');
-        _lastNameCtrl.text = _read(profile, 'last_name');
-        _dobCtrl.text = _read(profile, 'dob');
-        _gender = _emptyToNull(_read(profile, 'gender'));
-        _maritalStatusCtrl.text = _read(profile, 'marital_status');
-        _employmentTypeCtrl.text = _read(profile, 'employment_type');
-        _joiningDateCtrl.text = _read(profile, 'joining_date');
-        _assignedAreaCtrl.text = _read(profile, 'assigned_area');
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = error.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  String _read(Map<String, dynamic> source, String key) {
-    final value = source[key];
-    if (value == null) return '';
-    return value.toString().trim();
-  }
-
   String? _emptyToNull(String value) => value.isEmpty ? null : value;
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
-    final response = await _deliveryService.updateProfile(
-      fields: <String, dynamic>{
-        'first_name': _firstNameCtrl.text.trim(),
-        'last_name': _lastNameCtrl.text.trim(),
-        'dob': _dobCtrl.text.trim(),
-        'gender': (_gender ?? '').trim(),
-        'marital_status': _maritalStatusCtrl.text.trim(),
-        'employment_type': _employmentTypeCtrl.text.trim(),
-        'joining_date': _joiningDateCtrl.text.trim(),
-        'assigned_area': _assignedAreaCtrl.text.trim(),
-      },
+    final provider = context.read<DeliveryPersonalInfoProvider>();
+    final response = await provider.save(
+      firstName: _firstNameCtrl.text.trim(),
+      lastName: _lastNameCtrl.text.trim(),
+      dob: _dobCtrl.text.trim(),
+      gender: (_gender ?? '').trim(),
+      maritalStatus: _maritalStatusCtrl.text.trim(),
+      employmentType: _employmentTypeCtrl.text.trim(),
+      joiningDate: _joiningDateCtrl.text.trim(),
+      assignedArea: _assignedAreaCtrl.text.trim(),
     );
     if (!mounted) return;
-    setState(() => _isSaving = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response.message ?? 'Profile updated')),
+      SnackBar(content: Text(response)),
     );
-    if (response.success) {
-      _loadProfile();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryPersonalInfoProvider>();
+    final info = provider.info;
+    if (!provider.isLoading && _firstNameCtrl.text.isEmpty && info.raw.isNotEmpty) {
+      _firstNameCtrl.text = info.firstName;
+      _lastNameCtrl.text = info.lastName;
+      _dobCtrl.text = info.dob;
+      _gender ??= _emptyToNull(info.gender ?? '');
+      _maritalStatusCtrl.text = info.maritalStatus;
+      _employmentTypeCtrl.text = info.employmentType;
+      _joiningDateCtrl.text = info.joiningDate;
+      _assignedAreaCtrl.text = info.assignedArea;
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -124,10 +93,10 @@ class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen>
         foregroundColor: Colors.white,
         title: const Text('Personal info'),
       ),
-      body: _isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorText != null
-              ? _ErrorState(message: _errorText!, onRetry: _loadProfile)
+          : provider.error != null
+              ? _ErrorState(message: provider.error!, onRetry: provider.load)
               : SafeArea(
                   child: Form(
                     key: _formKey,
@@ -167,11 +136,11 @@ class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen>
                         SizedBox(
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _isSaving ? null : _saveProfile,
+                            onPressed: provider.isSaving ? null : _saveProfile,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: green,
                             ),
-                            child: _isSaving
+                            child: provider.isSaving
                                 ? const SizedBox(
                                     height: 18,
                                     width: 18,

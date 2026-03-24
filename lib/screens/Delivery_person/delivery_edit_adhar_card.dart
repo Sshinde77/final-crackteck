@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../provider/delivery_person/delivery_documents_provider.dart';
 
 class AadhaarEditScreen extends StatefulWidget {
   const AadhaarEditScreen({super.key});
@@ -15,7 +16,6 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
   final _formKey = GlobalKey<FormState>();
-  final _service = DeliveryManService.instance;
   final _picker = ImagePicker();
 
   final TextEditingController numberCtrl = TextEditingController();
@@ -24,37 +24,21 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
   XFile? _backFile;
   String? _frontLabel;
   String? _backLabel;
-  bool _isLoading = true;
-  bool _isSaving = false;
   bool _isUpdate = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryDocumentsProvider>().loadAadhar();
+    });
   }
 
   @override
   void dispose() {
     numberCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _service.fetchAadharDetails();
-      numberCtrl.text = (data['aadhar_number'] ?? data['aadhar_no'] ?? '').toString();
-      _frontLabel = (data['aadhar_front_path'] ?? data['aadhar_front'])?.toString();
-      _backLabel = (data['aadhar_back_path'] ?? data['aadhar_back'])?.toString();
-      _isUpdate = numberCtrl.text.trim().isNotEmpty;
-    } catch (_) {
-      _isUpdate = false;
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   Future<void> _showPickerOptions(bool isFront) async {
@@ -133,36 +117,30 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-    try {
-      final response = await _service.saveAadharDetails(
-        aadharNumber: numberCtrl.text.trim(),
-        frontFile: _frontFile,
-        backFile: _backFile,
-        isUpdate: _isUpdate,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? 'Aadhaar saved')),
-      );
-      if (response.success) {
-        Navigator.pop(context);
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+    final provider = context.read<DeliveryDocumentsProvider>();
+    final message = await provider.saveAadhar(
+      number: numberCtrl.text.trim(),
+      frontFile: _frontFile,
+      backFile: _backFile,
+      isUpdate: _isUpdate,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (provider.lastSaveSucceeded) {
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryDocumentsProvider>();
+    final aadhar = provider.aadhar;
+    if (!provider.isLoading && numberCtrl.text.isEmpty) {
+      numberCtrl.text = (aadhar['aadhar_number'] ?? aadhar['aadhar_no'] ?? '').toString();
+      _frontLabel ??= (aadhar['aadhar_front_path'] ?? aadhar['aadhar_front'])?.toString();
+      _backLabel ??= (aadhar['aadhar_back_path'] ?? aadhar['aadhar_back'])?.toString();
+      _isUpdate = numberCtrl.text.trim().isNotEmpty;
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -183,7 +161,7 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
           ),
         ],
       ),
-      body: _isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
@@ -215,14 +193,14 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isSaving ? null : _save,
+                        onPressed: provider.isSaving ? null : _save,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: darkGreen,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: _isSaving
+                        child: provider.isSaving
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,

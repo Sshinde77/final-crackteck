@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../model/delivery_person/delivery_order_model.dart';
+import '../../provider/delivery_person/delivery_attendance_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 
 class DeliveryPersonAttendanceScreen extends StatefulWidget {
   final int roleId;
@@ -23,74 +25,32 @@ class _DeliveryPersonAttendanceScreenState
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
 
-  final DeliveryManService _service = DeliveryManService.instance;
-  bool _isLoading = true;
-  bool _isUpdating = false;
-  Map<String, dynamic> _attendance = <String, dynamic>{};
-
   @override
   void initState() {
     super.initState();
-    _loadAttendance();
-  }
-
-  Future<void> _loadAttendance() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _service.fetchAttendance();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      setState(() => _attendance = data);
-    } catch (_) {
-      if (!mounted) return;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isUpdating = false;
-        });
-      }
-    }
-  }
-
-  String _fmt(dynamic value) {
-    final text = value?.toString().trim() ?? '';
-    if (text.isEmpty) return '--';
-    final parsed = DateTime.tryParse(text);
-    if (parsed == null) return text;
-    int hour = parsed.hour % 12;
-    if (hour == 0) hour = 12;
-    final suffix = parsed.hour >= 12 ? 'PM' : 'AM';
-    return '${hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')} $suffix';
+      context.read<DeliveryAttendanceProvider>().load();
+    });
   }
 
   Future<void> _action(bool login) async {
-    setState(() => _isUpdating = true);
-    final response = login
-        ? await _service.attendanceLogin()
-        : await _service.attendanceLogout();
+    final response = await context.read<DeliveryAttendanceProvider>().update(login);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response.message ?? 'Attendance updated')),
+      SnackBar(content: Text(response)),
     );
-    if (response.success) {
-      _loadAttendance();
-    } else {
-      setState(() => _isUpdating = false);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final loginTime = _fmt(
-      _attendance['login_at'] ??
-          _attendance['check_in'] ??
-          _attendance['auth_log']?['login_at'],
-    );
-    final logoutTime = _fmt(
-      _attendance['logout_at'] ??
-          _attendance['check_out'] ??
-          _attendance['auth_log']?['logout_at'],
-    );
+    final provider = context.watch<DeliveryAttendanceProvider>();
+    final loginTime = provider.attendance.loginAt == null
+        ? '--'
+        : DeliveryOrderModel.formatTime(provider.attendance.loginAt!);
+    final logoutTime = provider.attendance.logoutAt == null
+        ? '--'
+        : DeliveryOrderModel.formatTime(provider.attendance.logoutAt!);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -137,7 +97,7 @@ class _DeliveryPersonAttendanceScreenState
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadAttendance,
+        onRefresh: provider.load,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -165,7 +125,7 @@ class _DeliveryPersonAttendanceScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _isUpdating ? null : () => _action(true),
+                      onPressed: provider.isUpdating ? null : () => _action(true),
                       child: Column(
                         children: [
                           const Text('Check In', style: TextStyle(fontSize: 12)),
@@ -192,7 +152,7 @@ class _DeliveryPersonAttendanceScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _isUpdating ? null : () => _action(false),
+                      onPressed: provider.isUpdating ? null : () => _action(false),
                       child: Column(
                         children: [
                           const Text('Check Out', style: TextStyle(fontSize: 12)),
@@ -211,7 +171,7 @@ class _DeliveryPersonAttendanceScreenState
                 ],
               ),
               const SizedBox(height: 16),
-              if (_isLoading)
+              if (provider.isLoading)
                 const CircularProgressIndicator()
               else
                 _attendanceCard(

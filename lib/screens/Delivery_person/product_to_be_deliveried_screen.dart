@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../provider/delivery_person/delivery_order_detail_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 
 class ProductToBeDeliveredScreen extends StatefulWidget {
   final int roleId;
@@ -23,12 +24,7 @@ class ProductToBeDeliveredScreen extends StatefulWidget {
 class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen> {
   static const Color _green = Color(0xFF1E7C10);
 
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
-  bool _accepted = false;
-  bool _isLoading = true;
-  bool _isAccepting = false;
   int _unreadNoti = 1;
-  Map<String, dynamic> _detail = <String, dynamic>{};
 
   final List<_ProductItem> items = const <_ProductItem>[
     _ProductItem(
@@ -48,30 +44,10 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
   @override
   void initState() {
     super.initState();
-    _loadDetail();
-  }
-
-  Future<void> _loadDetail() async {
-    setState(() => _isLoading = true);
-    try {
-      final detail = await _deliveryService.fetchOrderDetail(widget.orderId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      setState(() {
-        _detail = detail;
-        final status = (_detail['status'] ?? _detail['order_status'] ?? '')
-            .toString()
-            .toLowerCase();
-        _accepted = status.contains('accept') ||
-            status.contains('assigned') ||
-            status.contains('picked');
-      });
-    } catch (_) {
-      // Keep graceful fallback UI.
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+      context.read<DeliveryOrderDetailProvider>().loadDetail();
+    });
   }
 
   void _toast(String msg) {
@@ -82,16 +58,13 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
   }
 
   Future<void> _onAccept() async {
-    if (_accepted || _isAccepting) return;
-    setState(() => _isAccepting = true);
-    try {
-      final response = await _deliveryService.acceptOrder(widget.orderId);
-      if (!mounted) return;
-      if (!response.success) {
-        _toast(response.message ?? 'Failed to accept order');
-        return;
-      }
-      setState(() => _accepted = true);
+    final provider = context.read<DeliveryOrderDetailProvider>();
+    if (provider.accepted || provider.isAccepting) return;
+
+    final message = await provider.acceptOrder();
+    if (!mounted || message == null) return;
+    _toast(message);
+    if (provider.accepted) {
       Navigator.pushNamed(
         context,
         AppRoutes.DeliverypickupparcelScreen,
@@ -105,13 +78,6 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
           Navigator.pop(context, true);
         }
       });
-    } catch (error) {
-      if (!mounted) return;
-      _toast(error.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) {
-        setState(() => _isAccepting = false);
-      }
     }
   }
 
@@ -120,41 +86,11 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
     _toast('Notifications clicked');
   }
 
-  String get _fromAddress {
-    return (_detail['from_address'] ??
-            _detail['pickup_address'] ??
-            _detail['warehouse_address'] ??
-            'Vasai Warehouse')
-        .toString();
-  }
-
-  String get _toAddress {
-    return (_detail['to_address'] ??
-            _detail['delivery_address'] ??
-            _detail['customer_address'] ??
-            'Customer address not available')
-        .toString();
-  }
-
-  String get _dateText {
-    final raw = (_detail['order_date'] ?? _detail['date'] ?? '').toString();
-    final parsed = DateTime.tryParse(raw);
-    if (parsed == null) return raw.isEmpty ? '--' : raw;
-    return '${parsed.day}-${parsed.month}-${parsed.year}';
-  }
-
-  String get _timeText {
-    final raw = (_detail['order_date'] ?? _detail['date'] ?? '').toString();
-    final parsed = DateTime.tryParse(raw);
-    if (parsed == null) return (_detail['time'] ?? '--').toString();
-    int h = parsed.hour % 12;
-    if (h == 0) h = 12;
-    final suffix = parsed.hour >= 12 ? 'PM' : 'AM';
-    return '${h.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')} $suffix';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryOrderDetailProvider>();
+    final detail = provider.detail;
+
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, false);
@@ -216,18 +152,18 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
         body: Column(
           children: [
             Expanded(
-              child: _isLoading
+              child: provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
                       child: Column(
                         children: [
                           _OrderInfoCard(
-                            orderId: widget.orderId,
-                            date: _dateText,
-                            time: _timeText,
-                            from: _fromAddress,
-                            to: _toAddress,
+                            orderId: detail.id,
+                            date: detail.date,
+                            time: detail.time,
+                            from: detail.from,
+                            to: detail.to,
                           ),
                           const SizedBox(height: 14),
                           ...items.map(
@@ -248,7 +184,9 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: (_accepted || _isAccepting) ? null : _onAccept,
+                    onPressed: (provider.accepted || provider.isAccepting)
+                        ? null
+                        : _onAccept,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _green,
                       disabledBackgroundColor: Colors.black12,
@@ -256,7 +194,7 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: _isAccepting
+                    child: provider.isAccepting
                         ? const SizedBox(
                             width: 22,
                             height: 22,
@@ -268,7 +206,7 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                             ),
                           )
                         : Text(
-                            _accepted ? 'Accepted' : 'Accept',
+                            provider.accepted ? 'Accepted' : 'Accept',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,

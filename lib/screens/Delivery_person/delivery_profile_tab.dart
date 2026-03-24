@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../provider/delivery_person/delivery_attendance_provider.dart';
+import '../../provider/delivery_person/delivery_documents_provider.dart';
+import '../../provider/delivery_person/delivery_kyc_provider.dart';
+import '../../provider/delivery_person/delivery_personal_info_provider.dart';
+import '../../provider/delivery_person/delivery_profile_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 import '../../widgets/placeholder.dart';
 import 'delivery_feedback.dart';
 import 'delivery_kyc_screen.dart';
@@ -30,74 +35,23 @@ class DeliveryProfileScreen extends StatefulWidget {
 class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
   static const Color green = Color(0xFF1E7C10);
 
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
-  bool _isLoading = true;
-  String? _errorText;
-  Map<String, dynamic> _profile = <String, dynamic>{};
-
   @override
   void initState() {
     super.initState();
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryProfileProvider>().loadProfile();
     });
-    try {
-      final profile = await _deliveryService.fetchProfile();
-      if (!mounted) return;
-      setState(() => _profile = profile);
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = error.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  String get _displayName {
-    final first = (_profile['first_name'] ?? '').toString().trim();
-    final last = (_profile['last_name'] ?? '').toString().trim();
-    final full = '$first $last'.trim();
-    if (full.isNotEmpty) return full;
-    return (_profile['name'] ?? 'Delivery Partner').toString();
-  }
-
-  String get _displayCode {
-    return (_profile['staff_id'] ??
-            _profile['employee_id'] ??
-            _profile['user_id'] ??
-            _profile['id'] ??
-            '--')
-        .toString();
-  }
-
-  double get _rating {
-    final raw = _profile['rating'] ?? _profile['average_rating'] ?? 0;
-    if (raw is num) return raw.toDouble();
-    return double.tryParse(raw.toString()) ?? 0;
-  }
-
-  ImageProvider? get _avatar {
-    final url = (_profile['profile_image'] ??
-            _profile['avatar'] ??
-            _profile['image'] ??
-            '')
-        .toString()
-        .trim();
-    if (url.isEmpty) return null;
-    return NetworkImage(url);
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryProfileProvider>();
+    final profile = provider.profile;
+    final ImageProvider? avatar = profile.avatarUrl.isEmpty
+        ? null
+        : NetworkImage(profile.avatarUrl);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -133,7 +87,7 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadProfile,
+        onRefresh: provider.loadProfile,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
@@ -142,19 +96,19 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
               CircleAvatar(
                 radius: 48,
                 backgroundColor: const Color(0xFFEFF7EE),
-                backgroundImage: _avatar,
-                child: _avatar == null
+                backgroundImage: avatar,
+                child: avatar == null
                     ? const Icon(Icons.person, size: 48, color: green)
                     : null,
               ),
               const SizedBox(height: 12),
               Text(
-                _displayName,
+                profile.name,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 4),
               Text(
-                _displayCode,
+                profile.code,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -162,15 +116,15 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              _RatingRow(rating: _rating),
+              _RatingRow(rating: profile.rating),
               const SizedBox(height: 20),
-              if (_isLoading)
+              if (provider.isLoading)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 20),
                   child: CircularProgressIndicator(),
                 ),
-              if (_errorText != null)
-                _ErrorBanner(message: _errorText!, onRetry: _loadProfile),
+              if (provider.error != null)
+                _ErrorBanner(message: provider.error!, onRetry: provider.loadProfile),
               _ProfileTile(
                 icon: Icons.person_outline,
                 label: 'Personal info',
@@ -178,12 +132,16 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => DeliveryPersonalInfoScreen(
-                        roleId: widget.roleId,
-                        roleName: widget.roleName,
-                      ),
+                      builder: (context) =>
+                          ChangeNotifierProvider<DeliveryPersonalInfoProvider>(
+                            create: (_) => DeliveryPersonalInfoProvider(),
+                            child: DeliveryPersonalInfoScreen(
+                              roleId: widget.roleId,
+                              roleName: widget.roleName,
+                            ),
+                          ),
                     ),
-                  ).then((_) => _loadProfile());
+                  ).then((_) => provider.loadProfile());
                 },
               ),
               _ProfileTile(
@@ -193,7 +151,11 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const DocumentsScreen(),
+                      builder: (context) =>
+                          ChangeNotifierProvider<DeliveryDocumentsProvider>(
+                            create: (_) => DeliveryDocumentsProvider(),
+                            child: const DocumentsScreen(),
+                          ),
                     ),
                   );
                 },
@@ -205,10 +167,14 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => DeliveryPersonAttendanceScreen(
-                        roleId: widget.roleId,
-                        roleName: widget.roleName,
-                      ),
+                      builder: (context) =>
+                          ChangeNotifierProvider<DeliveryAttendanceProvider>(
+                            create: (_) => DeliveryAttendanceProvider(),
+                            child: DeliveryPersonAttendanceScreen(
+                              roleId: widget.roleId,
+                              roleName: widget.roleName,
+                            ),
+                          ),
                     ),
                   );
                 },
@@ -235,10 +201,14 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => DeliveryKycScreen(
-                        roleId: widget.roleId,
-                        roleName: widget.roleName,
-                      ),
+                      builder: (context) =>
+                          ChangeNotifierProvider<DeliveryKycProvider>(
+                            create: (_) => DeliveryKycProvider(),
+                            child: DeliveryKycScreen(
+                              roleId: widget.roleId,
+                              roleName: widget.roleName,
+                            ),
+                          ),
                     ),
                   );
                 },

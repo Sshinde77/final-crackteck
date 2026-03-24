@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../provider/delivery_person/delivery_order_action_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 
 class DeliveryOtpScreen extends StatefulWidget {
   final int roleId;
@@ -21,42 +22,28 @@ class DeliveryOtpScreen extends StatefulWidget {
 
 class _DeliveryOtpScreenState extends State<DeliveryOtpScreen> {
   static const Color green = Color(0xFF1E7C10);
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
-  bool _isSending = false;
 
   Future<void> _sendOtp() async {
-    setState(() => _isSending = true);
-    try {
-      final response = await _deliveryService.sendOrderOtp(widget.orderId);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? 'OTP sent')),
+    final provider = context.read<DeliveryOrderActionProvider>();
+    final message = await provider.sendOtpMessage();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (provider.lastActionSucceeded) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.DeliveryOtpVerificationScreen,
+        arguments: deliveryotpverificationArguments(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          orderId: widget.orderId,
+        ),
       );
-      if (response.success) {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.DeliveryOtpVerificationScreen,
-          arguments: deliveryotpverificationArguments(
-            roleId: widget.roleId,
-            roleName: widget.roleName,
-            orderId: widget.orderId,
-          ),
-        );
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSending = false);
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryOrderActionProvider>();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -124,14 +111,14 @@ class _DeliveryOtpScreenState extends State<DeliveryOtpScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _isSending ? null : _sendOtp,
+                      onPressed: provider.isSendingOtp ? null : _sendOtp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: green,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: _isSending
+                      child: provider.isSendingOtp
                           ? const SizedBox(
                               width: 22,
                               height: 22,

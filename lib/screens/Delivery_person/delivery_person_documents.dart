@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../provider/delivery_person/delivery_documents_provider.dart';
 import 'delivery_edit_License_card.dart';
 import 'delivery_edit_adhar_card.dart';
 import 'delivery_edit_pan_card.dart';
@@ -16,47 +17,13 @@ class DocumentsScreen extends StatefulWidget {
 }
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
-
-  bool _isLoading = true;
-  String? _errorText;
-  Map<String, dynamic> _aadhar = <String, dynamic>{};
-  Map<String, dynamic> _pan = <String, dynamic>{};
-  Map<String, dynamic> _vehicle = <String, dynamic>{};
-
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryDocumentsProvider>().loadAll();
     });
-    try {
-      final results = await Future.wait<dynamic>(<Future<dynamic>>[
-        _deliveryService.fetchAadharDetails(),
-        _deliveryService.fetchPanDetails(),
-        _deliveryService.fetchVehicleDetails(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _aadhar = results[0] as Map<String, dynamic>;
-        _pan = results[1] as Map<String, dynamic>;
-        _vehicle = results[2] as Map<String, dynamic>;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = error.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   String _masked(dynamic value) {
@@ -79,6 +46,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryDocumentsProvider>();
+    final aadhar = provider.aadhar;
+    final pan = provider.pan;
+    final vehicle = provider.vehicle;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -100,76 +72,89 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadData,
+        onRefresh: provider.loadAll,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_isLoading)
+              if (provider.isLoading)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 32),
                     child: CircularProgressIndicator(),
                   ),
                 ),
-              if (_errorText != null)
-                _ErrorCard(message: _errorText!, onRetry: _loadData),
+              if (provider.error != null)
+                _ErrorCard(message: provider.error!, onRetry: provider.loadAll),
               const _Label('Aadhar no.'),
-              _MaskedField(value: _masked(_aadhar['aadhar_number'] ?? _aadhar['aadhar_no'])),
+              _MaskedField(value: _masked(aadhar['aadhar_number'] ?? aadhar['aadhar_no'])),
               const SizedBox(height: 10),
               _DocImageRow(
-                leftLabel: _pick(_aadhar, const ['aadhar_front_path', 'aadhar_front']),
-                rightLabel: _pick(_aadhar, const ['aadhar_back_path', 'aadhar_back']),
+                leftLabel: _pick(aadhar, const ['aadhar_front_path', 'aadhar_front']),
+                rightLabel: _pick(aadhar, const ['aadhar_back_path', 'aadhar_back']),
                 onEdit: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AadhaarEditScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider.value(
+                        value: provider,
+                        child: const AadhaarEditScreen(),
+                      ),
+                    ),
                   );
-                  _loadData();
+                  provider.loadAll();
                 },
               ),
               const SizedBox(height: 20),
               const _Label('PAN no.'),
-              _MaskedField(value: _masked(_pan['pan_number'] ?? _pan['pan_no'])),
+              _MaskedField(value: _masked(pan['pan_number'] ?? pan['pan_no'])),
               const SizedBox(height: 10),
               _DocImageRow(
-                leftLabel: _pick(_pan, const ['pan_card_front_path', 'pan_front']),
-                rightLabel: _pick(_pan, const ['pan_card_back_path', 'pan_back']),
+                leftLabel: _pick(pan, const ['pan_card_front_path', 'pan_front']),
+                rightLabel: _pick(pan, const ['pan_card_back_path', 'pan_back']),
                 onEdit: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const PancardEditScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider.value(
+                        value: provider,
+                        child: const PancardEditScreen(),
+                      ),
+                    ),
                   );
-                  _loadData();
+                  provider.loadAll();
                 },
               ),
               const SizedBox(height: 20),
               const _Label('Licenses No.'),
               _MaskedField(
                 value: _masked(
-                  _vehicle['driving_license_no'] ?? _vehicle['licence_no'],
+                  vehicle['driving_license_no'] ?? vehicle['licence_no'],
                 ),
               ),
               const SizedBox(height: 10),
               _DocImageRow(
                 leftLabel: _pick(
-                  _vehicle,
+                  vehicle,
                   const ['driving_license_front_path', 'licence_front_image'],
                 ),
                 rightLabel: _pick(
-                  _vehicle,
+                  vehicle,
                   const ['driving_license_back_path', 'licence_back_image'],
                 ),
                 onEdit: () async {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const LicenseEditScreen(),
+                      builder: (context) => ChangeNotifierProvider.value(
+                        value: provider,
+                        child: const LicenseEditScreen(),
+                      ),
                     ),
                   );
-                  _loadData();
+                  provider.loadAll();
                 },
               ),
               const SizedBox(height: 24),
@@ -181,7 +166,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               const _Label('Type'),
               _InputBox(
                 value: _pick(
-                  _vehicle,
+                  vehicle,
                   const ['vehicle_type', 'brand'],
                 ),
               ),
@@ -189,7 +174,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               const _Label('Vehicle Number'),
               _InputBox(
                 value: _pick(
-                  _vehicle,
+                  vehicle,
                   const ['vehicle_number', 'registration_number'],
                 ),
               ),
@@ -197,13 +182,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               const _Label('Driving License No.'),
               _InputBox(
                 value: _pick(
-                  _vehicle,
+                  vehicle,
                   const ['driving_license_no', 'licence_no'],
                 ),
               ),
               const SizedBox(height: 12),
               const _Label('Fuel type'),
-              _InputBox(value: _pick(_vehicle, const ['fuel_type'])),
+              _InputBox(value: _pick(vehicle, const ['fuel_type'])),
               const SizedBox(height: 6),
               Align(
                 alignment: Alignment.centerRight,
@@ -212,10 +197,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const VehicleDetailsScreen(),
+                        builder: (context) => ChangeNotifierProvider.value(
+                          value: provider,
+                          child: const VehicleDetailsScreen(),
+                        ),
                       ),
                     );
-                    _loadData();
+                    provider.loadAll();
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../services/delivery_man_service.dart';
+import 'package:provider/provider.dart';
+
+import '../../provider/delivery_person/delivery_kyc_provider.dart';
 
 class DeliveryKycScreen extends StatefulWidget {
   const DeliveryKycScreen({
@@ -21,7 +23,6 @@ class DeliveryKycScreen extends StatefulWidget {
 class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
   static const Color green = Color(0xFF1E7C10);
 
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -29,16 +30,15 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
   final _dobCtrl = TextEditingController();
   final _documentNoCtrl = TextEditingController();
   String? _documentType;
-  Map<String, dynamic> _status = <String, dynamic>{};
   File? _selectedFile;
-  bool _isLoading = true;
-  bool _isSubmitting = false;
-  String? _errorText;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryKycProvider>().load();
+    });
   }
 
   @override
@@ -49,43 +49,6 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
     _dobCtrl.dispose();
     _documentNoCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
-    });
-    try {
-      final results = await Future.wait<dynamic>([
-        _deliveryService.fetchProfile(),
-        _deliveryService.fetchKycStatus(),
-      ]);
-      final profile = results[0] as Map<String, dynamic>;
-      final status = results[1] as Map<String, dynamic>;
-      if (!mounted) return;
-      setState(() {
-        _nameCtrl.text =
-            '${_read(profile, 'first_name')} ${_read(profile, 'last_name')}'
-                .trim();
-        if (_nameCtrl.text.isEmpty) {
-          _nameCtrl.text = _read(profile, 'name');
-        }
-        _emailCtrl.text = _read(profile, 'email');
-        _phoneCtrl.text = _read(profile, 'phone');
-        _dobCtrl.text = _read(profile, 'dob');
-        _status = status;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = error.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   String _read(Map<String, dynamic> source, String key) {
@@ -113,8 +76,8 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
       ).showSnackBar(const SnackBar(content: Text('Please select a file')));
       return;
     }
-    setState(() => _isSubmitting = true);
-    final response = await _deliveryService.submitKyc(
+    final provider = context.read<DeliveryKycProvider>();
+    final response = await provider.submit(
       name: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
@@ -124,25 +87,29 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
       documentFile: _selectedFile!,
     );
     if (!mounted) return;
-    setState(() => _isSubmitting = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response.message ?? 'KYC submitted')),
+      SnackBar(content: Text(response)),
     );
-    if (response.success) {
-      _loadData();
-    }
-  }
-
-  String get _statusText {
-    return (_status['status'] ??
-            _status['kyc_status'] ??
-            _status['state'] ??
-            'Not submitted')
-        .toString();
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryKycProvider>();
+    final profile = provider.profile;
+    final status = provider.status;
+    if (!provider.isLoading && _nameCtrl.text.isEmpty && profile.isNotEmpty) {
+      _nameCtrl.text =
+          '${_read(profile, 'first_name')} ${_read(profile, 'last_name')}'.trim();
+      if (_nameCtrl.text.isEmpty) {
+        _nameCtrl.text = _read(profile, 'name');
+      }
+      _emailCtrl.text = _read(profile, 'email');
+      _phoneCtrl.text = _read(profile, 'phone');
+      _dobCtrl.text = _read(profile, 'dob');
+    }
+    final statusText =
+        (status['status'] ?? status['kyc_status'] ?? status['state'] ?? 'Not submitted')
+            .toString();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -150,10 +117,10 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
         foregroundColor: Colors.white,
         title: const Text('KYC Log'),
       ),
-      body: _isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorText != null
-              ? _KycError(message: _errorText!, onRetry: _loadData)
+          : provider.error != null
+              ? _KycError(message: provider.error!, onRetry: provider.load)
               : SafeArea(
                   child: Form(
                     key: _formKey,
@@ -172,7 +139,7 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'Current status: $_statusText',
+                                  'Current status: $statusText',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -217,11 +184,11 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
                         SizedBox(
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _isSubmitting ? null : _submit,
+                            onPressed: provider.isSubmitting ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: green,
                             ),
-                            child: _isSubmitting
+                            child: provider.isSubmitting
                                 ? const SizedBox(
                                     height: 18,
                                     width: 18,

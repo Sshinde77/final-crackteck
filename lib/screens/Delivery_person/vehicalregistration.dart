@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:final_crackteck/core/secure_storage_service.dart';
 import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/services/delivery_man_service.dart';
+import 'package:final_crackteck/services/delivery_person/delivery_documents_service.dart';
 
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
@@ -18,7 +18,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   final TextEditingController vehicleNumberCtrl = TextEditingController();
   final TextEditingController licenceCtrl = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  final DeliveryManService _service = DeliveryManService.instance;
+  final DeliveryDocumentsService _service = DeliveryDocumentsService();
 
   static const Color green = Color(0xFF2E7D32);
 

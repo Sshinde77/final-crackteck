@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../provider/delivery_person/delivery_documents_provider.dart';
 
 class PancardEditScreen extends StatefulWidget {
   const PancardEditScreen({super.key});
@@ -15,7 +16,6 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
   final _formKey = GlobalKey<FormState>();
-  final _service = DeliveryManService.instance;
   final _picker = ImagePicker();
 
   final TextEditingController panCtrl = TextEditingController();
@@ -24,37 +24,21 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
   XFile? _backFile;
   String? _frontLabel;
   String? _backLabel;
-  bool _isLoading = true;
-  bool _isSaving = false;
   bool _isUpdate = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryDocumentsProvider>().loadPan();
+    });
   }
 
   @override
   void dispose() {
     panCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _service.fetchPanDetails();
-      panCtrl.text = (data['pan_number'] ?? data['pan_no'] ?? '').toString();
-      _frontLabel = (data['pan_card_front_path'] ?? data['pan_front'])?.toString();
-      _backLabel = (data['pan_card_back_path'] ?? data['pan_back'])?.toString();
-      _isUpdate = panCtrl.text.trim().isNotEmpty;
-    } catch (_) {
-      _isUpdate = false;
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   Future<void> _showPickerOptions(bool isFront) async {
@@ -133,36 +117,30 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-    try {
-      final response = await _service.savePanDetails(
-        panNumber: panCtrl.text.trim(),
-        frontFile: _frontFile,
-        backFile: _backFile,
-        isUpdate: _isUpdate,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? 'PAN saved')),
-      );
-      if (response.success) {
-        Navigator.pop(context);
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+    final provider = context.read<DeliveryDocumentsProvider>();
+    final message = await provider.savePan(
+      number: panCtrl.text.trim(),
+      frontFile: _frontFile,
+      backFile: _backFile,
+      isUpdate: _isUpdate,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (provider.lastSaveSucceeded) {
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryDocumentsProvider>();
+    final pan = provider.pan;
+    if (!provider.isLoading && panCtrl.text.isEmpty) {
+      panCtrl.text = (pan['pan_number'] ?? pan['pan_no'] ?? '').toString();
+      _frontLabel ??= (pan['pan_card_front_path'] ?? pan['pan_front'])?.toString();
+      _backLabel ??= (pan['pan_card_back_path'] ?? pan['pan_back'])?.toString();
+      _isUpdate = panCtrl.text.trim().isNotEmpty;
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -183,7 +161,7 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
           ),
         ],
       ),
-      body: _isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
@@ -214,14 +192,14 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isSaving ? null : _save,
+                        onPressed: provider.isSaving ? null : _save,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: darkGreen,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: _isSaving
+                        child: provider.isSaving
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,

@@ -8,13 +8,15 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import 'constants/app_colors.dart';
 import 'constants/app_spacing.dart';
 import 'constants/app_strings.dart';
+import 'model/signup/common_signup_request.dart';
+import 'model/signup/delivery_signup_request.dart';
+import 'provider/signup/signup_provider.dart';
 import 'routes/app_routes.dart';
-import 'services/api_service.dart';
-import 'services/delivery_man_service.dart';
 
 enum _DocumentType {
   aadharFront,
@@ -39,8 +41,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _personalFormKey = GlobalKey<FormState>();
   final _documentFormKey = GlobalKey<FormState>();
   final _educationFormKey = GlobalKey<FormState>();
-  final ApiService _apiService = ApiService.instance;
-  final DeliveryManService _deliveryManService = DeliveryManService.instance;
 
   final firstNameCtrl = TextEditingController();
   final lastNameCtrl = TextEditingController();
@@ -80,7 +80,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
   int _currentStep = 0;
   bool agree = false;
-  bool loading = false;
 
   bool get _isDeliveryPerson => widget.arg.roleId == 2;
 
@@ -355,69 +354,69 @@ class _SignupScreenState extends State<SignupScreen> {
       pincodeCtrl.text.trim(),
     ].where((e) => e.isNotEmpty).join(', ');
 
-    setState(() => loading = true);
-
-    final res = isDelivery
-        ? await _deliveryManService.signupDeliveryMan(
-            name: fullName,
-            phone: numberCtrl.text.trim(),
-            email: emailCtrl.text.trim(),
-            dob: dobCtrl.text.trim(),
-            gender: (_selectedGender ?? '').trim(),
-            address1: addressLine1Ctrl.text.trim(),
-            address2: addressLine2Ctrl.text.trim(),
-            city: cityCtrl.text.trim(),
-            state: stateCtrl.text.trim(),
-            country: countryCtrl.text.trim(),
-            pincode: pincodeCtrl.text.trim(),
-            aadharNumber: aadharCtrl.text.trim(),
-            aadharFrontFile: XFile(aadharFrontFile!.path),
-            aadharBackFile: XFile(aadharBackFile!.path),
-            panNumber: panCtrl.text.trim(),
-            panFrontFile: XFile(panFrontFile!.path),
-            panBackFile: XFile(panBackFile!.path),
-            vehicleType: vehicleTypeCtrl.text.trim(),
-            vehicleNumber: vehicleNumberCtrl.text.trim(),
-            drivingLicenseNo: licenceNumberCtrl.text.trim(),
-            drivingLicenseFrontFile: XFile(licenceFrontFile!.path),
-            drivingLicenseBackFile: XFile(licenceBackFile!.path),
-            roleId: widget.arg.roleId,
-          )
-        : await _apiService.signup(
-            name: fullName,
-            phone: numberCtrl.text.trim(),
-            email: emailCtrl.text.trim(),
-            address: fullAddress,
-            aadhar: aadharCtrl.text.trim(),
-            pan: panCtrl.text.trim(),
-            aadharFile: aadharFrontFile!,
-            panFile: panFrontFile!,
-            firstName: firstNameCtrl.text.trim(),
-            lastName: lastNameCtrl.text.trim(),
-            addressLine1: addressLine1Ctrl.text.trim(),
-            addressLine2: addressLine2Ctrl.text.trim(),
-            country: countryCtrl.text.trim(),
-            state: stateCtrl.text.trim(),
-            city: cityCtrl.text.trim(),
-            pincode: pincodeCtrl.text.trim(),
-            aadharBackFile: aadharBackFile,
-            panBackFile: panBackFile,
-            drivingLicenceNumber: null,
-            licenceFrontFile: null,
-            licenceBackFile: null,
-            education: educationCtrl.text.trim(),
-            resultFile: resultFile,
-            addressProofFile: addressProofFile,
-          );
+    final provider = context.read<SignupProvider>();
+    await provider.submit(
+      isDelivery: isDelivery,
+      deliveryRequest: isDelivery
+          ? DeliverySignupRequest(
+              roleId: widget.arg.roleId,
+              name: fullName,
+              phone: numberCtrl.text.trim(),
+              email: emailCtrl.text.trim(),
+              dob: dobCtrl.text.trim(),
+              gender: (_selectedGender ?? '').trim(),
+              address1: addressLine1Ctrl.text.trim(),
+              address2: addressLine2Ctrl.text.trim(),
+              city: cityCtrl.text.trim(),
+              state: stateCtrl.text.trim(),
+              country: countryCtrl.text.trim(),
+              pincode: pincodeCtrl.text.trim(),
+              aadharNumber: aadharCtrl.text.trim(),
+              aadharFrontFile: XFile(aadharFrontFile!.path),
+              aadharBackFile: XFile(aadharBackFile!.path),
+              panNumber: panCtrl.text.trim(),
+              panFrontFile: XFile(panFrontFile!.path),
+              panBackFile: XFile(panBackFile!.path),
+              vehicleType: vehicleTypeCtrl.text.trim(),
+              vehicleNumber: vehicleNumberCtrl.text.trim(),
+              drivingLicenseNo: licenceNumberCtrl.text.trim(),
+              drivingLicenseFrontFile: XFile(licenceFrontFile!.path),
+              drivingLicenseBackFile: XFile(licenceBackFile!.path),
+            )
+          : null,
+      commonRequest: isDelivery
+          ? null
+          : CommonSignupRequest(
+              name: fullName,
+              phone: numberCtrl.text.trim(),
+              email: emailCtrl.text.trim(),
+              address: fullAddress,
+              aadhar: aadharCtrl.text.trim(),
+              pan: panCtrl.text.trim(),
+              aadharFile: aadharFrontFile!,
+              panFile: panFrontFile!,
+              firstName: firstNameCtrl.text.trim(),
+              lastName: lastNameCtrl.text.trim(),
+              addressLine1: addressLine1Ctrl.text.trim(),
+              addressLine2: addressLine2Ctrl.text.trim(),
+              country: countryCtrl.text.trim(),
+              state: stateCtrl.text.trim(),
+              city: cityCtrl.text.trim(),
+              pincode: pincodeCtrl.text.trim(),
+              aadharBackFile: aadharBackFile,
+              panBackFile: panBackFile,
+              education: educationCtrl.text.trim(),
+              resultFile: resultFile,
+              addressProofFile: addressProofFile,
+            ),
+    );
 
     if (!mounted) return;
-    setState(() => loading = false);
-
-    if (res.success) {
-      _snack('Signup successful');
+    if (provider.lastSubmitSucceeded) {
+      _snack(provider.lastMessage ?? 'Signup successful');
       Navigator.pop(context);
     } else {
-      _snack(res.message ?? 'Signup failed');
+      _snack(provider.lastMessage ?? 'Signup failed');
     }
   }
 
@@ -451,6 +450,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final signupProvider = context.watch<SignupProvider>();
     final roleName = widget.arg.roleName;
     final isDelivery = _isDeliveryPerson;
 
@@ -484,9 +484,9 @@ class _SignupScreenState extends State<SignupScreen> {
               if (_currentStep == 0)
                 _buildPersonalDetailsForm()
               else if (_currentStep == 1)
-                _buildDocumentsForm(isDelivery)
+                _buildDocumentsForm(isDelivery, signupProvider.isSubmitting)
               else
-                _buildEducationForm(),
+                _buildEducationForm(signupProvider.isSubmitting),
               const SizedBox(height: 15),
               Center(
                 child: RichText(
@@ -826,7 +826,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildDocumentsForm(bool isDelivery) {
+  Widget _buildDocumentsForm(bool isDelivery, bool isSubmitting) {
     return Form(
       key: _documentFormKey,
       child: Column(
@@ -928,7 +928,7 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Checkbox(
                 value: agree,
-                onChanged: (v) => setState(() => agree = v ?? false),
+                  onChanged: (v) => setState(() => agree = v ?? false),
                 activeColor: AppColors.primary,
               ),
               const Expanded(
@@ -944,7 +944,7 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: loading ? null : _goToPersonalStep,
+                  onPressed: isSubmitting ? null : _goToPersonalStep,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     side: const BorderSide(color: AppColors.primary),
@@ -964,7 +964,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: loading ? null : _goToEducationStep,
+                  onPressed: isSubmitting ? null : _goToEducationStep,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     minimumSize: const Size(double.infinity, 50),
@@ -972,7 +972,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: loading
+                  child: isSubmitting
                       ? const SizedBox(
                           height: 20,
                           width: 20,
@@ -997,7 +997,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildEducationForm() {
+  Widget _buildEducationForm(bool isSubmitting) {
     if (_isDeliveryPerson) {
       return Form(
         key: _educationFormKey,
@@ -1021,7 +1021,7 @@ class _SignupScreenState extends State<SignupScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: loading ? null : _goBackToDocumentsStep,
+                    onPressed: isSubmitting ? null : _goBackToDocumentsStep,
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
                       side: const BorderSide(color: AppColors.primary),
@@ -1041,7 +1041,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: loading ? null : signup,
+                    onPressed: isSubmitting ? null : signup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       minimumSize: const Size(double.infinity, 50),
@@ -1049,7 +1049,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: loading
+                    child: isSubmitting
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -1114,7 +1114,7 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: loading ? null : _goBackToDocumentsStep,
+                  onPressed: isSubmitting ? null : _goBackToDocumentsStep,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     side: const BorderSide(color: AppColors.primary),
@@ -1134,7 +1134,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: loading ? null : signup,
+                  onPressed: isSubmitting ? null : signup,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     minimumSize: const Size(double.infinity, 50),
@@ -1142,7 +1142,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: loading
+                  child: isSubmitting
                       ? const SizedBox(
                           height: 20,
                           width: 20,

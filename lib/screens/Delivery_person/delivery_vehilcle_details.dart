@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../../services/delivery_man_service.dart';
+import '../../provider/delivery_person/delivery_documents_provider.dart';
 
 class VehicleDetailsScreen extends StatefulWidget {
   const VehicleDetailsScreen({super.key});
@@ -13,18 +14,17 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   static const Color darkGreen = Color(0xFF145A00);
 
   final _formKey = GlobalKey<FormState>();
-  final _service = DeliveryManService.instance;
   final TextEditingController vehicleTypeCtrl = TextEditingController();
   final TextEditingController vehicleNumberCtrl = TextEditingController();
   final TextEditingController licenceCtrl = TextEditingController();
 
-  bool _isLoading = true;
-  bool _isSaving = false;
-
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryDocumentsProvider>().loadVehicle();
+    });
   }
 
   @override
@@ -35,55 +35,33 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _service.fetchVehicleDetails();
-      vehicleTypeCtrl.text =
-          (data['vehicle_type'] ?? data['brand'] ?? '').toString();
-      vehicleNumberCtrl.text =
-          (data['vehicle_number'] ?? data['registration_number'] ?? '').toString();
-      licenceCtrl.text =
-          (data['driving_license_no'] ?? data['licence_no'] ?? '').toString();
-    } catch (_) {
-      // keep editable empty state
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
-    try {
-      final response = await _service.updateVehicleDetails(
-        vehicleType: vehicleTypeCtrl.text.trim(),
-        vehicleNumber: vehicleNumberCtrl.text.trim(),
-        drivingLicenseNo: licenceCtrl.text.trim(),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? 'Vehicle details saved')),
-      );
-      if (response.success) {
-        Navigator.pop(context);
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+    final provider = context.read<DeliveryDocumentsProvider>();
+    final message = await provider.saveVehicle(
+      vehicleType: vehicleTypeCtrl.text.trim(),
+      vehicleNumber: vehicleNumberCtrl.text.trim(),
+      drivingLicenseNo: licenceCtrl.text.trim(),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (provider.lastSaveSucceeded) {
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryDocumentsProvider>();
+    final vehicle = provider.vehicle;
+    if (!provider.isLoading && vehicleTypeCtrl.text.isEmpty) {
+      vehicleTypeCtrl.text = (vehicle['vehicle_type'] ?? vehicle['brand'] ?? '').toString();
+      vehicleNumberCtrl.text =
+          (vehicle['vehicle_number'] ?? vehicle['registration_number'] ?? '').toString();
+      licenceCtrl.text =
+          (vehicle['driving_license_no'] ?? vehicle['licence_no'] ?? '').toString();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -98,7 +76,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
         ),
       ),
-      body: _isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
@@ -132,7 +110,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           width: double.infinity,
           height: 52,
           child: ElevatedButton(
-            onPressed: _isSaving ? null : _save,
+            onPressed: provider.isSaving ? null : _save,
             style: ElevatedButton.styleFrom(
               backgroundColor: darkGreen,
               elevation: 0,
@@ -140,7 +118,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: _isSaving
+            child: provider.isSaving
                 ? const SizedBox(
                     width: 22,
                     height: 22,

@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../provider/delivery_person/delivery_order_action_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 
 class DeliveryOtpVerificationScreen extends StatefulWidget {
   final int roleId;
@@ -25,39 +24,19 @@ class DeliveryOtpVerificationScreen extends StatefulWidget {
 class _DeliveryOtpVerificationScreenState
     extends State<DeliveryOtpVerificationScreen> {
   final TextEditingController _otpController = TextEditingController();
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
   static const Color green = Color(0xFF1E7C10);
-
-  Timer? _timer;
-  int _secondsRemaining = 80;
-  bool _isVerifying = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_secondsRemaining > 0) {
-        setState(() => _secondsRemaining--);
-      } else {
-        timer.cancel();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryOrderActionProvider>().startOtpTimer();
     });
-  }
-
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _otpController.dispose();
     super.dispose();
   }
@@ -65,33 +44,13 @@ class _DeliveryOtpVerificationScreenState
   Future<void> _verify() async {
     if (_otpController.text.trim().isEmpty) return;
 
-    setState(() => _isVerifying = true);
-    try {
-      final verifyResponse = await _deliveryService.verifyOrderOtp(
-        orderId: widget.orderId,
-        otp: _otpController.text.trim(),
-      );
-      if (!mounted) return;
-      if (!verifyResponse.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(verifyResponse.message ?? 'OTP verification failed')),
-        );
-        return;
-      }
-
-      final deliveredResponse = await _deliveryService.markOrderDelivered(
-        widget.orderId,
-      );
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            deliveredResponse.message ?? 'Order delivered successfully.',
-          ),
-        ),
-      );
-
+    final provider = context.read<DeliveryOrderActionProvider>();
+    final message = await provider.verifyAndDeliver(_otpController.text.trim());
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+    if (provider.lastActionSucceeded) {
       Navigator.pushNamed(
         context,
         AppRoutes.DeliveryDoneScreen,
@@ -100,32 +59,21 @@ class _DeliveryOtpVerificationScreenState
           roleName: widget.roleName,
         ),
       );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isVerifying = false);
-      }
     }
   }
 
   Future<void> _resend() async {
-    final response = await _deliveryService.sendOrderOtp(widget.orderId);
+    final provider = context.read<DeliveryOrderActionProvider>();
+    final message = await provider.sendOtpMessage();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response.message ?? 'OTP sent again')),
+      SnackBar(content: Text(message)),
     );
-    if (response.success) {
-      setState(() => _secondsRemaining = 80);
-      _startTimer();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryOrderActionProvider>();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -197,11 +145,11 @@ class _DeliveryOtpVerificationScreenState
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: _secondsRemaining == 0 ? _resend : null,
+                  onPressed: provider.canResend ? _resend : null,
                   child: Text(
                     'Resend code',
                     style: TextStyle(
-                      color: _secondsRemaining == 0 ? green : Colors.grey,
+                      color: provider.canResend ? green : Colors.grey,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -212,14 +160,14 @@ class _DeliveryOtpVerificationScreenState
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isVerifying ? null : _verify,
+                  onPressed: provider.isVerifyingOtp ? null : _verify,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: green,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _isVerifying
+                  child: provider.isVerifyingOtp
                       ? const SizedBox(
                           width: 22,
                           height: 22,
@@ -243,7 +191,7 @@ class _DeliveryOtpVerificationScreenState
               const SizedBox(height: 24),
               Center(
                 child: Text(
-                  '${_formatTime(_secondsRemaining)} left',
+                  '${provider.formatTime()} left',
                   style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               ),

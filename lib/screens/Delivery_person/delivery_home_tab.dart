@@ -1,8 +1,11 @@
 import 'package:final_crackteck/screens/Delivery_person/product_to_be_deliveried_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../model/delivery_person/delivery_order_model.dart';
+import '../../provider/delivery_person/delivery_home_provider.dart';
+import '../../provider/delivery_person/delivery_order_detail_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 
 class DeliveryPersonHomeTab extends StatefulWidget {
   final int roleId;
@@ -20,80 +23,21 @@ class DeliveryPersonHomeTab extends StatefulWidget {
 
 class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   final TextEditingController _searchCtrl = TextEditingController();
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
-
-  DateTime? _loginAt;
-  DateTime? _logoutAt;
   OrdersTab _activeTab = OrdersTab.total;
-  bool _isLoading = true;
-  bool _isAttendanceLoading = false;
-  String? _errorText;
-  List<OrderItem> _orders = <OrderItem>[];
 
   @override
   void initState() {
     super.initState();
-    _loadHomeData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DeliveryHomeProvider>().loadHomeData();
+    });
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadHomeData() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
-    });
-
-    try {
-      final results = await Future.wait<dynamic>(<Future<dynamic>>[
-        _deliveryService.fetchOrders(),
-        _deliveryService.fetchAttendance(),
-      ]);
-      final orderMaps = results[0] as List<Map<String, dynamic>>;
-      final attendanceMap = results[1] as Map<String, dynamic>;
-
-      if (!mounted) return;
-      setState(() {
-        _orders = orderMaps.map(OrderItem.fromApi).toList();
-        _hydrateAttendance(attendanceMap);
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = error.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void _hydrateAttendance(Map<String, dynamic> attendance) {
-    _loginAt = _parseDateTime(
-      attendance['login_at'] ??
-          attendance['check_in'] ??
-          attendance['clock_in'] ??
-          attendance['auth_log']?['login_at'],
-    );
-    _logoutAt = _parseDateTime(
-      attendance['logout_at'] ??
-          attendance['check_out'] ??
-          attendance['clock_out'] ??
-          attendance['auth_log']?['logout_at'],
-    );
-  }
-
-  DateTime? _parseDateTime(dynamic value) {
-    if (value == null) return null;
-    if (value is DateTime) return value;
-    final text = value.toString().trim();
-    if (text.isEmpty) return null;
-    return DateTime.tryParse(text);
   }
 
   void _toast(String message) {
@@ -105,88 +49,54 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
 
   String _fmtTime(DateTime? dt) {
     if (dt == null) return '--:-- --';
-    return OrderItem.formatTime(dt);
+    return DeliveryOrderModel.formatTime(dt);
   }
 
-  Future<void> _openProductScreen(OrderItem order) async {
+  Future<void> _openProductScreen(DeliveryOrderModel order) async {
     final accepted = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => ProductToBeDeliveredScreen(
-          roleId: widget.roleId,
-          roleName: widget.roleName,
-          orderId: order.id,
+        builder: (_) => ChangeNotifierProvider<DeliveryOrderDetailProvider>(
+          create: (_) => DeliveryOrderDetailProvider(orderId: order.id),
+          child: ProductToBeDeliveredScreen(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            orderId: order.id,
+          ),
         ),
       ),
     );
 
     if (accepted == true && mounted) {
-      setState(() => order.accepted = true);
+      context.read<DeliveryHomeProvider>().markOrderAccepted(order.id);
       _toast('Accepted ${order.id}');
     }
   }
 
   Future<void> _handleAttendance({required bool login}) async {
-    setState(() => _isAttendanceLoading = true);
-    try {
-      final response = login
-          ? await _deliveryService.attendanceLogin()
-          : await _deliveryService.attendanceLogout();
-
-      if (!mounted) return;
-
-      if (response.success) {
-        final data = response.data ?? <String, dynamic>{};
-        setState(() {
-          if (login) {
-            _loginAt =
-                _parseDateTime(
-                  data['login_at'] ??
-                      data['check_in'] ??
-                      data['auth_log']?['login_at'],
-                ) ??
-                DateTime.now();
-          } else {
-            _logoutAt =
-                _parseDateTime(
-                  data['logout_at'] ??
-                      data['check_out'] ??
-                      data['auth_log']?['logout_at'],
-                ) ??
-                DateTime.now();
-          }
-        });
-        _toast(response.message ?? (login ? 'Checked in' : 'Checked out'));
-      } else {
-        _toast(response.message ?? 'Attendance action failed');
-      }
-    } catch (error) {
-      if (!mounted) return;
-      _toast(error.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) {
-        setState(() => _isAttendanceLoading = false);
-      }
-    }
+    final message = await context.read<DeliveryHomeProvider>().updateAttendance(
+      login: login,
+    );
+    if (!mounted || message == null) return;
+    _toast(message);
   }
 
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFF1E7C10);
+    final provider = context.watch<DeliveryHomeProvider>();
 
     final q = _searchCtrl.text.trim().toLowerCase();
-    final totalCount = _orders.length;
-    final pendingCount =
-        _orders.where((o) => o.status == OrdersTab.pending && !o.accepted).length;
-    final cancelledCount =
-        _orders.where((o) => o.status == OrdersTab.cancelled).length;
+    final totalCount = provider.totalCount;
+    final pendingCount = provider.pendingCount;
+    final cancelledCount = provider.cancelledCount;
 
-    final visibleOrders = _orders.where((o) {
+    final visibleOrders = provider.orders.where((o) {
       final matchesTab = _activeTab == OrdersTab.total
           ? true
           : _activeTab == OrdersTab.pending
-              ? (o.status == OrdersTab.pending && !o.accepted)
-              : o.status == OrdersTab.cancelled;
+              ? (o.status == DeliveryOrderStatus.pending && !o.accepted)
+              : o.status == DeliveryOrderStatus.cancelled;
 
       if (!matchesTab) return false;
       if (q.isEmpty) return true;
@@ -206,7 +116,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       backgroundColor: const Color(0xFFFFFFFF),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadHomeData,
+          onRefresh: provider.loadHomeData,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -232,9 +142,9 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                   child: Column(
                     children: [
                       AttendanceSection(
-                        loginTimeText: _fmtTime(_loginAt),
-                        logoutTimeText: _fmtTime(_logoutAt),
-                        isBusy: _isAttendanceLoading,
+                        loginTimeText: _fmtTime(provider.attendance.loginAt),
+                        logoutTimeText: _fmtTime(provider.attendance.logoutAt),
+                        isBusy: provider.isAttendanceLoading,
                         onLogin: () => _handleAttendance(login: true),
                         onLogout: () => _handleAttendance(login: false),
                       ),
@@ -247,22 +157,22 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                         onTabChanged: (tab) => setState(() => _activeTab = tab),
                       ),
                       const SizedBox(height: 16),
-                      if (_isLoading)
+                      if (provider.isLoading)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 32),
                           child: CircularProgressIndicator(),
                         )
-                      else if (_errorText != null)
+                      else if (provider.error != null)
                         _HomeStateCard(
-                          message: _errorText!,
+                          message: provider.error!,
                           actionLabel: 'Retry',
-                          onTap: _loadHomeData,
+                          onTap: provider.loadHomeData,
                         )
                       else if (visibleOrders.isEmpty)
                         _HomeStateCard(
                           message: 'No orders available right now.',
                           actionLabel: 'Refresh',
-                          onTap: _loadHomeData,
+                          onTap: provider.loadHomeData,
                         )
                       else
                         OrdersSection(
@@ -651,8 +561,8 @@ class OrdersSection extends StatelessWidget {
   });
 
   final String title;
-  final List<OrderItem> orders;
-  final ValueChanged<OrderItem> onAccept;
+  final List<DeliveryOrderModel> orders;
+  final ValueChanged<DeliveryOrderModel> onAccept;
 
   @override
   Widget build(BuildContext context) {
@@ -683,12 +593,12 @@ class OrderCard extends StatelessWidget {
     required this.onAccept,
   });
 
-  final OrderItem order;
+  final DeliveryOrderModel order;
   final VoidCallback onAccept;
 
   @override
   Widget build(BuildContext context) {
-    if (order.status == OrdersTab.cancelled) {
+    if (order.status == DeliveryOrderStatus.cancelled) {
       return Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -849,89 +759,6 @@ class OrderCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class OrderItem {
-  OrderItem({
-    required this.id,
-    required this.date,
-    required this.time,
-    required this.from,
-    required this.to,
-    this.accepted = false,
-    required this.status,
-  });
-
-  final String id;
-  final String date;
-  final String time;
-  final String from;
-  final String to;
-  bool accepted;
-  final OrdersTab status;
-
-  factory OrderItem.fromApi(Map<String, dynamic> json) {
-    final statusText = (
-      json['status'] ??
-      json['order_status'] ??
-      json['delivery_status'] ??
-      json['state'] ??
-      ''
-    ).toString().toLowerCase();
-
-    final from = (json['from_address'] ??
-            json['pickup_address'] ??
-            json['warehouse_address'] ??
-            json['from'] ??
-            json['source'] ??
-            'Warehouse')
-        .toString();
-    final to = (json['to_address'] ??
-            json['delivery_address'] ??
-            json['customer_address'] ??
-            json['address'] ??
-            json['to'] ??
-            'Customer address not available')
-        .toString();
-    final rawDate = json['date'] ??
-        json['order_date'] ??
-        json['created_at'] ??
-        json['updated_at'] ??
-        '';
-    final parsed = DateTime.tryParse(rawDate.toString());
-    final id = (json['display_id'] ??
-            json['order_id'] ??
-            json['id'] ??
-            json['request_id'] ??
-            'NA')
-        .toString();
-
-    return OrderItem(
-      id: id.startsWith('#') ? id : '#$id',
-      date: parsed == null
-          ? (rawDate.toString().isEmpty ? '--' : rawDate.toString())
-          : '${parsed.day}-${parsed.month}-${parsed.year}',
-      time: parsed == null
-          ? (json['time']?.toString() ?? '--')
-          : formatTime(parsed),
-      from: from,
-      to: to,
-      accepted: statusText.contains('accept') ||
-          statusText.contains('assigned') ||
-          statusText.contains('picked') ||
-          statusText.contains('in_progress'),
-      status: statusText.contains('cancel')
-          ? OrdersTab.cancelled
-          : OrdersTab.pending,
-    );
-  }
-
-  static String formatTime(DateTime dateTime) {
-    int hour = dateTime.hour % 12;
-    if (hour == 0) hour = 12;
-    final suffix = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $suffix';
   }
 }
 

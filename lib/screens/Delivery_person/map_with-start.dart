@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
+import '../../provider/delivery_person/delivery_order_action_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/delivery_man_service.dart';
 
 class DeliverypickupparcelScreen extends StatefulWidget {
   final int roleId;
@@ -25,27 +26,19 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
   static const Color green = Color(0xFF1E7C10);
   static const Color lightGreen = Color(0xFFEFF7EE);
 
-  final DeliveryManService _deliveryService = DeliveryManService.instance;
   final ImagePicker _picker = ImagePicker();
-  bool _isUploading = false;
 
   Future<void> _pickImageAndNavigate(BuildContext context) async {
     final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
     if (photo == null) return;
 
-    setState(() => _isUploading = true);
-    try {
-      final response = await _deliveryService.uploadOrderSelfie(
-        orderId: widget.orderId,
-        profileImage: photo,
-      );
-      if (!mounted) return;
-      if (!response.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? 'Selfie upload failed')),
-        );
-        return;
-      }
+    final provider = context.read<DeliveryOrderActionProvider>();
+    final message = await provider.uploadSelfie(photo);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message ?? 'Selfie upload failed')),
+    );
+    if (provider.lastActionSucceeded) {
       Navigator.pushNamed(
         context,
         AppRoutes.DeliveryOtpScreen,
@@ -55,20 +48,12 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
           orderId: widget.orderId,
         ),
       );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DeliveryOrderActionProvider>();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -229,14 +214,16 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
                     width: double.infinity,
                     height: 44,
                     child: ElevatedButton(
-                      onPressed: _isUploading ? null : () => _pickImageAndNavigate(context),
+                      onPressed: provider.isUploadingSelfie
+                          ? null
+                          : () => _pickImageAndNavigate(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: green,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: _isUploading
+                      child: provider.isUploadingSelfie
                           ? const SizedBox(
                               width: 22,
                               height: 22,
