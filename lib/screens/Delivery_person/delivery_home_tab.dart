@@ -2,7 +2,7 @@ import 'package:final_crackteck/screens/Delivery_person/product_to_be_deliveried
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../model/delivery_person/delivery_order_model.dart';
+import '../../model/Delivery_person/delivery_order_model.dart';
 import '../../provider/delivery_person/delivery_home_provider.dart';
 import '../../provider/delivery_person/delivery_order_detail_provider.dart';
 import '../../routes/app_routes.dart';
@@ -23,7 +23,7 @@ class DeliveryPersonHomeTab extends StatefulWidget {
 
 class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   final TextEditingController _searchCtrl = TextEditingController();
-  OrdersTab _activeTab = OrdersTab.total;
+  OrdersTab _activeTab = OrdersTab.productDelivery;
 
   @override
   void initState() {
@@ -87,16 +87,21 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     final provider = context.watch<DeliveryHomeProvider>();
 
     final q = _searchCtrl.text.trim().toLowerCase();
-    final totalCount = provider.totalCount;
-    final pendingCount = provider.pendingCount;
-    final cancelledCount = provider.cancelledCount;
+    final productDeliveryCount = provider.countByCategory(
+      DeliveryOrderCategory.productDelivery,
+    );
+    final pickupDeliveryCount = provider.countByCategory(
+      DeliveryOrderCategory.pickupDelivery,
+    );
+    final requestPartCount = provider.countByCategory(
+      DeliveryOrderCategory.requestPart,
+    );
+    final returnRequestCount = provider.countByCategory(
+      DeliveryOrderCategory.returnRequest,
+    );
 
     final visibleOrders = provider.orders.where((o) {
-      final matchesTab = _activeTab == OrdersTab.total
-          ? true
-          : _activeTab == OrdersTab.pending
-              ? (o.status == DeliveryOrderStatus.pending && !o.accepted)
-              : o.status == DeliveryOrderStatus.cancelled;
+      final matchesTab = o.category == _activeTab.category;
 
       if (!matchesTab) return false;
       if (q.isEmpty) return true;
@@ -106,11 +111,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
           o.to.toLowerCase().contains(q);
     }).toList();
 
-    final ordersTitle = _activeTab == OrdersTab.total
-        ? 'Total Delivery'
-        : _activeTab == OrdersTab.pending
-            ? 'Delivery Pending'
-            : 'Cancelled Order';
+    final ordersTitle = _activeTab.title;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -150,9 +151,6 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                       ),
                       const SizedBox(height: 12),
                       StatsTabsSection(
-                        totalDelivery: totalCount,
-                        deliveryPending: pendingCount,
-                        cancelledOrder: cancelledCount,
                         activeTab: _activeTab,
                         onTabChanged: (tab) => setState(() => _activeTab = tab),
                       ),
@@ -425,54 +423,73 @@ class _AttendanceTile extends StatelessWidget {
   }
 }
 
-enum OrdersTab { total, pending, cancelled }
+enum OrdersTab {
+  productDelivery,
+  pickupDelivery,
+  requestPart,
+  returnRequest,
+}
+
+extension OrdersTabX on OrdersTab {
+  String get title {
+    switch (this) {
+      case OrdersTab.productDelivery:
+        return 'Product Delivery';
+      case OrdersTab.pickupDelivery:
+        return 'Pickup Delivery';
+      case OrdersTab.requestPart:
+        return 'Request Part';
+      case OrdersTab.returnRequest:
+        return 'Return Request';
+    }
+  }
+
+  DeliveryOrderCategory get category {
+    switch (this) {
+      case OrdersTab.productDelivery:
+        return DeliveryOrderCategory.productDelivery;
+      case OrdersTab.pickupDelivery:
+        return DeliveryOrderCategory.pickupDelivery;
+      case OrdersTab.requestPart:
+        return DeliveryOrderCategory.requestPart;
+      case OrdersTab.returnRequest:
+        return DeliveryOrderCategory.returnRequest;
+    }
+  }
+
+}
 
 class StatsTabsSection extends StatelessWidget {
   const StatsTabsSection({
     super.key,
-    required this.totalDelivery,
-    required this.deliveryPending,
-    required this.cancelledOrder,
     required this.activeTab,
     required this.onTabChanged,
   });
 
-  final int totalDelivery;
-  final int deliveryPending;
-  final int cancelledOrder;
   final OrdersTab activeTab;
   final ValueChanged<OrdersTab> onTabChanged;
 
   @override
   Widget build(BuildContext context) {
+    final cards = <OrdersTab>[
+      OrdersTab.productDelivery,
+      OrdersTab.pickupDelivery,
+      OrdersTab.requestPart,
+      OrdersTab.returnRequest,
+    ];
+
     return Row(
       children: [
-        Expanded(
-          child: TabStatCard(
-            count: totalDelivery,
-            label: 'Total\nDelivery',
-            selected: activeTab == OrdersTab.total,
-            onTap: () => onTabChanged(OrdersTab.total),
+        for (int i = 0; i < cards.length; i++) ...[
+          Expanded(
+            child: TabStatCard(
+              label: cards[i].title,
+              selected: activeTab == cards[i],
+              onTap: () => onTabChanged(cards[i]),
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TabStatCard(
-            count: deliveryPending,
-            label: 'Delivery\nPending',
-            selected: activeTab == OrdersTab.pending,
-            onTap: () => onTabChanged(OrdersTab.pending),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TabStatCard(
-            count: cancelledOrder,
-            label: 'Cancelled\nOrder',
-            selected: activeTab == OrdersTab.cancelled,
-            onTap: () => onTabChanged(OrdersTab.cancelled),
-          ),
-        ),
+          if (i != cards.length - 1) const SizedBox(width: 8),
+        ],
       ],
     );
   }
@@ -481,13 +498,11 @@ class StatsTabsSection extends StatelessWidget {
 class TabStatCard extends StatelessWidget {
   const TabStatCard({
     super.key,
-    required this.count,
     required this.label,
     required this.onTap,
     required this.selected,
   });
 
-  final int count;
   final String label;
   final VoidCallback onTap;
   final bool selected;
@@ -495,57 +510,32 @@ class TabStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const activeGreen = Color(0xFF1E7C10);
-    const inactiveGreen = Color(0xFF6CCB5A);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       onTap: onTap,
       child: Container(
-        height: 78,
         decoration: BoxDecoration(
-          color: selected ? activeGreen : inactiveGreen,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x22000000),
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
+          color: selected ? activeGreen : const Color(0xFFF4F7F3),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? activeGreen : const Color(0xFFD7E8D2),
+          ),
         ),
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  count.toString().padLeft(2, '0'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+        child: Center(
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected ? Colors.white : const Color(0xFF17321A),
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              height: 1.15,
             ),
-            const Spacer(),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                height: 1.1,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -569,7 +559,10 @@ class OrdersSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+        ),
         const SizedBox(height: 10),
         Column(
           children: orders

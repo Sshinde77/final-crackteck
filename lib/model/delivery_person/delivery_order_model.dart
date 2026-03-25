@@ -1,5 +1,12 @@
 enum DeliveryOrderStatus { pending, cancelled }
 
+enum DeliveryOrderCategory {
+  productDelivery,
+  pickupDelivery,
+  requestPart,
+  returnRequest,
+}
+
 class DeliveryOrderModel {
   DeliveryOrderModel({
     required this.id,
@@ -9,6 +16,7 @@ class DeliveryOrderModel {
     required this.to,
     required this.accepted,
     required this.status,
+    required this.category,
   });
 
   final String id;
@@ -18,6 +26,7 @@ class DeliveryOrderModel {
   final String to;
   final bool accepted;
   final DeliveryOrderStatus status;
+  final DeliveryOrderCategory category;
 
   factory DeliveryOrderModel.fromJson(Map<String, dynamic> json) {
     final statusText = (
@@ -56,6 +65,7 @@ class DeliveryOrderModel {
             'NA')
         .toString();
     final normalizedId = rawId.startsWith('#') ? rawId : '#$rawId';
+    final category = _parseCategory(json);
 
     return DeliveryOrderModel(
       id: normalizedId,
@@ -75,6 +85,7 @@ class DeliveryOrderModel {
       status: statusText.contains('cancel')
           ? DeliveryOrderStatus.cancelled
           : DeliveryOrderStatus.pending,
+      category: category,
     );
   }
 
@@ -86,6 +97,7 @@ class DeliveryOrderModel {
     String? to,
     bool? accepted,
     DeliveryOrderStatus? status,
+    DeliveryOrderCategory? category,
   }) {
     return DeliveryOrderModel(
       id: id ?? this.id,
@@ -95,7 +107,36 @@ class DeliveryOrderModel {
       to: to ?? this.to,
       accepted: accepted ?? this.accepted,
       status: status ?? this.status,
+      category: category ?? this.category,
     );
+  }
+
+  static DeliveryOrderCategory _parseCategory(Map<String, dynamic> json) {
+    final rawCategory = <dynamic>[
+      json['request_type'],
+      json['delivery_type'],
+      json['type'],
+      json['order_type'],
+      json['request_category'],
+      json['category'],
+      json['service_type'],
+    ].firstWhere(
+      (value) => value != null && value.toString().trim().isNotEmpty,
+      orElse: () => '',
+    ).toString().toLowerCase();
+
+    final compact = rawCategory.replaceAll(RegExp(r'[^a-z]'), '');
+
+    if (compact.contains('pickup')) {
+      return DeliveryOrderCategory.pickupDelivery;
+    }
+    if (compact.contains('requestpart') || compact.contains('partrequest')) {
+      return DeliveryOrderCategory.requestPart;
+    }
+    if (compact.contains('return')) {
+      return DeliveryOrderCategory.returnRequest;
+    }
+    return DeliveryOrderCategory.productDelivery;
   }
 
   static String formatTime(DateTime dateTime) {

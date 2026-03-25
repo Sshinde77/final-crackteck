@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../model/delivery_person/delivery_order_model.dart';
+import '../../model/Delivery_person/delivery_order_model.dart';
 import '../../provider/delivery_person/delivery_attendance_provider.dart';
 import '../../routes/app_routes.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../../model/delivery_person/delivery_attendance_model.dart';
-import '../../model/delivery_person/delivery_order_model.dart';
+import '../../model/Delivery_person/delivery_attendance_model.dart';
+import '../../model/Delivery_person/delivery_order_model.dart';
 import '../../services/delivery_person/delivery_attendance_service.dart';
 import '../../services/delivery_person/delivery_orders_service.dart';
 
@@ -33,6 +33,9 @@ class DeliveryHomeProvider extends ChangeNotifier {
       .length;
   int get cancelledCount => _orders
       .where((order) => order.status == DeliveryOrderStatus.cancelled)
+      .length;
+  int countByCategory(DeliveryOrderCategory category) => _orders
+      .where((order) => order.category == category)
       .length;
 
   Future<void> loadHomeData() async {

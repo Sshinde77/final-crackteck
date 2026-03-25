@@ -14,7 +14,7 @@ Future<void> main() async {
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
-  runApp(const CrackTechApp());
+  runApp(const CrackTechApp()); 
 }
 
 class CrackTechApp extends StatefulWidget {

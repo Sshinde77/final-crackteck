@@ -5,10 +5,8 @@ import 'package:final_crackteck/services/auth_service.dart';
 import 'package:final_crackteck/services/google_auth_service.dart';
 import 'package:final_crackteck/services/notification_service.dart';
 import 'package:final_crackteck/widgets/error_dialog.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'constants/api_constants.dart';
 import 'constants/app_colors.dart';
@@ -430,10 +428,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
-                          if (!kReleaseMode) ...[
-                            const SizedBox(height: 20),
-                            const _NotificationDebugPanel(),
-                          ],
                         ],
                       ),
                     ),
@@ -479,142 +473,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   _errorText = null;
                 });
               },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationDebugPanel extends StatefulWidget {
-  const _NotificationDebugPanel();
-
-  @override
-  State<_NotificationDebugPanel> createState() => _NotificationDebugPanelState();
-}
-
-class _NotificationDebugPanelState extends State<_NotificationDebugPanel> {
-  String? _token;
-  String? _status;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadState();
-  }
-
-  Future<void> _loadState() async {
-    setState(() {
-      _loading = true;
-    });
-
-    try {
-      final NotificationSettings settings =
-          await NotificationService.instance.getPermissionSettings();
-      final String? token = await NotificationService.instance.refreshAndGetToken();
-
-      if (!mounted) return;
-      setState(() {
-        _status = settings.authorizationStatus.name;
-        _token = token;
-        _loading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _status = 'error: $error';
-        _loading = false;
-      });
-    }
-  }
-
-  Future<void> _copyToken() async {
-    final token = _token;
-    if (token == null || token.isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: token));
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('FCM token copied')));
-  }
-
-  Future<void> _showTestNotification() async {
-    await NotificationService.instance.showLocalTestNotification();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Local test notification triggered')),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F7FF),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFCAD7F2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Notification Debug',
-            style: TextStyle(
-              color: Color(0xFF182134),
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _loading
-                ? 'Loading notification state...'
-                : 'Permission: ${_status ?? 'unknown'}',
-            style: const TextStyle(
-              color: Color(0xFF445066),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SelectableText(
-            _token == null || _token!.isEmpty
-                ? 'FCM token not available yet'
-                : _token!,
-            style: const TextStyle(
-              color: Color(0xFF182134),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _loadState,
-                  child: const Text('Refresh Token'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _showTestNotification,
-                  child: const Text('Test Local'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _copyToken,
-              child: const Text('Copy FCM Token'),
             ),
           ),
         ],
@@ -977,6 +835,7 @@ class SocialActionButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.white,
           side: const BorderSide(color: Color(0xFFD9DEE7)),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -1010,13 +869,18 @@ class SocialActionButton extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Color(0xFF182134),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF182134),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],

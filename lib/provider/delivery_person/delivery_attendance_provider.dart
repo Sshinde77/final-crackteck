@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../model/delivery_person/delivery_attendance_model.dart';
+import '../../model/Delivery_person/delivery_attendance_model.dart';
 import '../../services/delivery_person/delivery_attendance_service.dart';
 
 class DeliveryAttendanceProvider extends ChangeNotifier {

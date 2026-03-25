@@ -47,6 +47,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   static const Color _cardBorder = Color(0xFFE0E0E0);
   static const Color _dangerRed = Color(0xFFD30E0E);
 
+  bool get _isCompactLayout => MediaQuery.sizeOf(context).width < 380;
+
   bool _isLoading = true;
   bool _isAccepting = false;
   String? _errorMessage;
@@ -626,28 +628,32 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       backgroundColor: _pageBackground,
       appBar: AppBar(
         backgroundColor: DeliveryProductDetailScreen._primaryGreen,
-        toolbarHeight: 92,
+        toolbarHeight: _isCompactLayout ? 66 : 76,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: _isCompactLayout ? 24 : 26,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 4,
-        title: const Text(
+        title: Text(
           'Product to be delivered',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: _isCompactLayout ? 17 : 18,
             fontWeight: FontWeight.w700,
           ),
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
+            padding: EdgeInsets.only(right: _isCompactLayout ? 12 : 16),
             child: Icon(
               Icons.notifications_none_rounded,
               color: Colors.white,
-              size: 28,
+              size: _isCompactLayout ? 24 : 26,
             ),
           ),
         ],
@@ -661,9 +667,14 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
               top: false,
               child: Container(
                 color: Colors.white,
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                padding: EdgeInsets.fromLTRB(
+                  _isCompactLayout ? 16 : 20,
+                  12,
+                  _isCompactLayout ? 16 : 20,
+                  _isCompactLayout ? 14 : 18,
+                ),
                 child: SizedBox(
-                  height: 58,
+                  height: _isCompactLayout ? 50 : 54,
                   child: ElevatedButton(
                     onPressed: _isAccepting ? null : _onAcceptPressed,
                     style: ElevatedButton.styleFrom(
@@ -692,7 +703,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                             'Accept',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 20,
+                              fontSize: 17,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -725,14 +736,19 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      padding: EdgeInsets.fromLTRB(
+        _isCompactLayout ? 12 : 16,
+        _isCompactLayout ? 14 : 18,
+        _isCompactLayout ? 12 : 16,
+        _isCompactLayout ? 14 : 18,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSummaryCard(),
-          const SizedBox(height: 18),
+          SizedBox(height: _isCompactLayout ? 14 : 18),
           _buildProductCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: _isCompactLayout ? 14 : 16),
           _buildExtraDetailsCard(),
           const SizedBox(height: 8),
         ],
@@ -743,10 +759,10 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   Widget _buildSummaryCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(_isCompactLayout ? 14 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(_isCompactLayout ? 18 : 20),
         border: Border.all(color: _cardBorder),
       ),
       child: Column(
@@ -761,7 +777,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                   value: _displayRequestId,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: _isCompactLayout ? 8 : 12),
               Expanded(
                 flex: 3,
                 child: _summaryPair(
@@ -770,7 +786,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                   alignEnd: true,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: _isCompactLayout ? 8 : 12),
               Expanded(
                 flex: 2,
                 child: _summaryPair(
@@ -781,9 +797,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 14),
-            child: Divider(
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: _isCompactLayout ? 12 : 14),
+            child: const Divider(
               height: 1,
               thickness: 1.2,
               color: Color(0xFF9E9E9E),
@@ -793,7 +809,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
             label: 'From:',
             value: _displayFromLocation,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: _isCompactLayout ? 14 : 18),
           _locationRow(
             label: 'To:',
             value: _displayToLocation,
@@ -815,20 +831,20 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         if (label.isNotEmpty)
           Text(
             '$label:',
-            style: const TextStyle(
-              fontSize: 16,
+            style: TextStyle(
+              fontSize: _isCompactLayout ? 13.5 : 15,
               color: Colors.black,
               fontWeight: FontWeight.w700,
             ),
           ),
         if (label.isEmpty)
-          const SizedBox(height: 4),
+        SizedBox(height: _isCompactLayout ? 2 : 4),
         const SizedBox(height: 2),
         Text(
           value,
           textAlign: alignEnd ? TextAlign.end : TextAlign.start,
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: _isCompactLayout ? 13.5 : 15,
             color: Colors.black,
             fontWeight: FontWeight.w800,
           ),
@@ -845,11 +861,11 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 70,
+          width: _isCompactLayout ? 56 : 64,
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: _isCompactLayout ? 14.5 : 16,
               color: Colors.black,
               fontWeight: FontWeight.w700,
             ),
@@ -858,10 +874,10 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 17,
+            style: TextStyle(
+              fontSize: _isCompactLayout ? 13.5 : 15,
               color: Colors.black,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               height: 1.25,
             ),
           ),
@@ -872,13 +888,16 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   Widget _buildProductCard() {
     final highlights = _buildHighlights();
+    final compact = _isCompactLayout;
+    final imageSize = compact ? 88.0 : 100.0;
+    final cardRadius = compact ? 18.0 : 20.0;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(compact ? 12 : 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -887,102 +906,128 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 112,
-            height: 112,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F0F0),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: _DeliveryProductImage(imageUrl: _displayImageUrl),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _displayProductName,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    height: 1.2,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _displayPriceOrCharge,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (highlights.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: highlights
-                        .map(
-                          (item) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F6F1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              item,
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF244321),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stackProductMeta = constraints.maxWidth < 360;
+          final qtyWidget = Column(
+            crossAxisAlignment:
+                stackProductMeta ? CrossAxisAlignment.start : CrossAxisAlignment.end,
             children: [
               const Text(
                 'Qty',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12.5,
                   color: _dangerRed,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 _displayQuantity,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 20,
                   color: _dangerRed,
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ],
+          );
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: imageSize,
+                height: imageSize,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F0F0),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: _DeliveryProductImage(imageUrl: _displayImageUrl),
+                ),
+              ),
+              SizedBox(width: compact ? 10 : 12),
+              Expanded(
+                child: stackProductMeta
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildProductMeta(highlights, compact),
+                          const SizedBox(height: 10),
+                          qtyWidget,
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildProductMeta(highlights, compact)),
+                          const SizedBox(width: 10),
+                          qtyWidget,
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProductMeta(List<String> highlights, bool compact) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _displayProductName,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: compact ? 15.5 : 17,
+            height: 1.2,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        SizedBox(height: compact ? 8 : 10),
+        Text(
+          _displayPriceOrCharge,
+          style: TextStyle(
+            fontSize: compact ? 16 : 17,
+            color: Colors.black,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (highlights.isNotEmpty) ...[
+          SizedBox(height: compact ? 8 : 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: highlights
+                .map(
+                  (item) => Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 10,
+                      vertical: compact ? 5 : 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F6F1),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        fontSize: compact ? 10.5 : 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF244321),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -1002,24 +1047,24 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(_isCompactLayout ? 14 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(_isCompactLayout ? 16 : 18),
         border: Border.all(color: _cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Additional Details',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: _isCompactLayout ? 14 : 15,
               color: Colors.black,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: _isCompactLayout ? 10 : 12),
           ...items.map(_detailRow),
         ],
       ),
@@ -1028,25 +1073,25 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   Widget _detailRow(MapEntry<String, String> item) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: _isCompactLayout ? 8 : 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 104,
+            width: _isCompactLayout ? 88 : 104,
             child: Text(
               item.key,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: _isCompactLayout ? 12 : 13,
                 color: Color(0xFF6B7280),
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const Text(
+          Text(
             ': ',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: _isCompactLayout ? 12 : 13,
               color: Color(0xFF6B7280),
               fontWeight: FontWeight.w600,
             ),
@@ -1054,8 +1099,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
           Expanded(
             child: Text(
               item.value,
-              style: const TextStyle(
-                fontSize: 13.5,
+              style: TextStyle(
+                fontSize: _isCompactLayout ? 12.5 : 13.5,
                 color: Colors.black87,
                 fontWeight: FontWeight.w700,
               ),
