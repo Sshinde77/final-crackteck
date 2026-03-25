@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
@@ -7,8 +8,16 @@ import 'delivery_api_client.dart';
 
 class DeliveryDocumentsService extends DeliveryApiClient {
   Future<Map<String, dynamic>> fetchAadharDetails() async {
+    final uri = buildUri(
+      ApiConstants.deliveryManAadhar,
+      await requiredQuery(roleId: 2),
+    );
+    debugPrint('DeliveryDocuments Aadhar API Request: GET $uri');
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.deliveryManAadhar, await requiredQuery(roleId: 2)),
+      uri,
+    );
+    debugPrint(
+      'DeliveryDocuments Aadhar API Response: ${response.statusCode} ${response.body}',
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load Aadhaar details: ${response.statusCode}');
@@ -17,8 +26,16 @@ class DeliveryDocumentsService extends DeliveryApiClient {
   }
 
   Future<Map<String, dynamic>> fetchPanDetails() async {
+    final uri = buildUri(
+      ApiConstants.deliveryManPanCard,
+      await requiredQuery(roleId: 2),
+    );
+    debugPrint('DeliveryDocuments PAN API Request: GET $uri');
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.deliveryManPanCard, await requiredQuery(roleId: 2)),
+      uri,
+    );
+    debugPrint(
+      'DeliveryDocuments PAN API Response: ${response.statusCode} ${response.body}',
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load PAN details: ${response.statusCode}');
@@ -27,8 +44,16 @@ class DeliveryDocumentsService extends DeliveryApiClient {
   }
 
   Future<Map<String, dynamic>> fetchVehicleDetails() async {
+    final uri = buildUri(
+      ApiConstants.registervehicle,
+      await requiredQuery(roleId: 2),
+    );
+    debugPrint('DeliveryDocuments Vehicle API Request: GET $uri');
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.registervehicle, await requiredQuery(roleId: 2)),
+      uri,
+    );
+    debugPrint(
+      'DeliveryDocuments Vehicle API Response: ${response.statusCode} ${response.body}',
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load vehicle details: ${response.statusCode}');
@@ -67,7 +92,12 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         backFile.path,
       ),
     );
+    debugPrint('DeliveryDocuments Vehicle Register API Request: POST ${request.url}');
+    debugPrint('DeliveryDocuments Vehicle Register Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
+    debugPrint(
+      'DeliveryDocuments Vehicle Register API Response: ${response.statusCode} ${response.body}',
+    );
     return mapResponse(
       response,
       successMessage: 'Vehicle registered successfully.',
@@ -82,13 +112,12 @@ class DeliveryDocumentsService extends DeliveryApiClient {
     required bool isUpdate,
   }) async {
     final query = await requiredQuery(roleId: 2);
+    final endpoint = isUpdate
+        ? ApiConstants.deliveryManUpdateAadhar
+        : ApiConstants.deliveryManStoreAadhar;
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse(
-        isUpdate
-            ? ApiConstants.deliveryManUpdateAadhar
-            : ApiConstants.deliveryManStoreAadhar,
-      ),
+      Uri.parse(endpoint),
     );
     request.fields.addAll(<String, String>{
       'role_id': query['role_id']!,
@@ -106,7 +135,12 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         await http.MultipartFile.fromPath('aadhar_back_path', backFile.path),
       );
     }
+    debugPrint('DeliveryDocuments Aadhar Save API Request: POST ${request.url}');
+    debugPrint('DeliveryDocuments Aadhar Save Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
+    debugPrint(
+      'DeliveryDocuments Aadhar Save API Response: ${response.statusCode} ${response.body}',
+    );
     return mapResponse(
       response,
       successMessage: isUpdate
@@ -152,7 +186,12 @@ class DeliveryDocumentsService extends DeliveryApiClient {
           ),
         );
       }
+      debugPrint('DeliveryDocuments PAN Update API Request: POST ${request.url}');
+      debugPrint('DeliveryDocuments PAN Update Fields: ${request.fields}');
       final response = await performAuthenticatedMultipart(request);
+      debugPrint(
+        'DeliveryDocuments PAN Update API Response: ${response.statusCode} ${response.body}',
+      );
       return mapResponse(
         response,
         successMessage: 'PAN updated successfully.',
@@ -186,7 +225,12 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         ),
       );
     }
+    debugPrint('DeliveryDocuments PAN Save API Request: POST ${request.url}');
+    debugPrint('DeliveryDocuments PAN Save Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
+    debugPrint(
+      'DeliveryDocuments PAN Save API Response: ${response.statusCode} ${response.body}',
+    );
     return mapResponse(
       response,
       successMessage: 'PAN saved successfully.',
@@ -230,7 +274,12 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         ),
       );
     }
+    debugPrint('DeliveryDocuments Vehicle Update API Request: POST ${request.url}');
+    debugPrint('DeliveryDocuments Vehicle Update Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
+    debugPrint(
+      'DeliveryDocuments Vehicle Update API Response: ${response.statusCode} ${response.body}',
+    );
     return mapResponse(
       response,
       successMessage: 'Vehicle details updated successfully.',

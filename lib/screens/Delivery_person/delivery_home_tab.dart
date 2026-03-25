@@ -1,11 +1,11 @@
-import 'package:final_crackteck/screens/Delivery_person/product_to_be_deliveried_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../constants/api_constants.dart';
 import '../../model/Delivery_person/delivery_order_model.dart';
 import '../../provider/delivery_person/delivery_home_provider.dart';
-import '../../provider/delivery_person/delivery_order_detail_provider.dart';
 import '../../routes/app_routes.dart';
+import '../Field_executive/field_executive_delivery_product_detail_screen.dart';
 
 class DeliveryPersonHomeTab extends StatefulWidget {
   final int roleId;
@@ -52,17 +52,38 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     return DeliveryOrderModel.formatTime(dt);
   }
 
+  String _deliveryTypeForOrder(DeliveryOrderModel order) {
+    switch (order.category) {
+      case DeliveryOrderCategory.productDelivery:
+        return DeliveryRequestTypes.productDelivery;
+      case DeliveryOrderCategory.pickupDelivery:
+        return DeliveryRequestTypes.pickup;
+      case DeliveryOrderCategory.requestPart:
+        return DeliveryRequestTypes.part;
+      case DeliveryOrderCategory.returnRequest:
+        return DeliveryRequestTypes.returnRequest;
+    }
+  }
+
   Future<void> _openProductScreen(DeliveryOrderModel order) async {
+    final deliveryType = _deliveryTypeForOrder(order);
+    final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
     final accepted = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider<DeliveryOrderDetailProvider>(
-          create: (_) => DeliveryOrderDetailProvider(orderId: order.id),
-          child: ProductToBeDeliveredScreen(
-            roleId: widget.roleId,
-            roleName: widget.roleName,
-            orderId: order.id,
-          ),
+        builder: (_) => DeliveryProductDetailScreen(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          deliveryType: deliveryType,
+          deliveryId: deliveryId,
+          requestType: DeliveryRequestTypes.labelFor(deliveryType),
+          requestId: order.id,
+          productName: '',
+          location: order.to,
+          status: order.status.name,
+          customerName: '',
+          customerPhone: '',
+          customerAddress: '',
         ),
       ),
     );
@@ -528,6 +549,7 @@ class TabStatCard extends StatelessWidget {
             label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+
             textAlign: TextAlign.center,
             style: TextStyle(
               color: selected ? Colors.white : const Color(0xFF17321A),
@@ -685,71 +707,58 @@ class OrderCard extends StatelessWidget {
     }
 
     const green = Color(0xFF1E7C10);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        onTap: onAccept,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: order.accepted
+                  ? const Color(0xFFB8D8B2)
+                  : Colors.black12,
+            ),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  'ID: ${order.id}',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'ID: ${order.id}',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${order.date}   ${order.time}',
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
+              const SizedBox(height: 10),
               Text(
-                '${order.date}   ${order.time}',
-                style: const TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
+                'From:\n${order.from}',
+                style: const TextStyle(fontSize: 12, height: 1.25),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'To:\n${order.to}',
+                style: const TextStyle(fontSize: 12, height: 1.25),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            'From:\n${order.from}',
-            style: const TextStyle(fontSize: 12, height: 1.25),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'To:\n${order.to}',
-            style: const TextStyle(fontSize: 12, height: 1.25),
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: SizedBox(
-              height: 34,
-              child: ElevatedButton(
-                onPressed: onAccept,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                ),
-                child: Text(
-                  order.accepted ? 'Accepted' : 'Accept',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

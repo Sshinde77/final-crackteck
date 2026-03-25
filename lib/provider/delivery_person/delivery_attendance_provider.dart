@@ -10,10 +10,12 @@ class DeliveryAttendanceProvider extends ChangeNotifier {
   final DeliveryAttendanceService _service;
 
   DeliveryAttendanceModel _attendance = DeliveryAttendanceModel.empty();
+  List<Map<String, dynamic>> _logs = const <Map<String, dynamic>>[];
   bool _isLoading = false;
   bool _isUpdating = false;
 
   DeliveryAttendanceModel get attendance => _attendance;
+  List<Map<String, dynamic>> get logs => _logs;
   bool get isLoading => _isLoading;
   bool get isUpdating => _isUpdating;
 
@@ -21,8 +23,15 @@ class DeliveryAttendanceProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final data = await _service.fetchAttendance();
+      final results = await Future.wait<dynamic>(<Future<dynamic>>[
+        _service.fetchAttendance(),
+        _service.fetchAttendanceLogs(),
+      ]);
+      final data = results[0] as Map<String, dynamic>;
       _attendance = DeliveryAttendanceModel.fromJson(data);
+      _logs = (results[1] as List<Map<String, dynamic>>)
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
     } finally {
       _isLoading = false;
       _isUpdating = false;

@@ -45,6 +45,8 @@ class DeliveryAttendanceModel {
     if (value is DateTime) return value;
     final text = value.toString().trim();
     if (text.isEmpty) return null;
-    return DateTime.tryParse(text);
+    final parsed = DateTime.tryParse(text);
+    if (parsed == null) return null;
+    return parsed.isUtc ? parsed.toLocal() : parsed;
   }
 }

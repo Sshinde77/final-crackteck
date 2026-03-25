@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/secure_storage_service.dart';
 import '../../provider/delivery_person/delivery_attendance_provider.dart';
 import '../../provider/delivery_person/delivery_documents_provider.dart';
 import '../../provider/delivery_person/delivery_kyc_provider.dart';
 import '../../provider/delivery_person/delivery_personal_info_provider.dart';
 import '../../provider/delivery_person/delivery_profile_provider.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../widgets/placeholder.dart';
 import 'delivery_feedback.dart';
 import 'delivery_kyc_screen.dart';
@@ -34,6 +36,7 @@ class DeliveryProfileScreen extends StatefulWidget {
 
 class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
   static const Color green = Color(0xFF1E7C10);
+  bool _isLoggingOut = false;
 
   @override
   void initState() {
@@ -42,6 +45,68 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
       if (!mounted) return;
       context.read<DeliveryProfileProvider>().loadProfile();
     });
+  }
+
+  Future<void> _handleLogout() async {
+    if (_isLoggingOut) return;
+
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Log out'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Log out'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    setState(() => _isLoggingOut = true);
+
+    try {
+      final response = await ApiService.instance.logout(roleId: widget.roleId);
+      if (!mounted) return;
+
+      if (!response.success) {
+        setState(() => _isLoggingOut = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response.message ?? 'Logout failed. Please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      await SecureStorageService.clearTokens();
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.roleSelection,
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoggingOut = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong during logout. Please try again.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -228,18 +293,18 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   );
                 },
               ),
-              _ProfileTile(
-                icon: Icons.feedback_outlined,
-                label: "Feedback's",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FeedbackScreen(),
-                    ),
-                  );
-                },
-              ),
+              // _ProfileTile(
+              //   icon: Icons.feedback_outlined,
+              //   label: "Feedback's",
+              //   onTap: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) => const FeedbackScreen(),
+              //       ),
+              //     );
+              //   },
+              // ),
               const SizedBox(height: 16),
               _ProfileTile(
                 icon: Icons.description_outlined,
@@ -281,6 +346,11 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   ],
                 ),
                 onTap: () {},
+              ),
+              _ProfileTile(
+                icon: _isLoggingOut ? Icons.sync : Icons.logout,
+                label: _isLoggingOut ? 'Logging out...' : 'Log out',
+                onTap: _isLoggingOut ? () {} : _handleLogout,
               ),
             ],
           ),

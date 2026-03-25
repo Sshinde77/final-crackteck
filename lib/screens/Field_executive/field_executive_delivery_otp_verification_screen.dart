@@ -28,6 +28,7 @@ class DeliveryOtpVerificationScreen extends StatefulWidget {
 
 class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationScreen> {
   static const int _otpLength = 4;
+  static const int _fieldExecutiveRoleId = 1;
   final List<TextEditingController> _controllers =
       List.generate(_otpLength, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(_otpLength, (_) => FocusNode());
@@ -176,11 +177,29 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
 
     if (!response.success) return;
 
+    final isFieldExecutiveFlow =
+        widget.roleId == _fieldExecutiveRoleId ||
+        widget.roleName.toLowerCase().contains('field');
+
+    if (isFieldExecutiveFlow) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.FieldExecutiveDashboard,
+        (route) => false,
+        arguments: fieldexecutivedashboardArguments(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          initialIndex: 0,
+        ),
+      );
+      return;
+    }
+
     Navigator.pushNamedAndRemoveUntil(
       context,
-      AppRoutes.FieldExecutiveDashboard,
+      AppRoutes.Deliverypersondashbord,
       (route) => false,
-      arguments: fieldexecutivedashboardArguments(
+      arguments: deliverydasboardArguments(
         roleId: widget.roleId,
         roleName: widget.roleName,
         initialIndex: 0,
