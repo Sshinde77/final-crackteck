@@ -33,6 +33,10 @@ class SignupProvider extends ChangeNotifier {
           ? await _signupService.submitDelivery(deliveryRequest!)
           : await _signupService.submitCommon(commonRequest!);
 
+      debugPrint(
+        'Signup result: success=${response.success}, message=${response.message}, errors=${response.errors}',
+      );
+
       _lastSubmitSucceeded = response.success;
       _lastMessage =
           response.message ?? (response.success ? 'Signup successful' : 'Signup failed');

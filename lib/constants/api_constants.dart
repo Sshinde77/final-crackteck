@@ -91,6 +91,7 @@ class ApiConstants {
   static const String deliveryManReturnOrderDetail =
       "$baseUrl/return-orders/{id}";
   static const String deliveryManAcceptReturnOrder =
+  
       "$baseUrl/accept-return-order/{id}";
   static const String deliveryManSendReturnOrderOtp =
       "$baseUrl/return-order/{id}/otp";
@@ -206,6 +207,8 @@ class ApiConstants {
   static const String addstaffreimbursement =
       "$baseUrl/staff-reimbursements/";
 
+  static const String cashrecieved =
+      "$baseUrl/cash-received";
 
 
 

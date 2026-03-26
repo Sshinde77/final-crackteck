@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/api_constants.dart';
@@ -67,7 +68,9 @@ class DeliverySignupService extends DeliveryApiClient {
       'vehicle_type': request.vehicleType.trim(),
       'vehicle_number': request.vehicleNumber.trim(),
       'driving_license_no': request.drivingLicenseNo.trim(),
+      'education': request.education.trim(),
     });
+    debugPrint('Delivery signup request fields: ${signupRequest.fields}');
     signupRequest.files.add(
       await http.MultipartFile.fromPath(
         'aadhar_front_path',
@@ -104,8 +107,16 @@ class DeliverySignupService extends DeliveryApiClient {
         request.drivingLicenseBackFile.path,
       ),
     );
+    signupRequest.files.add(
+      await http.MultipartFile.fromPath('result_file', request.resultFile.path),
+    );
+    debugPrint(
+      'Delivery signup files: ${signupRequest.files.map((file) => '${file.field}=${file.filename}').join(', ')}',
+    );
     final streamed = await signupRequest.send().timeout(ApiConstants.requestTimeout);
     final response = await http.Response.fromStream(streamed);
+    debugPrint('Delivery signup status: ${response.statusCode}');
+    debugPrint('Delivery signup raw response: ${response.body}');
     return mapResponse(
       response,
       successMessage: 'Signup successful.',

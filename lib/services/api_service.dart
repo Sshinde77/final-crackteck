@@ -555,6 +555,8 @@ class ApiService {
           await http.MultipartFile.fromPath("pan_document", panFile.path),
         );
 
+      debugPrint('Signup request fields: ${request.fields}');
+
       if (aadharBackFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
@@ -606,8 +608,14 @@ class ApiService {
         );
       }
 
+      debugPrint(
+        'Signup files: ${request.files.map((file) => '${file.field}=${file.filename}').join(', ')}',
+      );
+
       final response = await request.send();
       final resBody = await response.stream.bytesToString();
+      debugPrint('Signup status: ${response.statusCode}');
+      debugPrint('Signup raw response: $resBody');
 
       if (_looksLikeHtml(resBody)) {
         debugPrint(
@@ -2724,6 +2732,99 @@ class ApiService {
       return ApiResponse(
         success: false,
         message: 'Failed to send OTP: $e',
+      );
+    }
+  }
+
+  static Future<ApiResponse> markCashReceived({
+    required String orderId,
+    required int roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+
+    if (storedUserId == null) {
+      debugPrint(
+        'Missing userId in secure storage when calling markCashReceived',
+      );
+      await _handleAuthFailure();
+      return ApiResponse(
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      );
+    }
+
+    final normalizedOrderId = orderId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (normalizedOrderId.isEmpty) {
+      return ApiResponse(
+        success: false,
+        message: 'Invalid order id',
+      );
+    }
+
+    final url = Uri.parse(ApiConstants.cashrecieved).replace(
+      queryParameters: <String, String>{
+        'user_id': storedUserId.toString(),
+        'role_id': roleId.toString(),
+        'order_id': normalizedOrderId,
+      },
+    );
+
+    try {
+      debugPrint('CashReceived API Request: POST $url');
+
+      final response = await _performAuthenticatedPost(url);
+
+      debugPrint('CashReceived API Response Status: ${response.statusCode}');
+      debugPrint('CashReceived API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        return ApiResponse(
+          success: false,
+          message: 'Authentication error. Please log in again.',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = <String, dynamic>{};
+      }
+
+      final map = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
+
+      final success =
+          response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          map['success'] == true;
+
+      return ApiResponse(
+        success: success,
+        message: (map['message']?.toString().trim().isNotEmpty ?? false)
+            ? map['message'].toString()
+            : (success
+                  ? 'Cash received confirmed successfully'
+                  : 'Failed to confirm cash received'),
+        data: map['data'],
+        errors: map['errors'],
+      );
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Request timeout. Please try again.',
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'No internet connection. Please check your network.',
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Failed to confirm cash received: $e',
       );
     }
   }

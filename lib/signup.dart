@@ -311,7 +311,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> signup() async {
     final isDelivery = _isDeliveryPerson;
-    if (!isDelivery && !_educationFormKey.currentState!.validate()) return;
+    if (!_educationFormKey.currentState!.validate()) return;
 
     if (!agree) {
       _snack('Please accept terms and conditions');
@@ -334,11 +334,11 @@ class _SignupScreenState extends State<SignupScreen> {
       _snack('Please upload licence front and back files');
       return;
     }
-    if (!isDelivery && educationCtrl.text.trim().isEmpty) {
+    if (educationCtrl.text.trim().isEmpty) {
       _snack('Please select education');
       return;
     }
-    if (!isDelivery && resultFile == null) {
+    if (resultFile == null) {
       _snack('Please upload result document');
       return;
     }
@@ -364,7 +364,7 @@ class _SignupScreenState extends State<SignupScreen> {
               phone: numberCtrl.text.trim(),
               email: emailCtrl.text.trim(),
               dob: dobCtrl.text.trim(),
-              gender: (_selectedGender ?? '').trim(),
+              gender: (_selectedGender ?? '').trim().toLowerCase(),
               address1: addressLine1Ctrl.text.trim(),
               address2: addressLine2Ctrl.text.trim(),
               city: cityCtrl.text.trim(),
@@ -382,6 +382,8 @@ class _SignupScreenState extends State<SignupScreen> {
               drivingLicenseNo: licenceNumberCtrl.text.trim(),
               drivingLicenseFrontFile: XFile(licenceFrontFile!.path),
               drivingLicenseBackFile: XFile(licenceBackFile!.path),
+              education: educationCtrl.text.trim(),
+              resultFile: XFile(resultFile!.path),
             )
           : null,
       commonRequest: isDelivery
@@ -424,6 +426,39 @@ class _SignupScreenState extends State<SignupScreen> {
     final v = value.trim();
     final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     return regex.hasMatch(v);
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  Future<void> _selectDob() async {
+    final now = DateTime.now();
+    final initialDate =
+        DateTime.tryParse(dobCtrl.text.trim()) ??
+        DateTime(now.year - 18, now.month, now.day);
+    final firstDate = DateTime(1900);
+    final lastDate = now;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isBefore(firstDate)
+          ? firstDate
+          : initialDate.isAfter(lastDate)
+          ? lastDate
+          : initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      dobCtrl.text = _formatDate(picked);
+    });
   }
 
   String _fileLabel(File? file) {
@@ -625,19 +660,7 @@ class _SignupScreenState extends State<SignupScreen> {
             },
           ),
           if (_isDeliveryPerson) ...[
-            _input(
-              'Date of Birth (YYYY-MM-DD)',
-              dobCtrl,
-              keyboard: TextInputType.datetime,
-              validator: (v) {
-                final value = (v ?? '').trim();
-                if (value.isEmpty) return 'Required';
-                if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
-                  return 'Use YYYY-MM-DD format';
-                }
-                return null;
-              },
-            ),
+            _dateInput('Date of Birth', dobCtrl),
             _dropdown(
               hint: 'Gender',
               value: _selectedGender,
@@ -681,6 +704,7 @@ class _SignupScreenState extends State<SignupScreen> {
               onPressed: _goToDocumentsStep,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -902,7 +926,22 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           if (isDelivery) ...[
             const SizedBox(height: 10),
-            _input('Vehicle Type', vehicleTypeCtrl),
+            _dropdown(
+              hint: 'Vehicle Type',
+              value: const ['Two Wheeler', 'Four Wheeler'].contains(
+                vehicleTypeCtrl.text.trim(),
+              )
+                  ? vehicleTypeCtrl.text.trim()
+                  : null,
+              items: const ['Two Wheeler', 'Four Wheeler'],
+              onChanged: (value) {
+                setState(() {
+                  vehicleTypeCtrl.text = value ?? '';
+                });
+              },
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Select vehicle type' : null,
+            ),
             _input(
               'Vehicle Number',
               vehicleNumberCtrl,
@@ -967,6 +1006,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: isSubmitting ? null : _goToEducationStep,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -998,88 +1038,12 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildEducationForm(bool isSubmitting) {
-    if (_isDeliveryPerson) {
-      return Form(
-        key: _educationFormKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'Review your details and submit the delivery partner signup form. Vehicle, Aadhaar, PAN, and licence documents will be uploaded with this request.',
-                style: TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: isSubmitting ? null : _goBackToDocumentsStep,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      side: const BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Back',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: isSubmitting ? null : signup,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Submit',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
     const educationOptions = [
-      'Post Graduate',
-      'Graduate',
-      '12',
-      '10',
       'Under 10',
+      '10 Passed',
+      '12 Passed',
+      'Graduation',
+      'Post Graduation',
     ];
 
     final selectedEducation = educationOptions.contains(educationCtrl.text.trim())
@@ -1104,7 +1068,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 (v == null || v.trim().isEmpty) ? 'Select education' : null,
           ),
           _uploadBox(
-            title: 'Upload Result',
+            title: 'Upload Document',
             subtitle: 'Marksheet / Certificate (PNG, JPG, PDF max 2MB)',
             file: resultFile,
             onTap: () => _pickFile(_DocumentType.educationResult),
@@ -1137,6 +1101,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: isSubmitting ? null : signup,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1192,6 +1157,28 @@ class _SignupScreenState extends State<SignupScreen> {
           counterText: '',
           filled: true,
           fillColor: Colors.grey.shade100,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dateInput(String hint, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: ctrl,
+        readOnly: true,
+        onTap: _selectDob,
+        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+        decoration: InputDecoration(
+          hintText: hint,
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          suffixIcon: const Icon(Icons.calendar_today_outlined),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
