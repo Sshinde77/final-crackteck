@@ -2829,6 +2829,268 @@ class ApiService {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> fetchCashReceivedList({
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchCashReceivedList',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    final url = Uri.parse(ApiConstants.cashrecievedlist).replace(
+      queryParameters: <String, String>{
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('CashReceived List API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('CashReceived List API Response Status: ${response.statusCode}');
+      debugPrint('CashReceived List API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load wallet entries: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <String, dynamic>{};
+      }
+
+      return _extractCashReceivedList(decoded);
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching wallet entries: $e');
+      throw Exception('Failed to load wallet entries: $e');
+    }
+  }
+
+  static List<Map<String, dynamic>> _extractCashReceivedList(dynamic decoded) {
+    List<dynamic> rawList = const <dynamic>[];
+
+    if (decoded is List) {
+      rawList = decoded;
+    } else if (decoded is Map<String, dynamic>) {
+      if (decoded['cash_received'] is List) {
+        rawList = decoded['cash_received'] as List<dynamic>;
+      } else if (decoded['cash_receiveds'] is List) {
+        rawList = decoded['cash_receiveds'] as List<dynamic>;
+      } else if (decoded['transactions'] is List) {
+        rawList = decoded['transactions'] as List<dynamic>;
+      } else if (decoded['wallet'] is List) {
+        rawList = decoded['wallet'] as List<dynamic>;
+      } else if (decoded['items'] is List) {
+        rawList = decoded['items'] as List<dynamic>;
+      } else if (decoded['data'] is List) {
+        rawList = decoded['data'] as List<dynamic>;
+      } else if (decoded['data'] is Map<String, dynamic>) {
+        final dataMap = decoded['data'] as Map<String, dynamic>;
+        if (dataMap['cash_received'] is List) {
+          rawList = dataMap['cash_received'] as List<dynamic>;
+        } else if (dataMap['cash_receiveds'] is List) {
+          rawList = dataMap['cash_receiveds'] as List<dynamic>;
+        } else if (dataMap['transactions'] is List) {
+          rawList = dataMap['transactions'] as List<dynamic>;
+        } else if (dataMap['wallet'] is List) {
+          rawList = dataMap['wallet'] as List<dynamic>;
+        } else if (dataMap['items'] is List) {
+          rawList = dataMap['items'] as List<dynamic>;
+        } else if (dataMap['data'] is List) {
+          rawList = dataMap['data'] as List<dynamic>;
+        }
+      }
+    }
+
+    return rawList
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> fetchCashReceivedDetail({
+    required String cashReceivedId,
+    int? roleId,
+  }) async {
+    final storedUserId = await SecureStorageService.getUserId();
+    final storedRoleId = await SecureStorageService.getRoleId();
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+    final sanitizedId = cashReceivedId.trim().replaceFirst(RegExp(r'^#'), '');
+
+    if (storedUserId == null || effectiveRoleId == null) {
+      debugPrint(
+        'Missing userId/roleId in secure storage when calling fetchCashReceivedDetail',
+      );
+      await _handleAuthFailure();
+      throw Exception('Authentication error. Please log in again.');
+    }
+
+    if (sanitizedId.isEmpty) {
+      throw Exception('Invalid wallet entry id: $cashReceivedId');
+    }
+
+    final endpoint = '${ApiConstants.cashrecieveddetailed}/$sanitizedId';
+    final url = Uri.parse(endpoint).replace(
+      queryParameters: <String, String>{
+        'user_id': storedUserId.toString(),
+        'role_id': effectiveRoleId.toString(),
+      },
+    );
+
+    try {
+      debugPrint('CashReceived Detail API Request: GET $url');
+      final response = await _performAuthenticatedGet(url);
+      debugPrint('CashReceived Detail API Response Status: ${response.statusCode}');
+      debugPrint('CashReceived Detail API Response Body: ${response.body}');
+
+      if (_looksLikeHtml(response.body)) {
+        await _handleAuthFailure();
+        throw Exception('Authentication error. Please log in again.');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load wallet detail: ${response.statusCode}',
+        );
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (_) {
+        decoded = const <String, dynamic>{};
+      }
+
+      final detail = _extractCashReceivedDetail(decoded, sanitizedId);
+      return detail ?? const <String, dynamic>{};
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout: $e');
+      throw Exception('Request timeout. Please try again.');
+    } on SocketException catch (e) {
+      debugPrint('No Internet: $e');
+      throw Exception('No internet connection. Please check your network.');
+    } catch (e) {
+      debugPrint('Error fetching wallet detail: $e');
+      throw Exception('Failed to load wallet detail: $e');
+    }
+  }
+
+  static Map<String, dynamic>? _extractCashReceivedDetail(
+    dynamic decoded,
+    String cashReceivedId,
+  ) {
+    final normalizedId = cashReceivedId.trim().replaceFirst(RegExp(r'^#'), '');
+    final numericId = int.tryParse(normalizedId);
+
+    bool matchesId(dynamic value) {
+      if (value == null) return false;
+      final text = value.toString().trim();
+      if (text.isEmpty) return false;
+      if (text == normalizedId) return true;
+      if (numericId == null) return false;
+      final parsed = int.tryParse(text);
+      return parsed != null && parsed == numericId;
+    }
+
+    Map<String, dynamic>? asMap(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(value);
+      }
+      if (value is Map) {
+        return Map<String, dynamic>.from(value as Map);
+      }
+      return null;
+    }
+
+    List<Map<String, dynamic>> asList(dynamic value) {
+      if (value is! List) return const <Map<String, dynamic>>[];
+      return value
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    }
+
+    bool looksLikeDetail(Map<String, dynamic> map) {
+      return map.containsKey('amount') ||
+          map.containsKey('cash_received_amount') ||
+          map.containsKey('collected_amount') ||
+          map.containsKey('cod_amount') ||
+          map.containsKey('order_id') ||
+          map.containsKey('payment_mode') ||
+          map.containsKey('received_at') ||
+          map.containsKey('created_at');
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      final direct = asMap(decoded['data']) ?? asMap(decoded['cash_received']);
+      if (direct != null && (matchesId(direct['id']) || looksLikeDetail(direct))) {
+        return direct;
+      }
+
+      final nestedMaps = <Map<String, dynamic>>[
+        ...asList(decoded['data']),
+        ...asList(decoded['cash_received']),
+        ...asList(decoded['cash_receiveds']),
+        ...asList(decoded['transactions']),
+        ...asList(decoded['items']),
+      ];
+      for (final item in nestedMaps) {
+        if (matchesId(item['id']) ||
+            matchesId(item['cash_received_id']) ||
+            matchesId(item['transaction_id'])) {
+          return item;
+        }
+      }
+
+      if (looksLikeDetail(decoded)) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    }
+
+    if (decoded is List) {
+      final items = decoded
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      for (final item in items) {
+        if (matchesId(item['id']) ||
+            matchesId(item['cash_received_id']) ||
+            matchesId(item['transaction_id'])) {
+          return item;
+        }
+      }
+      if (items.isNotEmpty) {
+        return items.first;
+      }
+    }
+
+    return null;
+  }
+
   /// Send OTP for a field-executive service request start flow.
   /// POST /service-request/{id}/send-otp?user_id={userId}&role_id={roleId}
   static Future<ApiResponse> sendServiceRequestOtp(

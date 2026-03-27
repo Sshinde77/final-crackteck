@@ -219,32 +219,17 @@ class NotificationService {
 
   Future<void> syncTokenWithBackendIfPossible({bool forceRefresh = false}) async {
     try {
-      final String? syncUrl = ApiConstants.fcmTokenSyncUrl.trim().isEmpty
-          ? null
-          : ApiConstants.fcmTokenSyncUrl.trim();
-      if (syncUrl == null) {
-        debugPrint(
-          'FCM token sync skipped because FCM_TOKEN_SYNC_URL is not configured.',
-        );
-        return;
-      }
-
       final String? token = forceRefresh
           ? await _logAndPersistCurrentToken()
           : (await SecureStorageService.getFcmToken()) ??
               await _logAndPersistCurrentToken();
       if (token == null || token.isEmpty) return;
 
-      final String? lastSynced =
-          await SecureStorageService.getLastSyncedFcmToken();
-      if (!forceRefresh && lastSynced == token) {
-        debugPrint('FCM token already synced with backend.');
-        return;
-      }
-
       final int? userId = await SecureStorageService.getUserId();
       final int? roleId = await SecureStorageService.getRoleId();
       final String? accessToken = await SecureStorageService.getAccessToken();
+      final String deviceId = await SecureStorageService.getOrCreateDeviceId();
+      final String deviceType = Platform.isIOS ? 'ios' : 'android';
 
       if (userId == null ||
           roleId == null ||
@@ -256,27 +241,37 @@ class NotificationService {
         return;
       }
 
-      final Map<String, dynamic> payload = <String, dynamic>{
-        ApiConstants.fcmTokenSyncField: token,
-        'fcm_token': token,
-        'device_token': token,
-        'user_id': userId,
-        'role_id': roleId,
-        'platform': Platform.isIOS ? 'ios' : 'android',
-      };
+      final String syncSignature = '$userId|$roleId|$deviceId|$token';
+      final String? lastSynced =
+          await SecureStorageService.getLastSyncedFcmToken();
+      if (!forceRefresh &&
+          (lastSynced == syncSignature || lastSynced == token)) {
+        debugPrint('FCM token already synced with backend.');
+        return;
+      }
+
+      final Uri uri = Uri.parse(
+        ApiConstants.FCMtoken,
+      ).replace(
+        queryParameters: <String, String>{
+          'user_id': userId.toString(),
+          'role_id': roleId.toString(),
+          'fcm_token': token,
+          'device_type': deviceType,
+          'device_id': deviceId,
+        },
+      );
 
       final response = await http.post(
-        Uri.parse(syncUrl),
+        uri,
         headers: <String, String>{
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode(payload),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        await SecureStorageService.saveLastSyncedFcmToken(token);
+        await SecureStorageService.saveLastSyncedFcmToken(syncSignature);
         debugPrint('FCM token synced to backend successfully.');
       } else {
         debugPrint(

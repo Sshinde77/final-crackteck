@@ -209,6 +209,13 @@ class ApiConstants {
 
   static const String cashrecieved =
       "$baseUrl/cash-received";
+  static const String cashrecievedlist =
+      "$baseUrl/cash-received";
+  static const String cashrecieveddetailed =
+      "$baseUrl/cash-received";
+
+  static const String FCMtoken =
+      "$baseUrl/device-token";
 
 
 

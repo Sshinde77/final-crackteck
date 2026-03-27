@@ -17,6 +17,7 @@ import 'delivery_person_attendance.dart';
 import 'delivery_person_documents.dart';
 import 'delivery_personal_info_screen.dart';
 import 'delivery_track_order.dart';
+import '../wallet/wallet_screen.dart';
 
 class DeliveryProfileScreen extends StatefulWidget {
   final int roleId;
@@ -251,7 +252,7 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ComingSoonScreen(
+                      builder: (context) => WalletScreen(
                         roleId: widget.roleId,
                         roleName: widget.roleName,
                       ),

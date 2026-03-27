@@ -52,7 +52,22 @@ class DeliveryHomeProvider extends ChangeNotifier {
       final orderMaps = results[0] as List<Map<String, dynamic>>;
       final attendanceMap = results[1] as Map<String, dynamic>;
 
-      _orders = orderMaps.map(DeliveryOrderModel.fromJson).toList();
+      _orders = orderMaps
+          .where((order) {
+            final statusText = <dynamic>[
+              order['status'],
+              order['order_status'],
+              order['delivery_status'],
+              order['state'],
+            ].firstWhere(
+              (value) => value != null && value.toString().trim().isNotEmpty,
+              orElse: () => '',
+            ).toString().toLowerCase();
+
+            return !statusText.contains('deliver');
+          })
+          .map(DeliveryOrderModel.fromJson)
+          .toList();
       _attendance = DeliveryAttendanceModel.fromJson(attendanceMap);
     } catch (error) {
       _error = error.toString().replaceFirst('Exception: ', '');

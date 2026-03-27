@@ -17,6 +17,7 @@ class SecureStorageService {
   static const String _userProfileKey = 'user_profile';
   static const String _fcmTokenKey = 'fcm_token';
   static const String _lastSyncedFcmTokenKey = 'last_synced_fcm_token';
+  static const String _deviceIdKey = 'device_id';
 
   static String? _accessToken;
   static String? _refreshToken;
@@ -25,6 +26,7 @@ class SecureStorageService {
   static Map<String, dynamic>? _userProfile;
   static String? _fcmToken;
   static String? _lastSyncedFcmToken;
+  static String? _deviceId;
 
   /// Tracks which userIds have completed vehicle registration during this
   /// app session. This lets us treat vehicle registration as a one-time
@@ -213,6 +215,24 @@ class SecureStorageService {
     ]);
   }
 
+  static Future<String> getOrCreateDeviceId() async {
+    if (_deviceId != null && _deviceId!.isNotEmpty) {
+      return _deviceId!;
+    }
+
+    final stored = _normalizeToken(await _storage.read(key: _deviceIdKey));
+    if (stored != null) {
+      _deviceId = stored;
+      return stored;
+    }
+
+    final generated =
+        'device_${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}';
+    await _storage.write(key: _deviceIdKey, value: generated);
+    _deviceId = generated;
+    return generated;
+  }
+
   /// Returns `true` if the in-memory current user has already completed the
   /// vehicle registration flow in this app session.
   static Future<bool> isVehicleRegisteredForCurrentUser() async {
@@ -246,6 +266,7 @@ class SecureStorageService {
     _userProfile = null;
     _fcmToken = null;
     _lastSyncedFcmToken = null;
+    _deviceId = null;
     await Future.wait([
       _storage.delete(key: _accessTokenKey),
       _storage.delete(key: _refreshTokenKey),
@@ -254,6 +275,7 @@ class SecureStorageService {
       _storage.delete(key: _userProfileKey),
       _storage.delete(key: _fcmTokenKey),
       _storage.delete(key: _lastSyncedFcmTokenKey),
+      _storage.delete(key: _deviceIdKey),
     ]);
   }
 }

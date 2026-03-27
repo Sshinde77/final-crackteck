@@ -10,6 +10,7 @@ import 'field_executive_personal_info.dart';
 import 'field_executive_privacy_policy.dart';
 import 'field_executive_stock_in_hand.dart';
 import '../reimbursement/reimbursement_screen.dart';
+import '../wallet/wallet_screen.dart';
 import '../../widgets/placeholder.dart';
 
 class CombinedProfileScreen extends StatefulWidget {
@@ -484,11 +485,11 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                 );
               },),
               const SizedBox(height: 12),
-              _OptionTile(icon: Icons.payments_outlined, label: "Cash in hand", onTap: () {
+              _OptionTile(icon: Icons.payments_outlined, label: "Wallet", onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ComingSoonScreen(
+                    builder: (context) => WalletScreen(
                       roleId: widget.roleId,
                       roleName: widget.roleName,
                     ),
