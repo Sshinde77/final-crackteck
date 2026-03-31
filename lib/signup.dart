@@ -83,6 +83,22 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool get _isDeliveryPerson => widget.arg.roleId == 2;
 
+  int get _signupRoleId {
+    final normalizedRole = widget.arg.roleName.trim().toLowerCase();
+    switch (normalizedRole) {
+      case 'field executive':
+        return 1;
+      case 'delivery man':
+        return 2;
+      case 'saleperson':
+      case 'salesperson':
+      case 'sales person':
+        return 3;
+      default:
+        return widget.arg.roleId;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -359,7 +375,7 @@ class _SignupScreenState extends State<SignupScreen> {
       isDelivery: isDelivery,
       deliveryRequest: isDelivery
           ? DeliverySignupRequest(
-              roleId: widget.arg.roleId,
+              roleId: _signupRoleId,
               name: fullName,
               phone: numberCtrl.text.trim(),
               email: emailCtrl.text.trim(),
@@ -389,9 +405,12 @@ class _SignupScreenState extends State<SignupScreen> {
       commonRequest: isDelivery
           ? null
           : CommonSignupRequest(
+              roleId: _signupRoleId,
               name: fullName,
               phone: numberCtrl.text.trim(),
               email: emailCtrl.text.trim(),
+              dob: dobCtrl.text.trim(),
+              gender: (_selectedGender ?? '').trim().toLowerCase(),
               address: fullAddress,
               aadhar: aadharCtrl.text.trim(),
               pan: panCtrl.text.trim(),
@@ -418,6 +437,8 @@ class _SignupScreenState extends State<SignupScreen> {
       _snack(provider.lastMessage ?? 'Signup successful');
       Navigator.pop(context);
     } else {
+      debugPrint('Signup API error message: ${provider.lastMessage}');
+      debugPrint('Signup API error details: ${provider.lastErrors}');
       _snack(provider.lastMessage ?? 'Signup failed');
     }
   }
@@ -659,19 +680,17 @@ class _SignupScreenState extends State<SignupScreen> {
               return null;
             },
           ),
-          if (_isDeliveryPerson) ...[
-            _dateInput('Date of Birth', dobCtrl),
-            _dropdown(
-              hint: 'Gender',
-              value: _selectedGender,
-              items: const ['Male', 'Female', 'Other'],
-              onChanged: (value) {
-                setState(() => _selectedGender = value);
-              },
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Select gender' : null,
-            ),
-          ],
+          _dateInput('Date of Birth', dobCtrl),
+          _dropdown(
+            hint: 'Gender',
+            value: _selectedGender,
+            items: const ['Male', 'Female', 'Other'],
+            onChanged: (value) {
+              setState(() => _selectedGender = value);
+            },
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Select gender' : null,
+          ),
           _input(
             'Address Line 1',
             addressLine1Ctrl,
@@ -928,12 +947,12 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 10),
             _dropdown(
               hint: 'Vehicle Type',
-              value: const ['Two Wheeler', 'Four Wheeler'].contains(
+              value: const ['two_wheeler', 'four_wheeler'].contains(
                 vehicleTypeCtrl.text.trim(),
               )
                   ? vehicleTypeCtrl.text.trim()
                   : null,
-              items: const ['Two Wheeler', 'Four Wheeler'],
+              items: const ['two_wheeler', 'four_wheeler'],
               onChanged: (value) {
                 setState(() {
                   vehicleTypeCtrl.text = value ?? '';

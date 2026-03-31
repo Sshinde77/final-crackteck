@@ -277,6 +277,7 @@ import 'package:final_crackteck/core/secure_storage_service.dart';
 import 'package:final_crackteck/routes/app_routes.dart';
 import 'package:final_crackteck/services/api_service.dart';
 import 'package:final_crackteck/services/notification_service.dart';
+import 'package:final_crackteck/services/session_manager.dart';
 import 'package:final_crackteck/widgets/custom_button.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
@@ -365,6 +366,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       if (!mounted) return;
 
       if (res.success) {
+        if (widget.args.roleId == 2) {
+          await _maybeMarkVehicleRegisteredFromOtpResponse(res.data);
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        await SessionManager.logSessionState('otp-verification-success');
         try {
           await NotificationService.instance.syncTokenWithBackendIfPossible(
             forceRefresh: true,
@@ -372,10 +378,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
         } catch (error) {
           debugPrint('FCM sync skipped after OTP verification: $error');
         }
-        if (widget.args.roleId == 2) {
-          await _maybeMarkVehicleRegisteredFromOtpResponse(res.data);
+        final isAuthenticated = await SessionManager.isLoggedIn(
+          expectedRoleId: widget.args.roleId,
+        );
+        if (!mounted) return;
+        if (!isAuthenticated) {
+          _showSnack(
+            'OTP verified, but the session token was not persisted. Please login again.',
+          );
+          return;
         }
-        await _navigateByRole(widget.args.roleId);
+        await _navigateAfterAuthentication();
       } else {
         _showSnack(res.message ?? "Invalid OTP");
       }
@@ -388,39 +401,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
   }
 
   // ================= NAVIGATION =================
-  Future<void> _navigateByRole(int roleId) async {
-    switch (roleId) {
-      case 1:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.FieldExecutiveDashboard,
-          (_) => false,
-          arguments: fieldexecutivedashboardArguments(
-            roleId: widget.args.roleId,
-            roleName: widget.args.roleName,
-          ),
-        );
-        break;
-      case 2:
-        final alreadyRegistered =
-            await SecureStorageService.isVehicleRegisteredForCurrentUser();
+  Future<void> _navigateAfterAuthentication() async {
+    String? targetRoute = widget.args.redirectRoute;
+    Object? targetArguments = widget.args.redirectArguments;
 
-        final targetRoute = alreadyRegistered
-            ? AppRoutes.Deliverypersondashbord
-            : AppRoutes.vehicalregister;
+    if (widget.args.roleId == 2) {
+      final alreadyRegistered =
+          await SecureStorageService.isVehicleRegisteredForCurrentUser();
+      targetRoute = alreadyRegistered
+          ? (widget.args.redirectRoute ?? AppRoutes.Deliverypersondashbord)
+          : AppRoutes.vehicalregister;
 
-        Navigator.pushNamedAndRemoveUntil(context, targetRoute, (_) => false);
-        break;
-      case 3:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.salespersonDashboard,
-          (_) => false,
-        );
-        break;
-      default:
-        _showSnack("Unknown role");
+      targetArguments = alreadyRegistered
+          ? widget.args.redirectArguments
+          : null;
     }
+
+    await SessionManager.navigateAfterAuthentication(
+      context,
+      roleId: widget.args.roleId,
+      roleName: widget.args.roleName,
+      redirectRoute: targetRoute,
+      redirectArguments: targetArguments,
+    );
   }
 
   // ================= RESEND OTP =================
@@ -444,9 +447,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  Future<void> _maybeMarkVehicleRegisteredFromOtpResponse(
-    dynamic data,
-  ) async {
+  Future<void> _maybeMarkVehicleRegisteredFromOtpResponse(dynamic data) async {
     if (data is! Map<String, dynamic>) return;
 
     Map<String, dynamic>? user;
@@ -457,23 +458,25 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       user = data;
     }
 
-    String _string(dynamic v) => v?.toString().trim() ?? '';
+    String readString(dynamic v) => v?.toString().trim() ?? '';
 
-    String vehicleNo = _string(
+    String vehicleNo = readString(
       user['vehicle_no'] ?? user['vehicleNo'] ?? user['vehical_no'],
     );
-    String vehicleType = _string(user['vehicle_type'] ?? user['vehicleType']);
+    String vehicleType = readString(
+      user['vehicle_type'] ?? user['vehicleType'],
+    );
 
     // Some APIs nest vehicle info under "vehicle_details".
     final vehicleDetails = user['vehicle_details'];
     if ((vehicleNo.isEmpty && vehicleType.isEmpty) &&
         vehicleDetails is Map<String, dynamic>) {
-      vehicleNo = _string(
+      vehicleNo = readString(
         vehicleDetails['vehicle_number'] ??
             vehicleDetails['vehicle_no'] ??
             vehicleDetails['vehical_no'],
       );
-      vehicleType = _string(
+      vehicleType = readString(
         vehicleDetails['vehicle_type'] ?? vehicleDetails['vehicleType'],
       );
     }
@@ -521,100 +524,116 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
     final args = widget.args;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         leading: BackButton(color: Colors.black),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.horizontalPadding,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-
-            const Text(
-              "Verifying\nyour number",
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.horizontalPadding,
+                0,
+                AppSpacing.horizontalPadding,
+                MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-            ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
 
-            const SizedBox(height: 12),
-
-            Text(
-              "We sent a code to",
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            Text(
-              args.phoneNumber,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 35),
-
-            GestureDetector(
-              onTap: () {
-                FocusScope.of(context).requestFocus(_otpFocusNode);
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(4, _otpBox),
-              ),
-            ),
-
-            // Hidden TextField
-            Opacity(
-              opacity: 0,
-              child: TextField(
-                controller: _otpController,
-                focusNode: _otpFocusNode,
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                onChanged: (val) {
-                  setState(() {});
-                  if (val.length == 4) verifyOtp();
-                },
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            CustomButton(
-              text: "Verify",
-              isLoading: _isVerifying,
-              onPressed: verifyOtp,
-            ),
-
-            const SizedBox(height: 20),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: resendOtp,
-                  child: Text(
-                    "Resend code",
-                    style: TextStyle(
-                      color: _canResend ? Colors.black : Colors.grey,
-                      fontWeight: FontWeight.bold,
+                    const Text(
+                      "Verifying\nyour number",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      "We sent a code to",
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    Text(
+                      args.phoneNumber,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 35),
+
+                    GestureDetector(
+                      onTap: () {
+                        FocusScope.of(context).requestFocus(_otpFocusNode);
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(4, _otpBox),
+                      ),
+                    ),
+
+                    Opacity(
+                      opacity: 0,
+                      child: TextField(
+                        controller: _otpController,
+                        focusNode: _otpFocusNode,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        onChanged: (val) {
+                          setState(() {});
+                          if (val.length == 4) verifyOtp();
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    CustomButton(
+                      text: "Verify",
+                      isLoading: _isVerifying,
+                      onPressed: verifyOtp,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: resendOtp,
+                          child: Text(
+                            "Resend code",
+                            style: TextStyle(
+                              color: _canResend ? Colors.black : Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _canResend
+                              ? "Expired"
+                              : "${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')} left",
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                Text(
-                  _canResend
-                      ? "Expired"
-                      : "${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')} left",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-          ],
+              ),
+            );
+          },
         ),
       ),
     );

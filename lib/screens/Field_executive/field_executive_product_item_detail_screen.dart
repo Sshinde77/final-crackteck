@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 
@@ -104,13 +105,23 @@ class _FieldExecutiveProductItemDetailScreenState
   String _extractServiceRequestStatus(Map<String, dynamic>? raw) {
     if (raw == null) return '';
 
-    final rootStatus = _readFromMap(raw, const ['service_status', 'status']);
-    if (rootStatus.isNotEmpty) return rootStatus;
+    try {
+      final rootStatus = _readFromMap(raw, const ['service_status', 'status']);
+      if (rootStatus.isNotEmpty) return rootStatus;
 
-    final requestMap = _asMap(raw['service_request']) ??
-        _asMap(raw['request']) ??
-        _asMap(raw['service']);
-    return _readFromMap(requestMap, const ['service_status', 'status']);
+      final requestMap = _asMap(raw['service_request']) ??
+          _asMap(raw['request']) ??
+          _asMap(raw['service']);
+      return _readFromMap(requestMap, const ['service_status', 'status']);
+    } catch (error, stackTrace) {
+      developer.log(
+        'STATUS PARSE ERROR',
+        name: 'FieldExecutiveProductItemDetailScreen',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return '';
+    }
   }
 
   String _normalizeStatus(String status) {
@@ -346,6 +357,11 @@ class _FieldExecutiveProductItemDetailScreenState
       return;
     }
 
+    developer.log(
+      'Sending API request: serviceRequestId=$requestDbId, roleId=${widget.roleId}',
+      name: 'FieldExecutiveProductItemDetailScreen',
+    );
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -376,11 +392,18 @@ class _FieldExecutiveProductItemDetailScreenState
         _isLoading = false;
         _error = selected == null ? 'Product details not found in API response.' : null;
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
+      developer.log(
+        'API ERROR',
+        name: 'FieldExecutiveProductItemDetailScreen',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _error = error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        _error = error.toString();
       });
     }
   }

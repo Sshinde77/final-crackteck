@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../constants/api_constants.dart';
 import '../../core/navigation_service.dart';
+import '../../core/network/api_http_client.dart';
 import '../../core/secure_storage_service.dart';
 import '../../model/api_response.dart';
 import '../api_service.dart';
@@ -12,6 +13,7 @@ import '../api_service.dart';
 class DeliveryApiClient {
   static const int defaultRoleId = 2;
   static const int maxAuthRetries = 1;
+  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
 
   Future<DeliveryAuthState> authState({bool forceReload = false}) async {
     return DeliveryAuthState(
@@ -79,7 +81,7 @@ class DeliveryApiClient {
     int retries = 0;
     while (true) {
       final token = await SecureStorageService.getAccessToken();
-      final response = await http
+      final response = await _httpClient
           .get(url, headers: headers(token: token))
           .timeout(ApiConstants.requestTimeout);
       if (!isUnauthorized(response)) {
@@ -101,7 +103,7 @@ class DeliveryApiClient {
     int retries = 0;
     while (true) {
       final token = await SecureStorageService.getAccessToken();
-      final response = await http
+      final response = await _httpClient
           .post(
             url,
             headers: headers(token: token, json: json),
@@ -127,7 +129,7 @@ class DeliveryApiClient {
     int retries = 0;
     while (true) {
       final token = await SecureStorageService.getAccessToken();
-      final response = await http
+      final response = await _httpClient
           .put(
             url,
             headers: headers(token: token, json: json),
@@ -155,8 +157,7 @@ class DeliveryApiClient {
     } else {
       request.headers.remove('Authorization');
     }
-    final streamed = await request.send().timeout(ApiConstants.requestTimeout);
-    final response = await http.Response.fromStream(streamed);
+    final response = await _httpClient.sendMultipart(request);
     if (isUnauthorized(response)) {
       await handleAuthFailure();
     }

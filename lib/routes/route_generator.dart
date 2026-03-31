@@ -94,7 +94,12 @@ class RouteGenerator {
         }
         return MaterialPageRoute(
           builder: (_) =>
-              LoginScreen(roleId: args.roleId, roleName: args.roleName),
+              LoginScreen(
+                roleId: args.roleId,
+                roleName: args.roleName,
+                redirectRoute: args.redirectRoute,
+                redirectArguments: args.redirectArguments,
+              ),
           settings: settings,
         );
 

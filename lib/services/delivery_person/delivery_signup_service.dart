@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/api_constants.dart';
+import '../../core/network/api_http_client.dart';
 import '../../model/api_response.dart';
 import '../../model/signup/common_signup_request.dart';
 import '../../model/signup/delivery_signup_request.dart';
@@ -13,12 +14,35 @@ class DeliverySignupService extends DeliveryApiClient {
     : _apiService = apiService ?? ApiService.instance;
 
   final ApiService _apiService;
+  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
+
+  String _normalizeVehicleType(String value) {
+    switch (value.trim().toLowerCase()) {
+      case 'two wheeler':
+      case '2 wheeler':
+      case '2-wheeler':
+      case 'bike':
+      case 'two_wheeler':
+        return 'two_wheeler';
+      case 'four wheeler':
+      case '4 wheeler':
+      case '4-wheeler':
+      case 'car':
+      case 'four_wheeler':
+        return 'four_wheeler';
+      default:
+        return value.trim();
+    }
+  }
 
   Future<ApiResponse> submitCommon(CommonSignupRequest request) {
     return _apiService.signup(
+      roleId: request.roleId,
       name: request.name,
       phone: request.phone,
       email: request.email,
+      dob: request.dob,
+      gender: request.gender,
       address: request.address,
       aadhar: request.aadhar,
       pan: request.pan,
@@ -46,6 +70,7 @@ class DeliverySignupService extends DeliveryApiClient {
   Future<ApiResponse<Map<String, dynamic>>> submitDelivery(
     DeliverySignupRequest request,
   ) async {
+    final vehicleType = _normalizeVehicleType(request.vehicleType);
     final signupRequest = http.MultipartRequest(
       'POST',
       Uri.parse(ApiConstants.signup),
@@ -65,7 +90,7 @@ class DeliverySignupService extends DeliveryApiClient {
       'pincode': request.pincode.trim(),
       'aadhar_number': request.aadharNumber.trim(),
       'pan_number': request.panNumber.trim(),
-      'vehicle_type': request.vehicleType.trim(),
+      'vehicle_type': vehicleType,
       'vehicle_number': request.vehicleNumber.trim(),
       'driving_license_no': request.drivingLicenseNo.trim(),
       'education': request.education.trim(),
@@ -113,8 +138,7 @@ class DeliverySignupService extends DeliveryApiClient {
     debugPrint(
       'Delivery signup files: ${signupRequest.files.map((file) => '${file.field}=${file.filename}').join(', ')}',
     );
-    final streamed = await signupRequest.send().timeout(ApiConstants.requestTimeout);
-    final response = await http.Response.fromStream(streamed);
+    final response = await _httpClient.sendMultipart(signupRequest);
     debugPrint('Delivery signup status: ${response.statusCode}');
     debugPrint('Delivery signup raw response: ${response.body}');
     return mapResponse(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -7,11 +8,13 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../constants/api_constants.dart';
+import '../core/network/api_http_client.dart';
 import '../model/api_response.dart';
 import '../model/field executive/diagnosis_item.dart';
 import '../model/field executive/field_executive_service_request_detail.dart';
 import '../core/secure_storage_service.dart';
 import '../core/navigation_service.dart';
+import 'session_manager.dart';
 
 class _ServiceRequestAuthState {
   final int? userId;
@@ -42,6 +45,7 @@ class ApiService {
   ApiService._(); // Private constructor for singleton
 
   static final ApiService instance = ApiService._();
+  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
 
   // ---------------------------
   // Helper: safe JSON decode
@@ -115,18 +119,20 @@ class ApiService {
     }
 
     if (accessToken != null && accessToken.isNotEmpty) {
-      await SecureStorageService.saveAccessToken(accessToken);
-    }
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      await SecureStorageService.saveRefreshToken(refreshToken);
-    }
-
-    // Persist role so that refresh-token calls know which role_id to send.
-    await SecureStorageService.saveRoleId(roleId);
-
-    // Persist user id when available so dashboard/refresh calls can send it.
-    if (userId != null) {
-      await SecureStorageService.saveUserId(userId);
+      await SessionManager.saveSession(
+        accessToken: accessToken,
+        roleId: roleId,
+        refreshToken: refreshToken,
+        userId: userId,
+      );
+    } else {
+      await SecureStorageService.saveRoleId(roleId);
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await SecureStorageService.saveRefreshToken(refreshToken);
+      }
+      if (userId != null) {
+        await SecureStorageService.saveUserId(userId);
+      }
     }
     return userId;
   }
@@ -207,7 +213,7 @@ class ApiService {
         '🔵 Request Body: {"role_id": $roleId, "phone_number": "$phoneNumber"}',
       );
 
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse(ApiConstants.login),
             headers: _headers,
@@ -291,7 +297,7 @@ class ApiService {
         '🔵 Request Body: {"role_id": $roleId, "phone_number": "$phoneNumber", "otp": "$otp"}',
       );
 
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse(ApiConstants.verifyOtp),
             headers: _headers,
@@ -320,8 +326,10 @@ class ApiService {
           authPayload,
           roleId: roleId,
         );
-        persistedUserId ??=
-            await _persistTokensFromData(jsonResponse, roleId: roleId);
+        persistedUserId ??= await _persistTokensFromData(
+          jsonResponse,
+          roleId: roleId,
+        );
 
         if (persistedUserId == null) {
           // Prevent stale user_id from previous sessions from being reused.
@@ -423,7 +431,7 @@ class ApiService {
         },
       );
 
-      final response = await http
+      final response = await _httpClient
           .post(
             uri,
             headers: headers,
@@ -479,9 +487,12 @@ class ApiService {
   }
 
   Future<ApiResponse> signup({
+    required int roleId,
     required String name,
     required String phone,
     required String email,
+    String? dob,
+    String? gender,
     required String address,
     required String aadhar,
     required String pan,
@@ -508,6 +519,7 @@ class ApiService {
       final uri = Uri.parse(ApiConstants.signup);
 
       final fields = <String, String>{
+        "role_id": roleId.toString(),
         "name": name,
         "phone": phone,
         "email": email,
@@ -517,6 +529,13 @@ class ApiService {
         "education": education,
       };
 
+      if (dob != null && dob.trim().isNotEmpty) {
+        fields["dob"] = dob.trim();
+      }
+      if (gender != null && gender.trim().isNotEmpty) {
+        fields["gender"] = gender.trim();
+      }
+
       if (firstName != null && firstName.trim().isNotEmpty) {
         fields["first_name"] = firstName.trim();
       }
@@ -524,10 +543,10 @@ class ApiService {
         fields["last_name"] = lastName.trim();
       }
       if (addressLine1 != null && addressLine1.trim().isNotEmpty) {
-        fields["address_line_1"] = addressLine1.trim();
+        fields["address1"] = addressLine1.trim();
       }
       if (addressLine2 != null && addressLine2.trim().isNotEmpty) {
-        fields["address_line_2"] = addressLine2.trim();
+        fields["address2"] = addressLine2.trim();
       }
       if (country != null && country.trim().isNotEmpty) {
         fields["country"] = country.trim();
@@ -612,8 +631,8 @@ class ApiService {
         'Signup files: ${request.files.map((file) => '${file.field}=${file.filename}').join(', ')}',
       );
 
-      final response = await request.send();
-      final resBody = await response.stream.bytesToString();
+      final response = await _httpClient.sendMultipart(request);
+      final resBody = response.body;
       debugPrint('Signup status: ${response.statusCode}');
       debugPrint('Signup raw response: $resBody');
 
@@ -668,20 +687,16 @@ class ApiService {
         if (storedUserId != null) 'user_id': storedUserId,
       };
 
-      final uri = Uri.parse(ApiConstants.logout).replace(
-        queryParameters: queryParameters,
-      );
+      final uri = Uri.parse(
+        ApiConstants.logout,
+      ).replace(queryParameters: queryParameters);
 
       debugPrint('API Request: POST $uri');
       debugPrint('Request Query: $queryParameters');
       debugPrint('Request Body: $requestBody');
 
-      final response = await http
-          .post(
-            uri,
-            headers: headers,
-            body: jsonEncode(requestBody),
-          )
+      final response = await _httpClient
+          .post(uri, headers: headers, body: jsonEncode(requestBody))
           .timeout(ApiConstants.requestTimeout);
 
       debugPrint('🟡 API Response Status: ${response.statusCode}');
@@ -772,7 +787,8 @@ class ApiService {
 
       return ApiResponse(
         success: success,
-        message: jsonResponse['message'] ??
+        message:
+            jsonResponse['message'] ??
             (success ? 'Clock-in successful' : 'Clock-in failed'),
         // Keep the full response when "data" is not present
         // so screens can still read fields like auth_log.login_at.
@@ -844,7 +860,8 @@ class ApiService {
 
       return ApiResponse(
         success: success,
-        message: jsonResponse['message'] ??
+        message:
+            jsonResponse['message'] ??
             (success ? 'Clock-out successful' : 'Clock-out failed'),
         // Keep the full response when "data" is not present
         // so screens can still read fields like auth_log.logout_at.
@@ -921,7 +938,7 @@ class ApiService {
         },
       );
 
-      final response = await http
+      final response = await _httpClient
           .post(uri, headers: headers)
           .timeout(ApiConstants.requestTimeout);
 
@@ -994,6 +1011,7 @@ class ApiService {
 
   static const int _fallbackRoleIdForRefresh = 3; // Salesperson role id
   static const int _maxAuthRetries = 1;
+  static bool _isHandlingAuthFailure = false;
 
   /// Heuristic check for HTML content (e.g. redirected login page).
   static bool _looksLikeHtml(String body) {
@@ -1019,10 +1037,7 @@ class ApiService {
       return true;
     }
 
-    final bodyLower = response.body.toLowerCase();
-    return bodyLower.contains('401') ||
-        bodyLower.contains('unauthorized') ||
-        bodyLower.contains('token not provided');
+    return false;
   }
 
   static Future<bool> _attemptTokenRefresh() async {
@@ -1043,19 +1058,29 @@ class ApiService {
   }
 
   static Future<void> _handleAuthFailure() async {
-    await SecureStorageService.clearTokens();
-    await NavigationService.navigateToAuthRoot();
+    if (_isHandlingAuthFailure) {
+      debugPrint('WARNING: Auth failure handling is already in progress.');
+      return;
+    }
+
+    _isHandlingAuthFailure = true;
+    try {
+      final storedRoleId = await SecureStorageService.getRoleId();
+      await SessionManager.logSessionState('apiService.authFailure.beforeClear');
+      await SessionManager.clearSession();
+      await NavigationService.navigateToAuthRoot(roleId: storedRoleId);
+    } finally {
+      _isHandlingAuthFailure = false;
+    }
   }
 
   static Future<_ServiceRequestAuthState> _readServiceRequestAuthState({
     bool forceReload = false,
   }) async {
     return _ServiceRequestAuthState(
-      userId: await SecureStorageService.getUserId(forceReload: forceReload),
-      roleId: await SecureStorageService.getRoleId(forceReload: forceReload),
-      accessToken: await SecureStorageService.getAccessToken(
-        forceReload: forceReload,
-      ),
+      userId: await SessionManager.getStoredUserId(forceReload: forceReload),
+      roleId: await SessionManager.getStoredRoleId(forceReload: forceReload),
+      accessToken: await SessionManager.getToken(forceReload: forceReload),
     );
   }
 
@@ -1093,7 +1118,7 @@ class ApiService {
     debugPrint('[ServiceRequestOtp][$flow] $message');
 
     if (redirectOnFailure) {
-      await NavigationService.navigateToAuthRoot();
+      await NavigationService.navigateToAuthRoot(roleId: state.roleId);
     }
 
     return ApiResponse(success: false, message: message);
@@ -1107,7 +1132,31 @@ class ApiService {
       flow: flow,
       redirectOnFailure: redirectOnFailure,
     );
-    return validation ?? ApiResponse(success: true, message: 'Authentication validated.');
+    return validation ??
+        ApiResponse(success: true, message: 'Authentication validated.');
+  }
+
+  static Future<bool> _retryWithNewerTokenIfAvailable(
+    String? attemptedAccessToken,
+  ) async {
+    final latestAccessToken = await SecureStorageService.getAccessToken(
+      forceReload: true,
+    );
+    final attempted = attemptedAccessToken?.trim();
+    final latest = latestAccessToken?.trim();
+
+    if (latest == null || latest.isEmpty) {
+      return false;
+    }
+
+    if (attempted == latest) {
+      return false;
+    }
+
+    debugPrint(
+      'Detected a newer access token while handling an auth failure. Retrying request with the refreshed token.',
+    );
+    return true;
   }
 
   static Future<http.Response> _performAuthenticatedGet(Uri url) async {
@@ -1120,7 +1169,7 @@ class ApiService {
           'Authorization': 'Bearer $accessToken',
       };
 
-      final response = await http
+      final response = await _httpClient
           .get(url, headers: headers)
           .timeout(ApiConstants.requestTimeout);
 
@@ -1130,6 +1179,11 @@ class ApiService {
 
       // Unauthorized
       if (retryCount >= _maxAuthRetries) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1137,6 +1191,11 @@ class ApiService {
       retryCount++;
       final refreshed = await _attemptTokenRefresh();
       if (!refreshed) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1154,7 +1213,7 @@ class ApiService {
           'Authorization': 'Bearer $accessToken',
       };
 
-      final response = await http
+      final response = await _httpClient
           .delete(url, headers: headers)
           .timeout(ApiConstants.requestTimeout);
 
@@ -1163,6 +1222,11 @@ class ApiService {
       }
 
       if (retryCount >= _maxAuthRetries) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1170,6 +1234,11 @@ class ApiService {
       retryCount++;
       final refreshed = await _attemptTokenRefresh();
       if (!refreshed) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1191,7 +1260,7 @@ class ApiService {
           'Authorization': 'Bearer $accessToken',
       };
 
-      final response = await http
+      final response = await _httpClient
           .post(url, headers: mergedHeaders, body: body)
           .timeout(ApiConstants.requestTimeout);
 
@@ -1200,6 +1269,11 @@ class ApiService {
       }
 
       if (retryCount >= _maxAuthRetries) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1207,6 +1281,11 @@ class ApiService {
       retryCount++;
       final refreshed = await _attemptTokenRefresh();
       if (!refreshed) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1228,7 +1307,7 @@ class ApiService {
           'Authorization': 'Bearer $accessToken',
       };
 
-      final response = await http
+      final response = await _httpClient
           .put(url, headers: mergedHeaders, body: body)
           .timeout(ApiConstants.requestTimeout);
 
@@ -1237,6 +1316,11 @@ class ApiService {
       }
 
       if (retryCount >= _maxAuthRetries) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1244,6 +1328,11 @@ class ApiService {
       retryCount++;
       final refreshed = await _attemptTokenRefresh();
       if (!refreshed) {
+        final shouldRetry = await _retryWithNewerTokenIfAvailable(accessToken);
+        if (shouldRetry) {
+          retryCount = 0;
+          continue;
+        }
         await _handleAuthFailure();
         return response;
       }
@@ -1604,12 +1693,17 @@ class ApiService {
       throw Exception('Authentication error. Please log in again.');
     }
 
-    final sanitizedDeliveryId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    final sanitizedDeliveryId = deliveryId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     if (sanitizedDeliveryId.isEmpty) {
       throw Exception('Invalid delivery id: $deliveryId');
     }
 
-    final endpointTemplate = DeliveryRequestTypes.detailEndpointFor(deliveryType);
+    final endpointTemplate = DeliveryRequestTypes.detailEndpointFor(
+      deliveryType,
+    );
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
     final endpoint = endpointTemplate.contains('{id}')
         ? endpointTemplate.replaceAll('{id}', sanitizedDeliveryId)
@@ -1650,7 +1744,10 @@ class ApiService {
         throw Exception('Server returned non-JSON delivery request response');
       }
 
-      final detail = _extractDeliveryRequestDetail(decoded, sanitizedDeliveryId);
+      final detail = _extractDeliveryRequestDetail(
+        decoded,
+        sanitizedDeliveryId,
+      );
       return detail ?? const <String, dynamic>{};
     } on TimeoutException catch (e) {
       debugPrint('Timeout: $e');
@@ -1671,7 +1768,10 @@ class ApiService {
     dynamic response,
     String deliveryId,
   ) {
-    final normalizedDeliveryId = deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedDeliveryId = deliveryId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericDeliveryId = int.tryParse(normalizedDeliveryId);
 
     bool matchesRequest(Map<String, dynamic> item) {
@@ -1770,7 +1870,10 @@ class ApiService {
     Map<String, dynamic> response,
     String deliveryType,
   ) {
-    List<dynamic> readListFromKeys(Map<String, dynamic> source, List<String> keys) {
+    List<dynamic> readListFromKeys(
+      Map<String, dynamic> source,
+      List<String> keys,
+    ) {
       for (final key in keys) {
         final value = source[key];
         if (value is List) {
@@ -1787,7 +1890,11 @@ class ApiService {
         'returnRequests',
       ],
       DeliveryRequestTypes.part: const ['part_requests', 'partRequests'],
-      DeliveryRequestTypes.productDelivery: const ['orders', 'order_list', 'orderList'],
+      DeliveryRequestTypes.productDelivery: const [
+        'orders',
+        'order_list',
+        'orderList',
+      ],
     };
 
     final genericKeys = <String>[
@@ -1798,26 +1905,20 @@ class ApiService {
       'items',
     ];
 
-    final fromTopLevel = readListFromKeys(
-      response,
-      <String>[
-        ...?typeSpecificKeys[deliveryType],
-        ...genericKeys,
-      ],
-    );
+    final fromTopLevel = readListFromKeys(response, <String>[
+      ...?typeSpecificKeys[deliveryType],
+      ...genericKeys,
+    ]);
     if (fromTopLevel.isNotEmpty) {
       return fromTopLevel;
     }
 
     final nestedData = response['data'];
     if (nestedData is Map<String, dynamic>) {
-      return readListFromKeys(
-        nestedData,
-        <String>[
-          ...?typeSpecificKeys[deliveryType],
-          ...genericKeys,
-        ],
-      );
+      return readListFromKeys(nestedData, <String>[
+        ...?typeSpecificKeys[deliveryType],
+        ...genericKeys,
+      ]);
     }
 
     return const <dynamic>[];
@@ -2175,7 +2276,8 @@ class ApiService {
     String endpoint = ApiConstants.productlistdetailFE
         .replaceFirst('{product_id}', normalizedId)
         .replaceFirst('{product-id}', normalizedId);
-    if (endpoint.contains('{product_id}') || endpoint.contains('{product-id}')) {
+    if (endpoint.contains('{product_id}') ||
+        endpoint.contains('{product-id}')) {
       endpoint = '${ApiConstants.productlistFE}/$normalizedId';
     }
 
@@ -2224,7 +2326,8 @@ class ApiService {
       Map<String, dynamic>? detail;
 
       if (decoded is Map<String, dynamic>) {
-        detail = mapFromDynamic(decoded['data']) ??
+        detail =
+            mapFromDynamic(decoded['data']) ??
             mapFromDynamic(decoded['product']) ??
             mapFromDynamic(decoded['products']) ??
             mapFromDynamic(decoded);
@@ -2390,9 +2493,10 @@ class ApiService {
       );
     }
 
-    final normalizedId = serviceRequestId
-        .trim()
-        .replaceFirst(RegExp(r'^#'), '');
+    final normalizedId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericId = int.tryParse(normalizedId);
     if (numericId == null) {
       return ApiResponse(
@@ -2404,9 +2508,10 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
 
-    String baseEndpoint = ApiConstants.ServiceRequestAccept
-        .replaceFirst('{service-request_id}', numericId.toString())
-        .replaceFirst('{service_request_id}', numericId.toString());
+    String baseEndpoint = ApiConstants.ServiceRequestAccept.replaceFirst(
+      '{service-request_id}',
+      numericId.toString(),
+    ).replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
       baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId';
@@ -2461,7 +2566,9 @@ class ApiService {
         success: success,
         message: (map['message']?.toString().trim().isNotEmpty ?? false)
             ? map['message'].toString()
-            : (success ? 'Service request accepted' : 'Failed to accept request'),
+            : (success
+                  ? 'Service request accepted'
+                  : 'Failed to accept request'),
         data: map['data'],
         errors: map['errors'],
       );
@@ -2547,9 +2654,7 @@ class ApiService {
     try {
       final isProductDelivery =
           normalizedType == DeliveryRequestTypes.productDelivery;
-      debugPrint(
-        'API Request: ${isProductDelivery ? 'GET' : 'POST'} $url',
-      );
+      debugPrint('API Request: ${isProductDelivery ? 'GET' : 'POST'} $url');
       final response = isProductDelivery
           ? await _performAuthenticatedGet(url)
           : await _performAuthenticatedPost(url);
@@ -2585,8 +2690,8 @@ class ApiService {
         message: (map['message']?.toString().trim().isNotEmpty ?? false)
             ? map['message'].toString()
             : (success
-                ? 'Delivery request accepted successfully'
-                : 'Failed to accept delivery request'),
+                  ? 'Delivery request accepted successfully'
+                  : 'Failed to accept delivery request'),
         data: map['data'],
         errors: map['errors'],
       );
@@ -2649,8 +2754,9 @@ class ApiService {
 
     String endpoint;
     try {
-      endpoint = DeliveryRequestTypes.sendOtpEndpointTemplateFor(deliveryType)
-          .replaceFirst('{id}', numericId.toString());
+      endpoint = DeliveryRequestTypes.sendOtpEndpointTemplateFor(
+        deliveryType,
+      ).replaceFirst('{id}', numericId.toString());
     } on ArgumentError catch (e) {
       return ApiResponse(
         success: false,
@@ -2729,10 +2835,7 @@ class ApiService {
         message: 'No internet connection. Please check your network.',
       );
     } catch (e) {
-      return ApiResponse(
-        success: false,
-        message: 'Failed to send OTP: $e',
-      );
+      return ApiResponse(success: false, message: 'Failed to send OTP: $e');
     }
   }
 
@@ -2755,10 +2858,7 @@ class ApiService {
 
     final normalizedOrderId = orderId.trim().replaceFirst(RegExp(r'^#'), '');
     if (normalizedOrderId.isEmpty) {
-      return ApiResponse(
-        success: false,
-        message: 'Invalid order id',
-      );
+      return ApiResponse(success: false, message: 'Invalid order id');
     }
 
     final url = Uri.parse(ApiConstants.cashrecieved).replace(
@@ -2855,7 +2955,9 @@ class ApiService {
     try {
       debugPrint('CashReceived List API Request: GET $url');
       final response = await _performAuthenticatedGet(url);
-      debugPrint('CashReceived List API Response Status: ${response.statusCode}');
+      debugPrint(
+        'CashReceived List API Response Status: ${response.statusCode}',
+      );
       debugPrint('CashReceived List API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
@@ -2964,7 +3066,9 @@ class ApiService {
     try {
       debugPrint('CashReceived Detail API Request: GET $url');
       final response = await _performAuthenticatedGet(url);
-      debugPrint('CashReceived Detail API Response Status: ${response.statusCode}');
+      debugPrint(
+        'CashReceived Detail API Response Status: ${response.statusCode}',
+      );
       debugPrint('CashReceived Detail API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
@@ -2973,9 +3077,7 @@ class ApiService {
       }
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to load wallet detail: ${response.statusCode}',
-        );
+        throw Exception('Failed to load wallet detail: ${response.statusCode}');
       }
 
       dynamic decoded;
@@ -3047,7 +3149,8 @@ class ApiService {
 
     if (decoded is Map<String, dynamic>) {
       final direct = asMap(decoded['data']) ?? asMap(decoded['cash_received']);
-      if (direct != null && (matchesId(direct['id']) || looksLikeDetail(direct))) {
+      if (direct != null &&
+          (matchesId(direct['id']) || looksLikeDetail(direct))) {
         return direct;
       }
 
@@ -3105,8 +3208,12 @@ class ApiService {
       return authValidation;
     }
 
-    final storedUserId = await SecureStorageService.getUserId(forceReload: true);
-    final storedRoleId = await SecureStorageService.getRoleId(forceReload: true);
+    final storedUserId = await SecureStorageService.getUserId(
+      forceReload: true,
+    );
+    final storedRoleId = await SecureStorageService.getRoleId(
+      forceReload: true,
+    );
     final storedAccessToken = await SecureStorageService.getAccessToken(
       forceReload: true,
     );
@@ -3119,10 +3226,7 @@ class ApiService {
     if (missingFields.isNotEmpty) {
       final message = _buildMissingServiceRequestAuthMessage(missingFields);
       debugPrint('[ServiceRequestOtp][sendServiceRequestOtp] $message');
-      return ApiResponse(
-        success: false,
-        message: message,
-      );
+      return ApiResponse(success: false, message: message);
     }
     if (roleId != null && roleId != storedRoleId) {
       debugPrint(
@@ -3130,9 +3234,10 @@ class ApiService {
       );
     }
 
-    final normalizedId = serviceRequestId
-        .trim()
-        .replaceFirst(RegExp(r'^#'), '');
+    final normalizedId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericId = int.tryParse(normalizedId);
     if (numericId == null) {
       return ApiResponse(
@@ -3144,12 +3249,14 @@ class ApiService {
 
     final effectiveRoleId = storedRoleId.toString();
 
-    String baseEndpoint = ApiConstants.ServiceRequestsendotp
-        .replaceFirst('{service-request_id}', numericId.toString())
-        .replaceFirst('{service_request_id}', numericId.toString());
+    String baseEndpoint = ApiConstants.ServiceRequestsendotp.replaceFirst(
+      '{service-request_id}',
+      numericId.toString(),
+    ).replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/send-otp';
+      baseEndpoint =
+          '${ApiConstants.serviceRequestdetails}/$numericId/send-otp';
     }
     if (!baseEndpoint.endsWith('/send-otp')) {
       baseEndpoint = '$baseEndpoint/send-otp';
@@ -3169,7 +3276,7 @@ class ApiService {
       debugPrint('API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
-        await NavigationService.navigateToAuthRoot();
+        await NavigationService.navigateToAuthRoot(roleId: storedRoleId);
         return ApiResponse(
           success: false,
           message: 'Authentication error. Please log in again.',
@@ -3211,10 +3318,7 @@ class ApiService {
         message: 'No internet connection. Please check your network.',
       );
     } catch (e) {
-      return ApiResponse(
-        success: false,
-        message: 'Failed to send OTP: $e',
-      );
+      return ApiResponse(success: false, message: 'Failed to send OTP: $e');
     }
   }
 
@@ -3255,16 +3359,14 @@ class ApiService {
 
     final normalizedOtp = otp.trim();
     if (normalizedOtp.isEmpty) {
-      return ApiResponse(
-        success: false,
-        message: 'OTP is required.',
-      );
+      return ApiResponse(success: false, message: 'OTP is required.');
     }
 
     String endpoint;
     try {
-      endpoint = DeliveryRequestTypes.verifyOtpEndpointTemplateFor(deliveryType)
-          .replaceFirst('{id}', numericId.toString());
+      endpoint = DeliveryRequestTypes.verifyOtpEndpointTemplateFor(
+        deliveryType,
+      ).replaceFirst('{id}', numericId.toString());
     } on ArgumentError catch (e) {
       return ApiResponse(
         success: false,
@@ -3294,9 +3396,7 @@ class ApiService {
       },
     );
 
-    final body = <String, String>{
-      'otp': normalizedOtp,
-    };
+    final body = <String, String>{'otp': normalizedOtp};
 
     try {
       debugPrint('API Request: POST $url');
@@ -3333,7 +3433,9 @@ class ApiService {
         success: success,
         message: (map['message']?.toString().trim().isNotEmpty ?? false)
             ? map['message'].toString()
-            : (success ? 'OTP verified successfully' : 'Invalid or expired OTP'),
+            : (success
+                  ? 'OTP verified successfully'
+                  : 'Invalid or expired OTP'),
         data: map['data'],
         errors: map['errors'],
       );
@@ -3348,10 +3450,7 @@ class ApiService {
         message: 'No internet connection. Please check your network.',
       );
     } catch (e) {
-      return ApiResponse(
-        success: false,
-        message: 'Failed to verify OTP: $e',
-      );
+      return ApiResponse(success: false, message: 'Failed to verify OTP: $e');
     }
   }
 
@@ -3370,8 +3469,12 @@ class ApiService {
       return authValidation;
     }
 
-    final storedUserId = await SecureStorageService.getUserId(forceReload: true);
-    final storedRoleId = await SecureStorageService.getRoleId(forceReload: true);
+    final storedUserId = await SecureStorageService.getUserId(
+      forceReload: true,
+    );
+    final storedRoleId = await SecureStorageService.getRoleId(
+      forceReload: true,
+    );
     final storedAccessToken = await SecureStorageService.getAccessToken(
       forceReload: true,
     );
@@ -3384,10 +3487,7 @@ class ApiService {
     if (missingFields.isNotEmpty) {
       final message = _buildMissingServiceRequestAuthMessage(missingFields);
       debugPrint('[ServiceRequestOtp][verifyServiceRequestOtp] $message');
-      return ApiResponse(
-        success: false,
-        message: message,
-      );
+      return ApiResponse(success: false, message: message);
     }
     if (roleId != null && roleId != storedRoleId) {
       debugPrint(
@@ -3395,7 +3495,10 @@ class ApiService {
       );
     }
 
-    final normalizedId = serviceRequestId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericId = int.tryParse(normalizedId);
     if (numericId == null) {
       return ApiResponse(
@@ -3407,20 +3510,19 @@ class ApiService {
 
     final normalizedOtp = otp.trim();
     if (normalizedOtp.isEmpty) {
-      return ApiResponse(
-        success: false,
-        message: 'OTP is required.',
-      );
+      return ApiResponse(success: false, message: 'OTP is required.');
     }
 
     final effectiveRoleId = storedRoleId.toString();
 
-    String baseEndpoint = ApiConstants.ServiceRequestverifyotp
-        .replaceFirst('{service-request_id}', numericId.toString())
-        .replaceFirst('{service_request_id}', numericId.toString());
+    String baseEndpoint = ApiConstants.ServiceRequestverifyotp.replaceFirst(
+      '{service-request_id}',
+      numericId.toString(),
+    ).replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/verify-otp';
+      baseEndpoint =
+          '${ApiConstants.serviceRequestdetails}/$numericId/verify-otp';
     }
     if (!baseEndpoint.endsWith('/verify-otp')) {
       baseEndpoint = '$baseEndpoint/verify-otp';
@@ -3447,7 +3549,7 @@ class ApiService {
       debugPrint('API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
-        await NavigationService.navigateToAuthRoot();
+        await NavigationService.navigateToAuthRoot(roleId: storedRoleId);
         return ApiResponse(
           success: false,
           message: 'Authentication error. Please log in again.',
@@ -3489,10 +3591,7 @@ class ApiService {
         message: 'No internet connection. Please check your network.',
       );
     } catch (e) {
-      return ApiResponse(
-        success: false,
-        message: 'Failed to verify OTP: $e',
-      );
+      return ApiResponse(success: false, message: 'Failed to verify OTP: $e');
     }
   }
 
@@ -3517,7 +3616,10 @@ class ApiService {
       );
     }
 
-    final normalizedId = serviceRequestId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericId = int.tryParse(normalizedId);
     if (numericId == null) {
       return ApiResponse(
@@ -3537,12 +3639,14 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
 
-    String baseEndpoint = ApiConstants.ServiceRequestcasetransfer
-        .replaceFirst('{service-request_id}', numericId.toString())
-        .replaceFirst('{service_request_id}', numericId.toString());
+    String baseEndpoint = ApiConstants.ServiceRequestcasetransfer.replaceFirst(
+      '{service-request_id}',
+      numericId.toString(),
+    ).replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/case-transfer';
+      baseEndpoint =
+          '${ApiConstants.serviceRequestdetails}/$numericId/case-transfer';
     }
     if (!baseEndpoint.endsWith('/case-transfer')) {
       baseEndpoint = '$baseEndpoint/case-transfer';
@@ -3597,8 +3701,8 @@ class ApiService {
         message: (map['message']?.toString().trim().isNotEmpty ?? false)
             ? map['message'].toString()
             : (success
-                ? 'Case transfer request created successfully.'
-                : 'Failed to create case transfer request'),
+                  ? 'Case transfer request created successfully.'
+                  : 'Failed to create case transfer request'),
         data: map['data'],
         errors: map['errors'],
       );
@@ -3642,7 +3746,10 @@ class ApiService {
       );
     }
 
-    final normalizedId = serviceRequestId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericId = int.tryParse(normalizedId);
     if (numericId == null) {
       return ApiResponse(
@@ -3670,12 +3777,14 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
 
-    String baseEndpoint = ApiConstants.ServiceRequestreschedule
-        .replaceFirst('{service-request_id}', numericId.toString())
-        .replaceFirst('{service_request_id}', numericId.toString());
+    String baseEndpoint = ApiConstants.ServiceRequestreschedule.replaceFirst(
+      '{service-request_id}',
+      numericId.toString(),
+    ).replaceFirst('{service_request_id}', numericId.toString());
     if (baseEndpoint.contains('{service-request_id}') ||
         baseEndpoint.contains('{service_request_id}')) {
-      baseEndpoint = '${ApiConstants.serviceRequestdetails}/$numericId/reschedule';
+      baseEndpoint =
+          '${ApiConstants.serviceRequestdetails}/$numericId/reschedule';
     }
     if (!baseEndpoint.endsWith('/reschedule')) {
       baseEndpoint = '$baseEndpoint/reschedule';
@@ -3732,8 +3841,8 @@ class ApiService {
         message: (map['message']?.toString().trim().isNotEmpty ?? false)
             ? map['message'].toString()
             : (success
-                ? 'Service request rescheduled successfully.'
-                : 'Failed to reschedule request'),
+                  ? 'Service request rescheduled successfully.'
+                  : 'Failed to reschedule request'),
         data: map['data'],
         errors: map['errors'],
       );
@@ -3779,6 +3888,11 @@ class ApiService {
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
     final rawId = serviceId.trim().replaceFirst(RegExp(r'^#'), '');
     final numericId = int.tryParse(rawId);
+
+    developer.log(
+      'fetchServiceRequestDetail request: serviceRequestId=$rawId, roleId=$effectiveRoleId, storedUserId=$storedUserId',
+      name: 'ApiService.fetchServiceRequestDetail',
+    );
 
     if (numericId == null) {
       throw Exception(
@@ -3863,10 +3977,19 @@ class ApiService {
     }
 
     Future<Map<String, dynamic>?> tryFetch(Uri url) async {
-      debugPrint('API Request: GET $url');
+      developer.log(
+        'API REQUEST URL: $url',
+        name: 'ApiService.fetchServiceRequestDetail',
+      );
       final response = await _performAuthenticatedGet(url);
-      debugPrint('API Response Status: ${response.statusCode}');
-      debugPrint('API Response Body: ${response.body}');
+      developer.log(
+        'API RESPONSE STATUS: ${response.statusCode}',
+        name: 'ApiService.fetchServiceRequestDetail',
+      );
+      developer.log(
+        'API RESPONSE BODY: ${response.body}',
+        name: 'ApiService.fetchServiceRequestDetail',
+      );
 
       if (_looksLikeHtml(response.body)) {
         await _handleAuthFailure();
@@ -3880,6 +4003,10 @@ class ApiService {
       final dynamic decoded;
       try {
         decoded = jsonDecode(response.body);
+        developer.log(
+          'API DECODED: $decoded',
+          name: 'ApiService.fetchServiceRequestDetail',
+        );
       } catch (_) {
         return null;
       }
@@ -3909,9 +4036,7 @@ class ApiService {
       }
 
       final attempts = <Uri>[
-        Uri.parse(detailEndpoint).replace(
-          queryParameters: base,
-        ),
+        Uri.parse(detailEndpoint).replace(queryParameters: base),
         Uri.parse(detailEndpoint),
       ];
 
@@ -3937,8 +4062,13 @@ class ApiService {
     } on SocketException catch (e) {
       debugPrint('No Internet: $e');
       throw Exception('No internet connection. Please check your network.');
-    } catch (e) {
-      debugPrint('Error fetching service request detail: $e');
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error fetching service request detail',
+        name: 'ApiService.fetchServiceRequestDetail',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -3962,10 +4092,14 @@ class ApiService {
       throw Exception('Authentication error. Please log in again.');
     }
 
-    final normalizedServiceRequestId = serviceRequestId
-        .trim()
-        .replaceFirst(RegExp(r'^#'), '');
-    final normalizedProductId = productId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedServiceRequestId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
+    final normalizedProductId = productId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
 
     if (int.tryParse(normalizedServiceRequestId) == null) {
       throw Exception(
@@ -3978,11 +4112,14 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
 
-    String endpoint = ApiConstants.ServiceRequestdiagnosis
-        .replaceFirst('{service-request_id}', normalizedServiceRequestId)
-        .replaceFirst('{service_request_id}', normalizedServiceRequestId)
-        .replaceFirst('{product_id}', normalizedProductId)
-        .replaceFirst('{product-id}', normalizedProductId);
+    String endpoint =
+        ApiConstants.ServiceRequestdiagnosis.replaceFirst(
+              '{service-request_id}',
+              normalizedServiceRequestId,
+            )
+            .replaceFirst('{service_request_id}', normalizedServiceRequestId)
+            .replaceFirst('{product_id}', normalizedProductId)
+            .replaceFirst('{product-id}', normalizedProductId);
     if (endpoint.contains('{service-request_id}') ||
         endpoint.contains('{service_request_id}') ||
         endpoint.contains('{product_id}') ||
@@ -4097,7 +4234,10 @@ class ApiService {
         }
 
         final itemMap = Map<String, dynamic>.from(item as Map);
-        final hasServiceScope = containsAnyScopeKey(itemMap, serviceRequestIdKeys);
+        final hasServiceScope = containsAnyScopeKey(
+          itemMap,
+          serviceRequestIdKeys,
+        );
         final hasProductScope = containsAnyScopeKey(itemMap, productIdKeys);
 
         if (!hasServiceScope && !hasProductScope) {
@@ -4107,13 +4247,18 @@ class ApiService {
 
         scopedItemsInResponse++;
 
-        final itemServiceRequestId = readIdFromMap(itemMap, serviceRequestIdKeys);
+        final itemServiceRequestId = readIdFromMap(
+          itemMap,
+          serviceRequestIdKeys,
+        );
         final itemProductId = readIdFromMap(itemMap, productIdKeys);
 
-        final serviceMatches = !hasServiceScope ||
+        final serviceMatches =
+            !hasServiceScope ||
             itemServiceRequestId.isEmpty ||
             itemServiceRequestId == normalizedServiceRequestId;
-        final productMatches = !hasProductScope ||
+        final productMatches =
+            !hasProductScope ||
             itemProductId.isEmpty ||
             itemProductId == normalizedProductId;
 
@@ -4175,7 +4320,8 @@ class ApiService {
           }
 
           final nestedDiagnosis = map['diagnosis'];
-          if (!hasNameKey && (nestedDiagnosis is List || nestedDiagnosis is Map)) {
+          if (!hasNameKey &&
+              (nestedDiagnosis is List || nestedDiagnosis is Map)) {
             for (final nested in normalizeToList(nestedDiagnosis)) {
               yield* extractDiagnosisNodes(nested);
             }
@@ -4193,7 +4339,9 @@ class ApiService {
         if (raw == null) return null;
 
         if (raw is Map) {
-          final item = DiagnosisItem.fromJson(Map<String, dynamic>.from(raw as Map));
+          final item = DiagnosisItem.fromJson(
+            Map<String, dynamic>.from(raw as Map),
+          );
           if (item.name.trim().isEmpty) return null;
           return item;
         }
@@ -4290,10 +4438,14 @@ class ApiService {
       );
     }
 
-    final normalizedServiceRequestId = serviceRequestId
-        .trim()
-        .replaceFirst(RegExp(r'^#'), '');
-    final normalizedProductId = productId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedServiceRequestId = serviceRequestId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
+    final normalizedProductId = productId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
 
     if (int.tryParse(normalizedServiceRequestId) == null) {
       return ApiResponse(
@@ -4311,11 +4463,14 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId).toString();
 
-    String endpoint = ApiConstants.ServiceRequestsubmitdiagnosis
-        .replaceFirst('{service-request_id}', normalizedServiceRequestId)
-        .replaceFirst('{service_request_id}', normalizedServiceRequestId)
-        .replaceFirst('{product_id}', normalizedProductId)
-        .replaceFirst('{product-id}', normalizedProductId);
+    String endpoint =
+        ApiConstants.ServiceRequestsubmitdiagnosis.replaceFirst(
+              '{service-request_id}',
+              normalizedServiceRequestId,
+            )
+            .replaceFirst('{service_request_id}', normalizedServiceRequestId)
+            .replaceFirst('{product_id}', normalizedProductId)
+            .replaceFirst('{product-id}', normalizedProductId);
     if (endpoint.contains('{service-request_id}') ||
         endpoint.contains('{service_request_id}') ||
         endpoint.contains('{product_id}') ||
@@ -4388,15 +4543,11 @@ class ApiService {
         if (name.isNotEmpty) {
           request.fields['diagnosis_list[$index][name]'] = name;
         }
-        if (status.isNotEmpty) {
-          request.fields['diagnosis_list[$index][status]'] = status;
-        }
+        request.fields['diagnosis_list[$index][status]'] = status;
         if (partStatus.isNotEmpty) {
           request.fields['diagnosis_list[$index][part_status]'] = partStatus;
         }
-        if (reportToSend.isNotEmpty) {
-          request.fields['diagnosis_list[$index][report]'] = reportToSend;
-        }
+        request.fields['diagnosis_list[$index][report]'] = reportToSend;
 
         final int? normalizedPartId = int.tryParse(
           (partIdRaw ?? '').toString().trim(),
@@ -4406,8 +4557,8 @@ class ApiService {
         );
 
         if (normalizedPartId != null) {
-          request.fields['diagnosis_list[$index][part_id]'] =
-              normalizedPartId.toString();
+          request.fields['diagnosis_list[$index][part_id]'] = normalizedPartId
+              .toString();
         }
         if (normalizedQuantity != null && normalizedQuantity > 0) {
           request.fields['diagnosis_list[$index][quantity]'] =
@@ -4449,8 +4600,7 @@ class ApiService {
         'Sending multipart request to $uri with fields: ${request.fields} and ${request.files.length} files',
       );
 
-      final streamed = await request.send().timeout(ApiConstants.requestTimeout);
-      return http.Response.fromStream(streamed);
+      return _httpClient.sendMultipart(request);
     }
 
     try {
@@ -4505,8 +4655,8 @@ class ApiService {
         message: (map['message']?.toString().trim().isNotEmpty ?? false)
             ? map['message'].toString()
             : (success
-                ? 'Diagnosis submitted successfully'
-                : 'Failed to submit diagnosis'),
+                  ? 'Diagnosis submitted successfully'
+                  : 'Failed to submit diagnosis'),
         data: map['data'],
         errors: map['errors'],
       );
@@ -4628,9 +4778,9 @@ class ApiService {
 
     final payload = <String, dynamic>{...body, 'user_id': storedUserId};
     final endpoint = ApiConstants.edit_lead.replaceFirst('{lead_id}', leadId);
-    final url = Uri.parse(endpoint).replace(
-      queryParameters: {'user_id': storedUserId.toString()},
-    );
+    final url = Uri.parse(
+      endpoint,
+    ).replace(queryParameters: {'user_id': storedUserId.toString()});
 
     try {
       debugPrint('UPDATE LEAD API Request: PUT $url');
@@ -4941,16 +5091,18 @@ class ApiService {
       '{follow_up_id}',
       followUpId,
     );
-    final url = Uri.parse(endpoint).replace(
-      queryParameters: {'user_id': storedUserId.toString()},
-    );
+    final url = Uri.parse(
+      endpoint,
+    ).replace(queryParameters: {'user_id': storedUserId.toString()});
 
     try {
       debugPrint('DELETE Follow-up API Request: $url');
 
       final response = await _performAuthenticatedDelete(url);
 
-      debugPrint('DELETE Follow-up API Response Status: ${response.statusCode}');
+      debugPrint(
+        'DELETE Follow-up API Response Status: ${response.statusCode}',
+      );
       debugPrint('DELETE Follow-up API Response Body: ${response.body}');
 
       if (_looksLikeHtml(response.body)) {
@@ -5030,9 +5182,9 @@ class ApiService {
       '{meet_id}',
       meetingId,
     );
-    final url = Uri.parse(endpoint).replace(
-      queryParameters: {'user_id': storedUserId.toString()},
-    );
+    final url = Uri.parse(
+      endpoint,
+    ).replace(queryParameters: {'user_id': storedUserId.toString()});
 
     try {
       debugPrint('DELETE Meeting API Request: $url');
@@ -5121,9 +5273,9 @@ class ApiService {
     }
 
     final payload = <String, dynamic>{...body, 'user_id': storedUserId};
-    final url = Uri.parse(ApiConstants.new_follow_up).replace(
-      queryParameters: {'user_id': storedUserId.toString()},
-    );
+    final url = Uri.parse(
+      ApiConstants.new_follow_up,
+    ).replace(queryParameters: {'user_id': storedUserId.toString()});
 
     try {
       debugPrint('CREATE Follow-up API Request: POST $url');
@@ -5135,7 +5287,9 @@ class ApiService {
         body: jsonEncode(payload),
       );
 
-      debugPrint('CREATE Follow-up API Response Status: ${response.statusCode}');
+      debugPrint(
+        'CREATE Follow-up API Response Status: ${response.statusCode}',
+      );
       debugPrint('CREATE Follow-up API Response Body: ${response.body}');
 
       final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
@@ -5207,9 +5361,9 @@ class ApiService {
       '{follow_up_id}',
       followUpId,
     );
-    final url = Uri.parse(endpoint).replace(
-      queryParameters: {'user_id': storedUserId.toString()},
-    );
+    final url = Uri.parse(
+      endpoint,
+    ).replace(queryParameters: {'user_id': storedUserId.toString()});
 
     try {
       debugPrint('UPDATE Follow-up API Request: PUT $url');
@@ -5221,7 +5375,9 @@ class ApiService {
         body: jsonEncode(payload),
       );
 
-      debugPrint('UPDATE Follow-up API Response Status: ${response.statusCode}');
+      debugPrint(
+        'UPDATE Follow-up API Response Status: ${response.statusCode}',
+      );
       debugPrint('UPDATE Follow-up API Response Body: ${response.body}');
 
       final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
@@ -5368,10 +5524,13 @@ class ApiService {
     }
 
     final payload = <String, dynamic>{...body, 'user_id': storedUserId};
-    final endpoint = ApiConstants.edit_meet.replaceFirst('{meet_id}', meetingId);
-    final url = Uri.parse(endpoint).replace(
-      queryParameters: {'user_id': storedUserId.toString()},
+    final endpoint = ApiConstants.edit_meet.replaceFirst(
+      '{meet_id}',
+      meetingId,
     );
+    final url = Uri.parse(
+      endpoint,
+    ).replace(queryParameters: {'user_id': storedUserId.toString()});
 
     try {
       debugPrint('UPDATE Meeting API Request: PUT $url');
@@ -5531,7 +5690,9 @@ class ApiService {
 
     debugPrint('🟠 Fallback API Request: GET $fallbackUrl');
     final fallbackResponse = await _performAuthenticatedGet(fallbackUrl);
-    debugPrint('🟠 Fallback API Response Status: ${fallbackResponse.statusCode}');
+    debugPrint(
+      '🟠 Fallback API Response Status: ${fallbackResponse.statusCode}',
+    );
     debugPrint('🟠 Fallback API Response Body: ${fallbackResponse.body}');
 
     if (_looksLikeHtml(fallbackResponse.body)) {
@@ -5753,7 +5914,9 @@ class ApiService {
 
     debugPrint('🟠 Fallback API Request: GET $fallbackUrl');
     final fallbackResponse = await _performAuthenticatedGet(fallbackUrl);
-    debugPrint('🟠 Fallback API Response Status: ${fallbackResponse.statusCode}');
+    debugPrint(
+      '🟠 Fallback API Response Status: ${fallbackResponse.statusCode}',
+    );
     debugPrint('🟠 Fallback API Response Body: ${fallbackResponse.body}');
 
     if (_looksLikeHtml(fallbackResponse.body)) {
@@ -5809,7 +5972,9 @@ class ApiService {
       query['role_id'] = effectiveRoleId;
     }
 
-    final url = Uri.parse(ApiConstants.meets_page).replace(queryParameters: query);
+    final url = Uri.parse(
+      ApiConstants.meets_page,
+    ).replace(queryParameters: query);
 
     try {
       debugPrint('🔵 API Request: GET $url');
@@ -5924,7 +6089,9 @@ class ApiService {
         item.containsKey('quotation_id');
   }
 
-  static Future<Map<String, dynamic>> _tryFetchQuotationsFromUrl(Uri url) async {
+  static Future<Map<String, dynamic>> _tryFetchQuotationsFromUrl(
+    Uri url,
+  ) async {
     debugPrint('🟠 Fallback API Request: GET $url');
     final response = await _performAuthenticatedGet(url);
     debugPrint('🟠 Fallback API Response Status: ${response.statusCode}');
@@ -5953,7 +6120,10 @@ class ApiService {
     final normalized = _normalizeQuotationsResponse(decoded);
     final data = normalized['data'];
     if (data is List) {
-      return {'data': data.where(_isQuotationLikeItem).toList(), 'meta': normalized['meta']};
+      return {
+        'data': data.where(_isQuotationLikeItem).toList(),
+        'meta': normalized['meta'],
+      };
     }
     return {'data': const <dynamic>[]};
   }
@@ -6032,11 +6202,7 @@ class ApiService {
             ),
           ),
           url.replace(
-            path: _replaceTrailingPathSegment(
-              url.path,
-              'quotation',
-              'quote',
-            ),
+            path: _replaceTrailingPathSegment(url.path, 'quotation', 'quote'),
           ),
         ];
 
@@ -6131,22 +6297,20 @@ class ApiService {
         }
       }
 
-      return rawList
-          .whereType<Map>()
-          .map((item) {
-            final map = Map<String, dynamic>.from(item as Map);
-            final nestedPlan = map['plan'];
+      return rawList.whereType<Map>().map((item) {
+        final map = Map<String, dynamic>.from(item as Map);
+        final nestedPlan = map['plan'];
 
-            if (nestedPlan is Map) {
-              return <String, dynamic>{
-                ...Map<String, dynamic>.from(nestedPlan),
-                if (map['covered_items'] != null) 'covered_items_meta': map['covered_items'],
-              };
-            }
+        if (nestedPlan is Map) {
+          return <String, dynamic>{
+            ...Map<String, dynamic>.from(nestedPlan),
+            if (map['covered_items'] != null)
+              'covered_items_meta': map['covered_items'],
+          };
+        }
 
-            return map;
-          })
-          .toList();
+        return map;
+      }).toList();
     } on TimeoutException {
       throw Exception('Request timeout. Please try again.');
     } on SocketException {
@@ -6173,15 +6337,13 @@ class ApiService {
       );
     }
 
-    final request = http.MultipartRequest('POST', Uri.parse(ApiConstants.new_quotation))
-      ..headers.addAll({
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $accessToken',
-      })
-      ..fields.addAll({
-        ...fields,
-        'user_id': storedUserId.toString(),
-      });
+    final request =
+        http.MultipartRequest('POST', Uri.parse(ApiConstants.new_quotation))
+          ..headers.addAll({
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $accessToken',
+          })
+          ..fields.addAll({...fields, 'user_id': storedUserId.toString()});
 
     try {
       if (productImage != null && productImage.path.trim().isNotEmpty) {
@@ -6196,10 +6358,11 @@ class ApiService {
       debugPrint('CREATE Quotation API Request: POST ${request.url}');
       debugPrint('CREATE Quotation Request Fields: ${request.fields}');
 
-      final streamedResponse = await request.send().timeout(ApiConstants.requestTimeout);
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await _httpClient.sendMultipart(request);
 
-      debugPrint('CREATE Quotation API Response Status: ${response.statusCode}');
+      debugPrint(
+        'CREATE Quotation API Response Status: ${response.statusCode}',
+      );
       debugPrint('CREATE Quotation API Response Body: ${response.body}');
 
       final jsonResponse = ApiService.instance._safeJsonDecode(response.body);
@@ -6429,7 +6592,10 @@ class ApiService {
     final storedRoleId = await SecureStorageService.getRoleId();
     final effectiveRoleId =
         storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
-    final sanitizedFeedbackId = feedbackId.trim().replaceFirst(RegExp(r'^#'), '');
+    final sanitizedFeedbackId = feedbackId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
 
     if (storedUserId == null || effectiveRoleId == null) {
       debugPrint(
@@ -6456,8 +6622,8 @@ class ApiService {
       return response;
     }
 
-    final baseDetailEndpoint =
-        ApiConstants.fieldexecutivefeedbackdetail.replaceFirst(RegExp(r'/$'), '');
+    final baseDetailEndpoint = ApiConstants.fieldexecutivefeedbackdetail
+        .replaceFirst(RegExp(r'/$'), '');
     final primaryUrl = Uri.parse(baseDetailEndpoint).replace(
       queryParameters: {
         'feedback_id': sanitizedFeedbackId,
@@ -6466,12 +6632,13 @@ class ApiService {
         'role_id': effectiveRoleId.toString(),
       },
     );
-    final fallbackUrl = Uri.parse('$baseDetailEndpoint/$sanitizedFeedbackId').replace(
-      queryParameters: {
-        'user_id': storedUserId.toString(),
-        'role_id': effectiveRoleId.toString(),
-      },
-    );
+    final fallbackUrl = Uri.parse('$baseDetailEndpoint/$sanitizedFeedbackId')
+        .replace(
+          queryParameters: {
+            'user_id': storedUserId.toString(),
+            'role_id': effectiveRoleId.toString(),
+          },
+        );
 
     try {
       var response = await performDetailRequest(primaryUrl);
@@ -6514,7 +6681,10 @@ class ApiService {
     dynamic decoded,
     String feedbackId,
   ) {
-    final normalizedFeedbackId = feedbackId.trim().replaceFirst(RegExp(r'^#'), '');
+    final normalizedFeedbackId = feedbackId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     final numericFeedbackId = int.tryParse(normalizedFeedbackId);
 
     bool matchesFeedback(Map<String, dynamic> map) {
@@ -6554,12 +6724,7 @@ class ApiService {
     }
 
     if (decoded is Map<String, dynamic>) {
-      const directMapKeys = <String>[
-        'feedback',
-        'item',
-        'details',
-        'data',
-      ];
+      const directMapKeys = <String>['feedback', 'item', 'details', 'data'];
       for (final key in directMapKeys) {
         final map = asMap(decoded[key]);
         if (map != null && map.isNotEmpty) {
@@ -6632,7 +6797,8 @@ class ApiService {
   }) async {
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
-    final effectiveRoleId = storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
+    final effectiveRoleId =
+        storedRoleId ?? (roleId != null && roleId > 0 ? roleId : null);
 
     if (storedUserId == null || effectiveRoleId == null) {
       debugPrint(
@@ -6661,7 +6827,9 @@ class ApiService {
       }
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to load field executive profile: ${response.statusCode}');
+        throw Exception(
+          'Failed to load field executive profile: ${response.statusCode}',
+        );
       }
 
       dynamic decoded;
@@ -7054,7 +7222,8 @@ class ApiService {
 
       final nestedData = decoded['data'];
       if (nestedData is Map<String, dynamic>) {
-        final nestedDetail = asMap(nestedData['reimbursement']) ??
+        final nestedDetail =
+            asMap(nestedData['reimbursement']) ??
             asMap(nestedData['staff_reimbursement']) ??
             asMap(nestedData['item']);
         if (nestedDetail != null && nestedDetail.isNotEmpty) {
@@ -7110,13 +7279,15 @@ class ApiService {
       );
     }
 
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(ApiConstants.addstaffreimbursement),
-    )..headers.addAll({
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $accessToken',
-      });
+    final request =
+        http.MultipartRequest(
+            'POST',
+            Uri.parse(ApiConstants.addstaffreimbursement),
+          )
+          ..headers.addAll({
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $accessToken',
+          });
 
     request.fields.addAll({
       'amount': amount.trim(),
@@ -7138,9 +7309,7 @@ class ApiService {
       debugPrint('ADD Reimbursement API Request: POST ${request.url}');
       debugPrint('ADD Reimbursement Request Fields: ${request.fields}');
 
-      final streamedResponse =
-          await request.send().timeout(ApiConstants.requestTimeout);
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await _httpClient.sendMultipart(request);
 
       debugPrint(
         'ADD Reimbursement API Response Status: ${response.statusCode}',
@@ -7206,7 +7375,7 @@ class ApiService {
   /// Generic GET request
   static Future<dynamic> get(String url, {String? token}) async {
     try {
-      final res = await http
+      final res = await _httpClient
           .get(
             Uri.parse(url),
             headers: {
@@ -7231,7 +7400,7 @@ class ApiService {
         if (token != null) 'Authorization': 'Bearer $token',
       };
 
-      final res = await http
+      final res = await _httpClient
           .post(Uri.parse(url), headers: headers, body: jsonEncode(body))
           .timeout(ApiConstants.requestTimeout);
 
@@ -7251,7 +7420,7 @@ class ApiService {
         if (token != null) 'Authorization': 'Bearer $token',
       };
 
-      final res = await http
+      final res = await _httpClient
           .put(Uri.parse(url), headers: headers, body: jsonEncode(body))
           .timeout(ApiConstants.requestTimeout);
 
@@ -7274,7 +7443,7 @@ class ApiService {
         'Authorization': 'Bearer $accessToken',
     };
 
-    final res = await http
+    final res = await _httpClient
         .post(
           Uri.parse("${ApiConstants.updateTaskStatus}/$taskId"),
           headers: headers,

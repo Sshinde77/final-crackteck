@@ -15,3 +15,10 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
+
+
+1) fix the sign up screen 
+2) show both address in delivery application
+3) product image
+4) show customer details
+    

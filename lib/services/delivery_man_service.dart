@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../constants/api_constants.dart';
+import '../core/network/api_http_client.dart';
 import '../core/secure_storage_service.dart';
 import '../model/api_response.dart';
 import 'delivery_person/delivery_api_client.dart';
@@ -14,6 +15,7 @@ class DeliveryManService extends DeliveryApiClient {
   DeliveryManService._();
 
   static final DeliveryManService instance = DeliveryManService._();
+  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
 
   static const int _defaultRoleId = 2;
 
@@ -106,8 +108,7 @@ class DeliveryManService extends DeliveryApiClient {
         drivingLicenseBackFile.path,
       ),
     );
-    final streamed = await request.send().timeout(ApiConstants.requestTimeout);
-    final response = await http.Response.fromStream(streamed);
+    final response = await _httpClient.sendMultipart(request);
     return mapResponse(
       response,
       successMessage: 'Signup successful.',

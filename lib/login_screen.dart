@@ -4,6 +4,7 @@ import 'package:final_crackteck/services/api_service.dart';
 import 'package:final_crackteck/services/auth_service.dart';
 import 'package:final_crackteck/services/google_auth_service.dart';
 import 'package:final_crackteck/services/notification_service.dart';
+import 'package:final_crackteck/services/session_manager.dart';
 import 'package:final_crackteck/widgets/error_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,9 +17,16 @@ import 'constants/app_strings.dart';
 class LoginScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
+  final String? redirectRoute;
+  final Object? redirectArguments;
 
-  const LoginScreen({Key? key, required this.roleId, required this.roleName})
-    : super(key: key);
+  const LoginScreen({
+    Key? key,
+    required this.roleId,
+    required this.roleName,
+    this.redirectRoute,
+    this.redirectArguments,
+  }) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -63,6 +71,38 @@ class _LoginScreenState extends State<LoginScreen> {
     return true;
   }
 
+  bool _validateEmailPassword() {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty) {
+      setState(() {
+        _errorText = 'Email is required.';
+      });
+      return false;
+    }
+
+    final emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!emailPattern.hasMatch(email)) {
+      setState(() {
+        _errorText = 'Enter a valid email address.';
+      });
+      return false;
+    }
+
+    if (password.isEmpty) {
+      setState(() {
+        _errorText = 'Password is required.';
+      });
+      return false;
+    }
+
+    setState(() {
+      _errorText = null;
+    });
+    return true;
+  }
+
   Future<void> _handleLogin() async {
     if (!_validatePhoneNumber()) return;
 
@@ -74,7 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final phoneNumber = _phoneController.text.trim();
 
-      debugPrint('Login attempt for ${widget.roleName} with phone: $phoneNumber');
+      debugPrint(
+        'Login attempt for ${widget.roleName} with phone: $phoneNumber',
+      );
 
       final response = await _apiService.login(
         roleId: widget.roleId,
@@ -95,6 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
             roleId: widget.roleId,
             roleName: widget.roleName,
             phoneNumber: phoneNumber,
+            redirectRoute: widget.redirectRoute,
+            redirectArguments: widget.redirectArguments,
           ),
         );
       } else {
@@ -170,20 +214,38 @@ class _LoginScreenState extends State<LoginScreen> {
         debugPrint('FCM sync skipped after Google sign-in: $error');
       }
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Google sign-in successful.')),
       );
-      _navigateToDashboard();
+      await SessionManager.logSessionState('google-login-success');
+      final isAuthenticated = await SessionManager.isLoggedIn(
+        expectedRoleId: widget.roleId,
+      );
+      if (!mounted) return;
+      if (!isAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Login succeeded but the session token was not persisted. Please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+      await _navigateAfterAuthentication();
     } on GoogleAuthException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (error) {
       debugPrint('Unhandled Google sign-in error: $error');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google sign-in failed. Please try again.')),
+        const SnackBar(
+          content: Text('Google sign-in failed. Please try again.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -194,40 +256,83 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _navigateToDashboard() {
-    switch (widget.roleId) {
-      case 1:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.FieldExecutiveDashboard,
-          (route) => false,
-          arguments: fieldexecutivedashboardArguments(
-            roleId: widget.roleId,
-            roleName: widget.roleName,
-          ),
-        );
+  Future<void> _handleEmailPasswordLogin() async {
+    if (!_validateEmailPassword()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    try {
+      final response = await _authService.loginWithEmailPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        roleId: widget.roleId,
+      );
+
+      if (!mounted) return;
+
+      final bool isSuccess = response['success'] == true;
+      if (!isSuccess) {
+        setState(() {
+          _errorText =
+              response['message']?.toString() ??
+              'Email login failed. Please try again.';
+        });
         return;
-      case 2:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.Deliverypersondashbord,
-          (route) => false,
+      }
+
+      try {
+        await NotificationService.instance.syncTokenWithBackendIfPossible(
+          forceRefresh: true,
         );
+      } catch (error) {
+        debugPrint('FCM sync skipped after email login: $error');
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']?.toString() ?? 'Login successful.'),
+        ),
+      );
+      await SessionManager.logSessionState('email-login-success');
+      final isAuthenticated = await SessionManager.isLoggedIn(
+        expectedRoleId: widget.roleId,
+      );
+      if (!mounted) return;
+      if (!isAuthenticated) {
+        setState(() {
+          _errorText =
+              'Login succeeded but the session token was not persisted. Please try again.';
+        });
         return;
-      case 3:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.salespersonDashboard,
-          (route) => false,
-        );
-        return;
-      default:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.roleSelection,
-          (route) => false,
-        );
+      }
+      await _navigateAfterAuthentication();
+    } catch (error) {
+      debugPrint('Unhandled email login error: $error');
+      if (!mounted) return;
+      setState(() {
+        _errorText = 'Login failed. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  Future<void> _navigateAfterAuthentication() async {
+    await SessionManager.navigateAfterAuthentication(
+      context,
+      roleId: widget.roleId,
+      roleName: widget.roleName,
+      redirectRoute: widget.redirectRoute,
+      redirectArguments: widget.redirectArguments,
+    );
   }
 
   void _navigateToSignUp() {
@@ -358,7 +463,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     key: const ValueKey('email-tab'),
                                     emailController: _emailController,
                                     passwordController: _passwordController,
+                                    errorText: _errorText,
+                                    isLoading: _isLoading,
                                     obscurePassword: _obscurePassword,
+                                    onChanged: (_) {
+                                      if (_errorText != null) {
+                                        setState(() {
+                                          _errorText = null;
+                                        });
+                                      }
+                                    },
                                     onToggleVisibility: () {
                                       setState(() {
                                         _obscurePassword = !_obscurePassword;
@@ -369,9 +483,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         'Forgot password',
                                       );
                                     },
-                                    onLoginPressed: () {
-                                      _showUnavailableMessage('Email login');
-                                    },
+                                    onLoginPressed: _handleEmailPasswordLogin,
                                   ),
                           ),
                           const SizedBox(height: 28),
@@ -532,7 +644,10 @@ class EmailLoginTab extends StatelessWidget {
     super.key,
     required this.emailController,
     required this.passwordController,
+    required this.errorText,
+    required this.isLoading,
     required this.obscurePassword,
+    required this.onChanged,
     required this.onToggleVisibility,
     required this.onForgotPassword,
     required this.onLoginPressed,
@@ -540,7 +655,10 @@ class EmailLoginTab extends StatelessWidget {
 
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final String? errorText;
+  final bool isLoading;
   final bool obscurePassword;
+  final ValueChanged<String> onChanged;
   final VoidCallback onToggleVisibility;
   final VoidCallback onForgotPassword;
   final VoidCallback onLoginPressed;
@@ -564,6 +682,7 @@ class EmailLoginTab extends StatelessWidget {
           hintText: 'Email',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.alternate_email,
+          onChanged: onChanged,
         ),
         const SizedBox(height: 14),
         ModernInputField(
@@ -571,6 +690,7 @@ class EmailLoginTab extends StatelessWidget {
           hintText: 'Password',
           obscureText: obscurePassword,
           prefixIcon: Icons.lock_outline,
+          onChanged: onChanged,
           suffix: IconButton(
             onPressed: onToggleVisibility,
             icon: Icon(
@@ -581,6 +701,16 @@ class EmailLoginTab extends StatelessWidget {
             ),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              errorText!,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerRight,
@@ -602,7 +732,11 @@ class EmailLoginTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        PrimaryActionButton(label: 'Login', onPressed: onLoginPressed),
+        PrimaryActionButton(
+          label: 'Login',
+          isLoading: isLoading,
+          onPressed: onLoginPressed,
+        ),
       ],
     );
   }
@@ -712,6 +846,7 @@ class ModernInputField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.hintText,
+    this.onChanged,
     this.keyboardType,
     this.obscureText = false,
     this.prefixIcon,
@@ -720,6 +855,7 @@ class ModernInputField extends StatelessWidget {
 
   final TextEditingController controller;
   final String hintText;
+  final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
   final bool obscureText;
   final IconData? prefixIcon;
@@ -736,6 +872,7 @@ class ModernInputField extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
+        onChanged: onChanged,
         keyboardType: keyboardType,
         obscureText: obscureText,
         decoration: InputDecoration(
@@ -951,9 +1088,7 @@ class _TabButton extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: selected
-                ? const Color(0xFF182134)
-                : const Color(0xFF6F7C91),
+            color: selected ? const Color(0xFF182134) : const Color(0xFF6F7C91),
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),

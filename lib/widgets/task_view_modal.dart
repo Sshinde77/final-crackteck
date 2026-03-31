@@ -1,8 +1,8 @@
 import 'package:final_crackteck/model/sales_person/task_model.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants/api_constants.dart';
+import '../core/network/api_http_client.dart';
 
 class TaskViewModal extends StatefulWidget {
   final TaskModel task;
@@ -14,6 +14,7 @@ class TaskViewModal extends StatefulWidget {
 }
 
 class _TaskViewModalState extends State<TaskViewModal> {
+  final ApiHttpClient _httpClient = ApiHttpClient.instance;
   String selectedStatus = "";
 
   @override
@@ -23,9 +24,9 @@ class _TaskViewModalState extends State<TaskViewModal> {
   }
 
   Future<void> updateStatus() async {
-    final res = await http.post(
+    final res = await _httpClient.post(
       Uri.parse(ApiConstants.updateTaskStatus),
-      headers: {"Content-Type": "application/json"},
+      headers: {"Content-Type": "application/json", "Accept": "application/json"},
       body: jsonEncode({
         "task_id": widget.task.id,
         "status": selectedStatus,

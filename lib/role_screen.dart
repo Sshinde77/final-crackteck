@@ -1,4 +1,5 @@
 import 'package:final_crackteck/routes/app_routes.dart';
+import 'package:final_crackteck/services/session_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'constants/app_strings.dart';
@@ -59,7 +60,7 @@ class rolesccreen extends StatelessWidget {
                   icon: Icons.engineering,
                   title: 'Field Executive',
                   onTap: () {
-                    _navigateToLogin(
+                    _openProtectedRole(
                       context,
                       roleId: 1,
                       roleName: AppStrings.fieldExecutive,
@@ -72,7 +73,7 @@ class rolesccreen extends StatelessWidget {
                   icon: Icons.local_shipping,
                   title: 'Delivery Man',
                   onTap: () {
-                    _navigateToLogin(
+                    _openProtectedRole(
                       context,
                       roleId: 2,
                       roleName: AppStrings.deliveryMan,
@@ -85,7 +86,7 @@ class rolesccreen extends StatelessWidget {
                   icon: Icons.person_outline,
                   title: 'Sales Person',
                   onTap: () {
-                    _navigateToLogin(
+                    _openProtectedRole(
                       context,
                       roleId: 3,
                       roleName: AppStrings.salesPerson,
@@ -149,15 +150,17 @@ class rolesccreen extends StatelessWidget {
     );
   }
 
-  void _navigateToLogin(
+  Future<void> _openProtectedRole(
     BuildContext context, {
     required int roleId,
     required String roleName,
-  }) {
-    Navigator.pushNamed(
+  }) async {
+    await SessionManager.openProtectedRouteForRole(
       context,
-      AppRoutes.login,
-      arguments: LoginArguments(roleId: roleId, roleName: roleName),
+      roleId: roleId,
+      roleName: roleName,
+      routeName: SessionManager.defaultRouteForRole(roleId),
+      arguments: SessionManager.defaultArgumentsForRole(roleId, roleName),
     );
   }
 }

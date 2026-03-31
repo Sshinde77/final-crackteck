@@ -27,13 +27,15 @@ class SecureStorageService {
   static String? _fcmToken;
   static String? _lastSyncedFcmToken;
   static String? _deviceId;
+  static Future<void>? _pendingAccessTokenWrite;
+  static Future<void>? _pendingRoleIdWrite;
+  static Future<void>? _pendingUserIdWrite;
 
   /// Tracks which userIds have completed vehicle registration during this
   /// app session. This lets us treat vehicle registration as a one-time
   /// step per user without adding new persistent storage.
   static final Set<int> _vehicleRegisteredUserIds = <int>{};
-  static const String _vehicleRegisteredKeyPrefix =
-      'vehicle_registered_user_';
+  static const String _vehicleRegisteredKeyPrefix = 'vehicle_registered_user_';
 
   static String? _normalizeToken(String? value) {
     final trimmed = value?.trim();
@@ -41,29 +43,91 @@ class SecureStorageService {
     return trimmed;
   }
 
+  static Future<void> _awaitPendingWrite(Future<void>? pendingWrite) async {
+    if (pendingWrite != null) {
+      await pendingWrite;
+    }
+  }
+
+  static Future<String?> _readNormalizedValue(String key) async {
+    return _normalizeToken(await _storage.read(key: key));
+  }
+
+  static Future<String?> _waitForStoredValue(
+    String key, {
+    String? expectedValue,
+    bool expectCleared = false,
+    int maxAttempts = 4,
+  }) async {
+    String? value;
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      value = await _readNormalizedValue(key);
+      if (expectCleared) {
+        if (value == null) {
+          return null;
+        }
+      } else if (expectedValue == null) {
+        if (value != null) {
+          return value;
+        }
+      } else if (value == expectedValue) {
+        return value;
+      }
+
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 100 * attempt),
+        );
+      }
+    }
+    return value;
+  }
+
   /// Get the currently stored access token (if any).
   static Future<String?> getAccessToken({bool forceReload = false}) async {
+    await _awaitPendingWrite(_pendingAccessTokenWrite);
     if (!forceReload && _accessToken != null && _accessToken!.isNotEmpty) {
       return _accessToken;
     }
-    _accessToken = _normalizeToken(await _storage.read(key: _accessTokenKey));
+    _accessToken = await _readNormalizedValue(_accessTokenKey);
     return _accessToken;
   }
 
   /// Persist a new access token.
   static Future<void> saveAccessToken(String token) async {
-    final normalizedToken = _normalizeToken(token);
-    if (normalizedToken == null) {
-      _accessToken = null;
-      await _storage.delete(key: _accessTokenKey);
-      debugPrint(
-        'WARNING: saveAccessToken received an empty token. Cleared access_token.',
-      );
-      return;
-    }
+    final Future<void> persistOperation = () async {
+      final normalizedToken = _normalizeToken(token);
+      if (normalizedToken == null) {
+        _accessToken = null;
+        await _storage.delete(key: _accessTokenKey);
+        await _waitForStoredValue(_accessTokenKey, expectCleared: true);
+        debugPrint(
+          'WARNING: saveAccessToken received an empty token. Cleared access_token.',
+        );
+        return;
+      }
 
-    await _storage.write(key: _accessTokenKey, value: normalizedToken);
-    _accessToken = normalizedToken;
+      await _storage.write(key: _accessTokenKey, value: normalizedToken);
+      _accessToken =
+          await _waitForStoredValue(
+            _accessTokenKey,
+            expectedValue: normalizedToken,
+          ) ??
+          normalizedToken;
+      debugPrint(
+        'SecureStorageService.saveAccessToken persisted=${_accessToken == normalizedToken} '
+        'length=${normalizedToken.length}',
+      );
+    }();
+
+    _pendingAccessTokenWrite = persistOperation;
+    try {
+      await persistOperation;
+    } finally {
+      if (identical(_pendingAccessTokenWrite, persistOperation)) {
+        _pendingAccessTokenWrite = null;
+      }
+    }
   }
 
   /// Get the currently stored refresh token (if any).
@@ -90,6 +154,7 @@ class SecureStorageService {
 
   /// Get the currently stored role id (if any).
   static Future<int?> getRoleId({bool forceReload = false}) async {
+    await _awaitPendingWrite(_pendingRoleIdWrite);
     if (!forceReload && _roleId != null) return _roleId;
     final String? raw = await _storage.read(key: _roleIdKey);
     _roleId = raw == null ? null : int.tryParse(raw);
@@ -98,12 +163,29 @@ class SecureStorageService {
 
   /// Persist the current role id.
   static Future<void> saveRoleId(int roleId) async {
-    await _storage.write(key: _roleIdKey, value: roleId.toString());
-    _roleId = roleId;
+    final Future<void> persistOperation = () async {
+      final expectedValue = roleId.toString();
+      await _storage.write(key: _roleIdKey, value: expectedValue);
+      final persistedValue = await _waitForStoredValue(
+        _roleIdKey,
+        expectedValue: expectedValue,
+      );
+      _roleId = int.tryParse(persistedValue ?? expectedValue);
+    }();
+
+    _pendingRoleIdWrite = persistOperation;
+    try {
+      await persistOperation;
+    } finally {
+      if (identical(_pendingRoleIdWrite, persistOperation)) {
+        _pendingRoleIdWrite = null;
+      }
+    }
   }
 
   /// Get the currently stored user id (if any).
   static Future<int?> getUserId({bool forceReload = false}) async {
+    await _awaitPendingWrite(_pendingUserIdWrite);
     if (!forceReload && _userId != null) return _userId;
     final String? raw = await _storage.read(key: _userIdKey);
     _userId = raw == null ? null : int.tryParse(raw);
@@ -112,8 +194,24 @@ class SecureStorageService {
 
   /// Persist the current user id.
   static Future<void> saveUserId(int userId) async {
-    await _storage.write(key: _userIdKey, value: userId.toString());
-    _userId = userId;
+    final Future<void> persistOperation = () async {
+      final expectedValue = userId.toString();
+      await _storage.write(key: _userIdKey, value: expectedValue);
+      final persistedValue = await _waitForStoredValue(
+        _userIdKey,
+        expectedValue: expectedValue,
+      );
+      _userId = int.tryParse(persistedValue ?? expectedValue);
+    }();
+
+    _pendingUserIdWrite = persistOperation;
+    try {
+      await persistOperation;
+    } finally {
+      if (identical(_pendingUserIdWrite, persistOperation)) {
+        _pendingUserIdWrite = null;
+      }
+    }
   }
 
   /// Clear the current user id while keeping tokens unchanged.
@@ -182,7 +280,9 @@ class SecureStorageService {
     _fcmToken = normalizedToken;
   }
 
-  static Future<String?> getLastSyncedFcmToken({bool forceReload = false}) async {
+  static Future<String?> getLastSyncedFcmToken({
+    bool forceReload = false,
+  }) async {
     if (!forceReload &&
         _lastSyncedFcmToken != null &&
         _lastSyncedFcmToken!.isNotEmpty) {

@@ -2,9 +2,12 @@ import 'dart:io';
 
 class CommonSignupRequest {
   const CommonSignupRequest({
+    required this.roleId,
     required this.name,
     required this.phone,
     required this.email,
+    required this.dob,
+    required this.gender,
     required this.address,
     required this.aadhar,
     required this.pan,
@@ -25,9 +28,12 @@ class CommonSignupRequest {
     this.addressProofFile,
   });
 
+  final int roleId;
   final String name;
   final String phone;
   final String email;
+  final String dob;
+  final String gender;
   final String address;
   final String aadhar;
   final String pan;

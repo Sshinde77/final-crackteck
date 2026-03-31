@@ -15,6 +15,7 @@ class ApiConstants {
 
   // Authentication Endpoints
   static const String login = '$baseUrl/send-otp';
+  static const String emailPasswordLogin = '$baseUrl/email-pass-login';
   static const String verifyOtp = '$baseUrl/verify-otp';
   static const String refreshToken = '$baseUrl/refresh-token';
   static const String signup = '$baseUrl/signup';

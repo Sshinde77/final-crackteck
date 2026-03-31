@@ -1642,6 +1642,34 @@ class _FieldExecutiveInstallationChecklistScreenState
     }
   }
 
+  String _resolvedStatusForSubmit(String name, DiagnosisItem? diagnosis) {
+    final String localStatus = _statusToApiValue(_itemStatus[name]);
+    if (localStatus.isNotEmpty) {
+      return localStatus;
+    }
+
+    final String apiStatus = _statusToApiValue(diagnosis?.statusLabel);
+    if (apiStatus.isNotEmpty) {
+      return apiStatus;
+    }
+
+    return '';
+  }
+
+  String _resolvedReportForSubmit(String name, DiagnosisItem? diagnosis) {
+    final String localReport = (_itemProblemSolution[name] ?? '').trim();
+    if (localReport.isNotEmpty) {
+      return localReport;
+    }
+
+    final String apiReport = (diagnosis?.report ?? '').trim();
+    if (apiReport.isNotEmpty) {
+      return apiReport;
+    }
+
+    return '';
+  }
+
   List<Map<String, dynamic>> _buildDiagnosisSubmitPayload() {
     final Map<String, DiagnosisItem> diagnosisByName = {
       for (final item in _effectiveDiagnosisItems) item.name: item,
@@ -1656,8 +1684,7 @@ class _FieldExecutiveInstallationChecklistScreenState
     return List<Map<String, dynamic>>.generate(items.length, (index) {
       final String name = items[index];
       final DiagnosisItem? diagnosis = diagnosisByName[name];
-      final String selectedStatus = _normalizeStatusLabel(_itemStatus[name]);
-      final String apiStatus = _statusToApiValue(selectedStatus);
+      final String apiStatus = _resolvedStatusForSubmit(name, diagnosis);
       final String partStatus = _normalizePartStatus(diagnosis?.partStatus);
       final bool markPartUsedOnSubmit =
           (partStatus == 'customer_approved' || partStatus == 'delivered') &&
@@ -1668,7 +1695,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       final int? approvedQuantity = int.tryParse(
         (diagnosis?.quantityFromApi ?? '').trim(),
       );
-      final String report = (_itemProblemSolution[name] ?? '').trim();
+      final String report = _resolvedReportForSubmit(name, diagnosis);
       final File? issueImage = _itemIssueImage[name];
       final List<SelectedStockItem> selectedStockItems =
           _sanitizeSelectedStockItems(
@@ -1704,6 +1731,7 @@ class _FieldExecutiveInstallationChecklistScreenState
         final Map<String, dynamic> payload = <String, dynamic>{
           'name': name,
           'status': 'working',
+          'report': report,
           'part_status': 'used',
         };
         if (usedPartId != null && usedQuantity != null && usedQuantity > 0) {
@@ -1715,8 +1743,8 @@ class _FieldExecutiveInstallationChecklistScreenState
 
       final Map<String, dynamic> payload = <String, dynamic>{
         'name': name,
-        if (apiStatus.isNotEmpty) 'status': apiStatus,
-        if (report.isNotEmpty) 'report': report,
+        'status': apiStatus,
+        'report': report,
         if (issueImage != null) 'images': <File>[issueImage],
       };
 

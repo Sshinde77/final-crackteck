@@ -103,19 +103,30 @@ enum FieldExecutiveProductItemDetailFlow {
 class LoginArguments {
   final int roleId;
   final String roleName;
+  final String? redirectRoute;
+  final Object? redirectArguments;
 
-  LoginArguments({required this.roleId, required this.roleName});
+  LoginArguments({
+    required this.roleId,
+    required this.roleName,
+    this.redirectRoute,
+    this.redirectArguments,
+  });
 }
 
 class OtpArguments {
   final int roleId;
   final String roleName;
   final String phoneNumber;
+  final String? redirectRoute;
+  final Object? redirectArguments;
 
   OtpArguments({
     required this.roleId,
     required this.roleName,
     required this.phoneNumber,
+    this.redirectRoute,
+    this.redirectArguments,
   });
 }
 

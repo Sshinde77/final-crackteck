@@ -1,12 +1,16 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
+import 'api_http_client.dart';
 
 class ApiClient {
+  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
+
   static Future<dynamic> get(String url, {String? token}) async {
-    final response = await http.get(
+    final response = await _httpClient.get(
       Uri.parse(url),
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
         if (token != null) "Authorization": "Bearer $token",
       },
     );

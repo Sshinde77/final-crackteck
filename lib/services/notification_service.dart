@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,11 +7,11 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 
 import '../constants/api_constants.dart';
 import '../core/navigation_service.dart';
+import '../core/network/api_http_client.dart';
 import '../core/secure_storage_service.dart';
 
 const AndroidNotificationChannel _defaultNotificationChannel =
@@ -32,6 +33,7 @@ class NotificationService {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
+  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -133,7 +135,7 @@ class NotificationService {
 
     _messaging.onTokenRefresh.listen((String token) async {
       await SecureStorageService.saveFcmToken(token);
-      print('FCM token refreshed: $token');
+      debugPrint('FCM token refreshed: $token');
       await syncTokenWithBackendIfPossible();
     });
 
@@ -198,15 +200,58 @@ class NotificationService {
 
   Future<String?> _logAndPersistCurrentToken() async {
     await _ensureFirebaseReady();
-    final String? token = await _messaging.getToken();
+    final String? token = await _getMessagingTokenWithRetry();
     if (token == null || token.isEmpty) {
       debugPrint('FCM token is not available yet.');
       return null;
     }
 
     await SecureStorageService.saveFcmToken(token);
-    print('FCM token: $token');
+    debugPrint('FCM token: $token');
     return token;
+  }
+
+  bool _isRetryableFcmTokenError(Object error) {
+    final normalized = error.toString().toUpperCase();
+    return normalized.contains('SERVICE_NOT_AVAILABLE') ||
+        normalized.contains('UNAVAILABLE') ||
+        normalized.contains('TIMEOUT');
+  }
+
+  Future<String?> _getMessagingTokenWithRetry({
+    int maxAttempts = 3,
+  }) async {
+    Object? lastError;
+
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final token = await _messaging.getToken();
+        if (token != null && token.isNotEmpty) {
+          return token;
+        }
+
+        debugPrint('FCM getToken attempt=$attempt returned an empty token.');
+      } catch (error) {
+        lastError = error;
+        debugPrint('FCM getToken attempt=$attempt failed: $error');
+        if (!_isRetryableFcmTokenError(error) || attempt == maxAttempts) {
+          rethrow;
+        }
+      }
+
+      if (attempt < maxAttempts) {
+        final retryDelay = Duration(milliseconds: 600 * attempt);
+        debugPrint(
+          'Retrying FirebaseMessaging.getToken in ${retryDelay.inMilliseconds}ms.',
+        );
+        await Future<void>.delayed(retryDelay);
+      }
+    }
+
+    if (lastError != null) {
+      debugPrint('FCM getToken exhausted retries: $lastError');
+    }
+    return null;
   }
 
   Future<String?> refreshAndGetToken() async {
@@ -262,7 +307,7 @@ class NotificationService {
         },
       );
 
-      final response = await http.post(
+      final response = await _httpClient.post(
         uri,
         headers: <String, String>{
           'Accept': 'application/json',

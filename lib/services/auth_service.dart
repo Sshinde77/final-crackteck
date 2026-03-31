@@ -6,12 +6,111 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
+import '../core/network/api_http_client.dart';
 import '../core/secure_storage_service.dart';
+import 'session_manager.dart';
 
 class AuthService {
-  AuthService({http.Client? client}) : _client = client ?? http.Client();
+  AuthService({http.Client? client})
+    : _client = client ?? ApiHttpClient.instance;
 
   final http.Client _client;
+
+  Future<Map<String, dynamic>> loginWithEmailPassword({
+    required String email,
+    required String password,
+    required int roleId,
+  }) async {
+    try {
+      final response = await _client
+          .post(
+            Uri.parse(ApiConstants.emailPasswordLogin),
+            headers: const <String, String>{
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(<String, dynamic>{
+              'email': email.trim(),
+              'password': password,
+              'role_id': roleId,
+            }),
+          )
+          .timeout(ApiConstants.requestTimeout);
+
+      final Map<String, dynamic> jsonResponse = _decodeJson(response.body);
+      final bool apiSuccess = _readSuccess(jsonResponse);
+      final bool isSuccess =
+          response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          apiSuccess;
+
+      if (!isSuccess) {
+        return <String, dynamic>{
+          'success': false,
+          'message':
+              jsonResponse['message'] ??
+              'Email login failed with status ${response.statusCode}.',
+          'data': jsonResponse,
+        };
+      }
+
+      final String? token = _readString(jsonResponse, const <String>[
+        'token',
+        'access_token',
+      ]);
+      if (token == null) {
+        return <String, dynamic>{
+          'success': false,
+          'message': 'Login succeeded but no token was returned.',
+          'data': jsonResponse,
+        };
+      }
+
+      final String? refreshToken = _readString(jsonResponse, const <String>[
+        'refresh_token',
+        'refreshToken',
+      ]);
+      final Map<String, dynamic>? user = _extractUser(jsonResponse);
+      final int? userId = _extractUserId(jsonResponse, user);
+
+      await SessionManager.saveSession(
+        accessToken: token,
+        roleId: roleId,
+        refreshToken: refreshToken,
+        userId: userId,
+        userProfile: user,
+      );
+
+      return <String, dynamic>{
+        'success': true,
+        'message': jsonResponse['message'] ?? 'Login successful.',
+        'token': token,
+        'user': user,
+        'data': jsonResponse,
+      };
+    } on SocketException {
+      return <String, dynamic>{
+        'success': false,
+        'message': 'No internet connection. Please check your network.',
+      };
+    } on TimeoutException {
+      return <String, dynamic>{
+        'success': false,
+        'message': 'The request timed out. Please try again.',
+      };
+    } on http.ClientException catch (error) {
+      return <String, dynamic>{
+        'success': false,
+        'message': 'Request failed: ${error.message}',
+      };
+    } catch (error) {
+      debugPrint('Email password login error: $error');
+      return <String, dynamic>{
+        'success': false,
+        'message': 'Something went wrong during login.',
+      };
+    }
+  }
 
   Future<Map<String, dynamic>> loginWithGoogle(
     String accessToken, {
@@ -70,20 +169,17 @@ class AuthService {
       final Map<String, dynamic>? user = _extractUser(jsonResponse);
       final int? userId = _extractUserId(jsonResponse, user);
 
-      await SecureStorageService.saveAccessToken(token);
-      if (refreshToken != null) {
-        await SecureStorageService.saveRefreshToken(refreshToken);
-      }
-      if (userId != null) {
-        await SecureStorageService.saveUserId(userId);
-      }
-      if (user != null) {
-        await SecureStorageService.saveUserProfile(user);
-      }
+      await SessionManager.saveSession(
+        accessToken: token,
+        roleId: roleId,
+        refreshToken: refreshToken,
+        userId: userId,
+        userProfile: user,
+      );
 
-        return <String, dynamic>{
-          'success': true,
-          'message': jsonResponse['message'] ?? 'Google login successful.',
+      return <String, dynamic>{
+        'success': true,
+        'message': jsonResponse['message'] ?? 'Google login successful.',
         'token': token,
         'user': user,
         'data': jsonResponse,

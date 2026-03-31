@@ -13,10 +13,12 @@ class SignupProvider extends ChangeNotifier {
   bool _isSubmitting = false;
   bool _lastSubmitSucceeded = false;
   String? _lastMessage;
+  Map<String, dynamic>? _lastErrors;
 
   bool get isSubmitting => _isSubmitting;
   bool get lastSubmitSucceeded => _lastSubmitSucceeded;
   String? get lastMessage => _lastMessage;
+  Map<String, dynamic>? get lastErrors => _lastErrors;
 
   Future<void> submit({
     required bool isDelivery,
@@ -26,6 +28,7 @@ class SignupProvider extends ChangeNotifier {
     _isSubmitting = true;
     _lastSubmitSucceeded = false;
     _lastMessage = null;
+    _lastErrors = null;
     notifyListeners();
 
     try {
@@ -38,11 +41,13 @@ class SignupProvider extends ChangeNotifier {
       );
 
       _lastSubmitSucceeded = response.success;
+      _lastErrors = response.errors;
       _lastMessage =
           response.message ?? (response.success ? 'Signup successful' : 'Signup failed');
     } catch (error) {
       _lastSubmitSucceeded = false;
       _lastMessage = error.toString().replaceFirst('Exception: ', '');
+      _lastErrors = null;
     } finally {
       _isSubmitting = false;
       notifyListeners();
