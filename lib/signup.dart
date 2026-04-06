@@ -398,8 +398,11 @@ class _SignupScreenState extends State<SignupScreen> {
               drivingLicenseNo: licenceNumberCtrl.text.trim(),
               drivingLicenseFrontFile: XFile(licenceFrontFile!.path),
               drivingLicenseBackFile: XFile(licenceBackFile!.path),
-              education: educationCtrl.text.trim(),
-              resultFile: XFile(resultFile!.path),
+              qualification: educationCtrl.text.trim(),
+              qualificationCertifications: XFile(resultFile!.path),
+              addressProof: addressProofFile != null
+                  ? XFile(addressProofFile!.path)
+                  : null,
             )
           : null,
       commonRequest: isDelivery
@@ -1058,11 +1061,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildEducationForm(bool isSubmitting) {
     const educationOptions = [
-      'Under 10',
-      '10 Passed',
-      '12 Passed',
-      'Graduation',
-      'Post Graduation',
+      'under-10',
+      '10-passed',
+      '12-passed',
+      'graduation',
+      'post-graduation',
     ];
 
     final selectedEducation = educationOptions.contains(educationCtrl.text.trim())

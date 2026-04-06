@@ -1020,24 +1020,66 @@ class _SalesPersonQuotationScreenState
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red.shade300,
+                              ),
+                              const SizedBox(height: 16),
                               const Text(
-                                'Failed to load quotations',
+                                'Unable to Load Quotations',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w800,
-                                  fontSize: 16,
+                                  fontSize: 18,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 quotationsProvider.error!,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 12),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black54,
+                                ),
                               ),
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    quotationsProvider.loadQuotations(),
-                                child: const Text('Retry'),
+                              const SizedBox(height: 16),
+                              if (quotationsProvider.hasConfigurationIssue)
+                                Text(
+                                  'This appears to be a server configuration issue.\n'
+                                  'Please contact your system administrator.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade700,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              const SizedBox(height: 16),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: [
+                                  if (!quotationsProvider.hasConfigurationIssue)
+                                    ElevatedButton.icon(
+                                      onPressed: () => quotationsProvider
+                                          .refreshQuotations(),
+                                      icon: const Icon(Icons.refresh, size: 18),
+                                      label: const Text('Retry'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: darkGreen,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  OutlinedButton.icon(
+                                    onPressed: () => Navigator.maybePop(context),
+                                    icon: const Icon(Icons.arrow_back, size: 18),
+                                    label: const Text('Go Back'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: darkGreen,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

@@ -15,6 +15,11 @@ class QuotationsProvider extends ChangeNotifier {
   int perPage = 0;
 
   bool get hasMore => currentPage < lastPage;
+  bool get hasConfigurationIssue {
+    final message = error?.toLowerCase() ?? '';
+    return message.contains('server configuration issue') ||
+        message.contains('returned html instead of json');
+  }
 
   String _normalizeError(Object e) {
     final raw = e.toString().trim();

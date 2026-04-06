@@ -25,8 +25,9 @@ class DeliverySignupRequest {
     required this.drivingLicenseNo,
     required this.drivingLicenseFrontFile,
     required this.drivingLicenseBackFile,
-    required this.education,
-    required this.resultFile,
+    required this.qualification,
+    required this.qualificationCertifications,
+    this.addressProof,
   });
 
   final int roleId;
@@ -52,6 +53,7 @@ class DeliverySignupRequest {
   final String drivingLicenseNo;
   final XFile drivingLicenseFrontFile;
   final XFile drivingLicenseBackFile;
-  final String education;
-  final XFile resultFile;
+  final String qualification;
+  final XFile qualificationCertifications;
+  final XFile? addressProof;
 }

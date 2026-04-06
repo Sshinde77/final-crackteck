@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:final_crackteck/model/sales_person/lead_model.dart';
 import 'package:final_crackteck/model/sales_person/leads_provider.dart';
@@ -29,9 +30,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   // ✅ Filters (dialog will update these)
-  final Set<String> _industryFilters = <String>{};
-
-  // ✅ Popup status filters (New/Lost/Qualified/Unqualified)
+  // Status filters shown in the popup.
   final Set<String> _statusFiltersStr = <String>{};
 
   // ✅ Date filter (Calendar) - single date like your screenshot
@@ -66,15 +65,17 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
     super.dispose();
   }
 
-  // ✅ Map your enum statuses to popup labels
+  // Map normalized lead statuses to filter/search labels.
   String _mapStatusToPopupLabel(LeadStatus s) {
     switch (s) {
       case LeadStatus.confirmed:
-        return "Qualified";
-      case LeadStatus.pending:
+        return "Confirmed";
+      case LeadStatus.inProgress:
+        return "In Progress";
+      case LeadStatus.newLead:
         return "New";
       case LeadStatus.cancelled:
-        return "Lost";
+        return "Cancelled";
     }
   }
 
@@ -119,9 +120,6 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
           lead.status.label.toLowerCase().contains(q) ||
           popupStatus.toLowerCase().contains(q);
 
-      final matchesIndustry =
-          _industryFilters.isEmpty || _industryFilters.contains(lead.industry);
-
       final matchesStatus =
           _statusFiltersStr.isEmpty || _statusFiltersStr.contains(popupStatus);
 
@@ -129,7 +127,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
           ? true
           : _isSameDay(lead.leadDate, _selectedDate!);
 
-      return matchesSearch && matchesIndustry && matchesStatus && matchesDate;
+      return matchesSearch && matchesStatus && matchesDate;
     }).toList();
 
     list.sort((a, b) => b.leadDate.compareTo(a.leadDate));
@@ -137,15 +135,21 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
   }
 
   _LeadItem _mapLeadModelToItem(LeadModel model) {
-    final statusRaw = model.status.toLowerCase();
+    final statusRaw = model.status.trim().toLowerCase();
     LeadStatus status;
-    if (statusRaw == 'lost') {
-      status = LeadStatus.cancelled;
-    } else if (statusRaw == 'qualified' || statusRaw == 'quoted') {
+    if (statusRaw == 'won') {
       status = LeadStatus.confirmed;
+    } else if (statusRaw == 'lost') {
+      status = LeadStatus.cancelled;
+    } else if (statusRaw == 'contacted' ||
+        statusRaw == 'qualified' ||
+        statusRaw == 'nurtured' ||
+        statusRaw == 'quoted') {
+      status = LeadStatus.inProgress;
+    } else if (statusRaw == 'new' || statusRaw.isEmpty) {
+      status = LeadStatus.newLead;
     } else {
-      // Treat "New", "Contacted" and any unknowns as pending.
-      status = LeadStatus.pending;
+      status = LeadStatus.newLead;
     }
 
     DateTime parsedDate = DateTime.now();
@@ -176,7 +180,6 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
 
   // ✅ Open center popup like screenshot
   Future<void> _openFilterPopup() async {
-    final tempIndustry = Set<String>.from(_industryFilters);
     final tempStatus = Set<String>.from(_statusFiltersStr);
     DateTime? tempDate = _selectedDate;
 
@@ -260,61 +263,6 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Industry Type",
-                        style: TextStyle(
-                          color: darkGreen,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      twoColRow(
-                        checkboxItem(
-                          label: "Pharma",
-                          checked: tempIndustry.contains("Pharma"),
-                          onTap: () => setModalState(() {
-                            tempIndustry.contains("Pharma")
-                                ? tempIndustry.remove("Pharma")
-                                : tempIndustry.add("Pharma");
-                          }),
-                        ),
-                        checkboxItem(
-                          label: "Retail",
-                          checked: tempIndustry.contains("Retail"),
-                          onTap: () => setModalState(() {
-                            tempIndustry.contains("Retail")
-                                ? tempIndustry.remove("Retail")
-                                : tempIndustry.add("Retail");
-                          }),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      twoColRow(
-                        checkboxItem(
-                          label: "Manufacturer",
-                          checked: tempIndustry.contains("Manufacturer"),
-                          onTap: () => setModalState(() {
-                            tempIndustry.contains("Manufacturer")
-                                ? tempIndustry.remove("Manufacturer")
-                                : tempIndustry.add("Manufacturer");
-                          }),
-                        ),
-                        checkboxItem(
-                          label: "Healthcare",
-                          checked: tempIndustry.contains("Healthcare"),
-                          onTap: () => setModalState(() {
-                            tempIndustry.contains("Healthcare")
-                                ? tempIndustry.remove("Healthcare")
-                                : tempIndustry.add("Healthcare");
-                          }),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      const Text(
                         "Status",
                         style: TextStyle(
                           color: darkGreen,
@@ -335,12 +283,12 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                           }),
                         ),
                         checkboxItem(
-                          label: "Lost",
-                          checked: tempStatus.contains("Lost"),
+                          label: "In Progress",
+                          checked: tempStatus.contains("In Progress"),
                           onTap: () => setModalState(() {
-                            tempStatus.contains("Lost")
-                                ? tempStatus.remove("Lost")
-                                : tempStatus.add("Lost");
+                            tempStatus.contains("In Progress")
+                                ? tempStatus.remove("In Progress")
+                                : tempStatus.add("In Progress");
                           }),
                         ),
                       ),
@@ -348,21 +296,21 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
 
                       twoColRow(
                         checkboxItem(
-                          label: "Qualified",
-                          checked: tempStatus.contains("Qualified"),
+                          label: "Confirmed",
+                          checked: tempStatus.contains("Confirmed"),
                           onTap: () => setModalState(() {
-                            tempStatus.contains("Qualified")
-                                ? tempStatus.remove("Qualified")
-                                : tempStatus.add("Qualified");
+                            tempStatus.contains("Confirmed")
+                                ? tempStatus.remove("Confirmed")
+                                : tempStatus.add("Confirmed");
                           }),
                         ),
                         checkboxItem(
-                          label: "Unqualified",
-                          checked: tempStatus.contains("Unqualified"),
+                          label: "Cancelled",
+                          checked: tempStatus.contains("Cancelled"),
                           onTap: () => setModalState(() {
-                            tempStatus.contains("Unqualified")
-                                ? tempStatus.remove("Unqualified")
-                                : tempStatus.add("Unqualified");
+                            tempStatus.contains("Cancelled")
+                                ? tempStatus.remove("Cancelled")
+                                : tempStatus.add("Cancelled");
                           }),
                         ),
                       ),
@@ -478,9 +426,6 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                             child: InkWell(
                               onTap: () {
                                 setState(() {
-                                  _industryFilters
-                                    ..clear()
-                                    ..addAll(tempIndustry);
                                   _statusFiltersStr
                                     ..clear()
                                     ..addAll(tempStatus);
@@ -579,8 +524,8 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, color: fg, size: 18),
-                    const SizedBox(width: 8),
+                    Icon(icon, color: fg, size: 16),
+                    const SizedBox(width: 4),
                     Text(
                       label,
                       style: TextStyle(color: fg, fontWeight: FontWeight.w900),
@@ -630,11 +575,22 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                         ? Colors.red
                         : Colors.black,
                   ),
-                  kv("Status", apiValue(lead.statusRaw)),
+                  kv("Status", apiValue(lead.status.label)),
                   kv("Created At", apiValue(lead.createdAtRaw)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
+                      actionButton(
+                        label: "Call",
+                        icon: Icons.call_outlined,
+                        bg: const Color(0xFFE6F6EA),
+                        fg: darkGreen,
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await _callLead(lead);
+                        },
+                      ),
+                      const SizedBox(width: 8),
                       actionButton(
                         label: "Edit",
                         icon: Icons.edit_outlined,
@@ -645,7 +601,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                           _openEditLead(lead);
                         },
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       actionButton(
                         label: "Delete",
                         icon: Icons.delete_outline,
@@ -682,6 +638,29 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
     if (!mounted) return;
     if (updated == true) {
       await Provider.of<LeadsProvider>(context, listen: false).loadLeads('', 0);
+    }
+  }
+
+  Future<void> _callLead(_LeadItem lead) async {
+    final raw = lead.number.trim();
+    if (raw.isEmpty || raw == '-') {
+      _snack(context, "Lead phone number not available");
+      return;
+    }
+
+    final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (digits.isEmpty) {
+      _snack(context, "Lead phone number not available");
+      return;
+    }
+
+    final uri = Uri.parse('tel:$digits');
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && mounted) {
+      _snack(context, "Unable to open dialer");
     }
   }
 
@@ -1027,8 +1006,10 @@ class _LeadCard extends StatelessWidget {
     switch (s) {
       case LeadStatus.confirmed:
         return const _StatusStyle(bg: darkGreen, fg: Colors.white);
-      case LeadStatus.pending:
+      case LeadStatus.inProgress:
         return const _StatusStyle(bg: Color(0xFFFFF1CC), fg: Color(0xFF8A5A00));
+      case LeadStatus.newLead:
+        return const _StatusStyle(bg: Color(0xFFE8F1FF), fg: Color(0xFF0D47A1));
       case LeadStatus.cancelled:
         return const _StatusStyle(bg: Color(0xFFFFE6E6), fg: Color(0xFFB00020));
     }
@@ -1144,15 +1125,17 @@ class _StatusButton extends StatelessWidget {
 // =======================
 // MODEL
 // =======================
-enum LeadStatus { confirmed, pending, cancelled }
+enum LeadStatus { confirmed, inProgress, newLead, cancelled }
 
 extension LeadStatusX on LeadStatus {
   String get label {
     switch (this) {
       case LeadStatus.confirmed:
         return "Confirmed";
-      case LeadStatus.pending:
-        return "Pending";
+      case LeadStatus.inProgress:
+        return "In Progress";
+      case LeadStatus.newLead:
+        return "New";
       case LeadStatus.cancelled:
         return "Cancelled";
     }

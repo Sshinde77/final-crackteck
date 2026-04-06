@@ -93,7 +93,7 @@ class DeliverySignupService extends DeliveryApiClient {
       'vehicle_type': vehicleType,
       'vehicle_number': request.vehicleNumber.trim(),
       'driving_license_no': request.drivingLicenseNo.trim(),
-      'education': request.education.trim(),
+      'qualification': request.qualification.trim(),
     });
     debugPrint('Delivery signup request fields: ${signupRequest.fields}');
     signupRequest.files.add(
@@ -133,8 +133,19 @@ class DeliverySignupService extends DeliveryApiClient {
       ),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath('result_file', request.resultFile.path),
+      await http.MultipartFile.fromPath(
+        'qualification_certifications',
+        request.qualificationCertifications.path,
+      ),
     );
+    if (request.addressProof != null) {
+      signupRequest.files.add(
+        await http.MultipartFile.fromPath(
+          'address_proof',
+          request.addressProof!.path,
+        ),
+      );
+    }
     debugPrint(
       'Delivery signup files: ${signupRequest.files.map((file) => '${file.field}=${file.filename}').join(', ')}',
     );

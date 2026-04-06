@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 
 import 'package:final_crackteck/core/secure_storage_service.dart';
 import 'package:final_crackteck/model/sales_person/dashboard_provider.dart';
+import 'package:final_crackteck/model/sales_person/lead_model.dart';
 import 'package:final_crackteck/model/sales_person/task_model.dart';
 import 'package:final_crackteck/routes/app_routes.dart';
+import 'package:final_crackteck/services/api_service.dart';
 import 'package:final_crackteck/widgets/bottom_navigation.dart';
 
 class SalespersonDashboard extends StatefulWidget {
@@ -24,6 +26,9 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
 
   int _currentIndex = 0; // 0 = Home, 2 = Profile
   bool _isMoreOpen = false;
+  List<LeadModel> _overviewLeads = <LeadModel>[];
+  bool _overviewLeadsLoading = false;
+  bool _overviewLeadsLoaded = false;
 
   @override
   void initState() {
@@ -35,6 +40,7 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
 
   Future<void> _loadDashboardForCurrentUser() async {
     final userId = await SecureStorageService.getUserId();
+    final roleId = await SecureStorageService.getRoleId() ?? 3;
     if (!mounted) return;
 
     if (userId == null) {
@@ -48,15 +54,167 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
     }
 
     final provider = Provider.of<DashboardProvider>(context, listen: false);
-    await provider.loadDashboard(userId.toString());
+    await Future.wait<void>([
+      provider.loadDashboard(userId.toString()),
+      _loadOverviewLeads(userId.toString(), roleId),
+    ]);
+  }
+
+  Future<void> _loadOverviewLeads(String userId, int roleId) async {
+    if (mounted) {
+      setState(() {
+        _overviewLeadsLoading = true;
+      });
+    }
+
+    try {
+      final List<LeadModel> allLeads = <LeadModel>[];
+      int page = 1;
+      int lastPage = 1;
+
+      do {
+        final result = await ApiService.fetchLeads(userId, roleId, page: page);
+        final data = result['data'];
+        if (data is List) {
+          for (final item in data) {
+            if (item is Map<String, dynamic>) {
+              allLeads.add(LeadModel.fromJson(item));
+            }
+          }
+        }
+
+        final meta = result['meta'];
+        if (meta is Map<String, dynamic>) {
+          lastPage = _asInt(meta['last_page'], fallback: page);
+        } else {
+          lastPage = page;
+        }
+        page++;
+      } while (page <= lastPage);
+
+      allLeads.sort((a, b) {
+        final aDate = _leadUpdatedAt(a) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = _leadUpdatedAt(b) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
+
+      if (!mounted) return;
+      setState(() {
+        _overviewLeads = allLeads;
+        _overviewLeadsLoaded = true;
+        _overviewLeadsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _overviewLeadsLoading = false;
+      });
+    }
+  }
+
+  int _asInt(dynamic value, {int fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      return int.tryParse(value) ?? fallback;
+    }
+    return fallback;
+  }
+
+  DateTime? _parseApiDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+
+    return DateTime.tryParse(value) ??
+        DateTime.tryParse(value.replaceFirst(' ', 'T'));
+  }
+
+  DateTime? _leadUpdatedAt(LeadModel lead) {
+    return _parseApiDate(lead.updatedAt) ?? _parseApiDate(lead.createdAt);
+  }
+
+  bool _isWithinSelectedRange(DateTime dateTime) {
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    if (_reportValue == "Today's Sales Report") {
+      return date == today;
+    }
+
+    if (_reportValue == 'Monthly Sales Report') {
+      final start = today.subtract(Duration(days: today.weekday - 1));
+      final end = start.add(const Duration(days: 6));
+      return !date.isBefore(start) && !date.isAfter(end);
+    }
+
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(now.year, now.month + 1, 0);
+    return !date.isBefore(start) && !date.isAfter(end);
+  }
+
+  _LeadOverviewCounts _fallbackOverviewCounts(DashboardProvider provider) {
+    return _LeadOverviewCounts(
+      newLeads: provider.sales?.newLeads ?? 0,
+      inProgressLeads:
+          (provider.sales?.contactedLeads ?? 0) +
+          (provider.sales?.qualifiedLeads ?? 0),
+      wonLeads: provider.sales?.quotedLeads ?? 0,
+      lostLeads: provider.sales?.lostLeads ?? 0,
+    );
+  }
+
+  _LeadOverviewCounts _overviewCountsFromLeads() {
+    int newLeads = 0;
+    int inProgressLeads = 0;
+    int wonLeads = 0;
+    int lostLeads = 0;
+
+    for (final lead in _overviewLeads) {
+      final updatedAt = _leadUpdatedAt(lead);
+      if (updatedAt == null || !_isWithinSelectedRange(updatedAt)) {
+        continue;
+      }
+
+      switch (lead.status.trim().toLowerCase()) {
+        case 'lost':
+          lostLeads++;
+          break;
+        case 'quoted':
+        case 'won':
+          wonLeads++;
+          break;
+        case 'contacted':
+        case 'qualified':
+        case 'proposal':
+        case 'nurture':
+          inProgressLeads++;
+          break;
+        default:
+          newLeads++;
+          break;
+      }
+    }
+
+    return _LeadOverviewCounts(
+      newLeads: newLeads,
+      inProgressLeads: inProgressLeads,
+      wonLeads: wonLeads,
+      lostLeads: lostLeads,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context);
-    final double targetVal = provider.sales?.target ?? 0;
-    final double achievedVal = provider.sales?.achieved ?? 0;
-    final double pendingVal = provider.sales?.pending ?? 0;
+    final counts = _overviewLeadsLoaded
+        ? _overviewCountsFromLeads()
+        : _fallbackOverviewCounts(provider);
+    final int newLeads = counts.newLeads;
+    final int inProgressLeads = counts.inProgressLeads;
+    final int wonLeads = counts.wonLeads;
+    final int lostLeads = counts.lostLeads;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -116,7 +274,13 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            child: _buildBody(provider, targetVal, achievedVal, pendingVal),
+            child: _buildBody(
+              provider,
+              newLeads,
+              inProgressLeads,
+              wonLeads,
+              lostLeads,
+            ),
           ),
         ),
       ),
@@ -196,9 +360,10 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
 
   Widget _buildBody(
     DashboardProvider provider,
-    double targetVal,
-    double achievedVal,
-    double pendingVal,
+    int newLeads,
+    int inProgressLeads,
+    int wonLeads,
+    int lostLeads,
   ) {
     if (provider.error != null && !provider.loading) {
       return _buildErrorState();
@@ -224,13 +389,14 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
           SalesOverviewSection(
             reportValue: _reportValue,
             onReportChange: (v) => setState(() => _reportValue = v),
-            target: targetVal,
-            achieved: achievedVal,
-            pending: pendingVal,
+            newLeads: newLeads,
+            inProgressLeads: inProgressLeads,
+            wonLeads: wonLeads,
+            lostLeads: lostLeads,
             onDetails: () {
               Navigator.pushNamed(context, AppRoutes.salesoverview);
             },
-            isLoading: provider.loading,
+            isLoading: provider.loading || _overviewLeadsLoading,
           ),
         ],
       ),
@@ -306,6 +472,20 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
       ),
     );
   }
+}
+
+class _LeadOverviewCounts {
+  final int newLeads;
+  final int inProgressLeads;
+  final int wonLeads;
+  final int lostLeads;
+
+  const _LeadOverviewCounts({
+    required this.newLeads,
+    required this.inProgressLeads,
+    required this.wonLeads,
+    required this.lostLeads,
+  });
 }
 
 class _TodayTaskHeader extends StatelessWidget {
@@ -405,14 +585,7 @@ class _TodayTaskList extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final task = tasks[index];
-          return _TaskCard(
-            title: task.title,
-            leadId: task.leadId,
-            followUpId: task.followUpId,
-            number: task.phone,
-            location: task.location,
-            status: task.status,
-          );
+          return _TaskCard(task: task);
         },
       ),
     );
@@ -421,14 +594,17 @@ class _TodayTaskList extends StatelessWidget {
 
 class SalesOverviewSection extends StatelessWidget {
   static const darkGreen = Color(0xFF145A00);
-  static const lightGreen = Color(0xFFB9D9B0);
+  static const newLeadsColor = Color(0xFF145A00);
+  static const inProgressLeadsColor = Color(0xFFF4B400);
+  static const wonLeadsColor = Color(0xFF1A73E8);
+  static const lostLeadsColor = Color(0xFFD93025);
 
   final String reportValue;
   final ValueChanged<String> onReportChange;
-
-  final double target;
-  final double achieved;
-  final double pending;
+  final int newLeads;
+  final int inProgressLeads;
+  final int wonLeads;
+  final int lostLeads;
 
   final VoidCallback onDetails;
   final bool isLoading;
@@ -437,15 +613,38 @@ class SalesOverviewSection extends StatelessWidget {
     super.key,
     required this.reportValue,
     required this.onReportChange,
-    required this.target,
-    required this.achieved,
-    required this.pending,
+    required this.newLeads,
+    required this.inProgressLeads,
+    required this.wonLeads,
+    required this.lostLeads,
     required this.onDetails,
     this.isLoading = false,
   });
 
+  String _currentRangeLabel() {
+    final now = DateTime.now();
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${(d.year % 100).toString().padLeft(2, '0')}';
+
+    if (reportValue == "Today's Sales Report") {
+      return fmt(now);
+    }
+
+    if (reportValue == 'Monthly Sales Report') {
+      final start = now.subtract(Duration(days: now.weekday - 1));
+      final end = start.add(const Duration(days: 6));
+      return '${fmt(start)} to ${fmt(end)}';
+    }
+
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(now.year, now.month + 1, 0);
+    return '${fmt(start)} to ${fmt(end)}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final totalLeads = newLeads + inProgressLeads + wonLeads + lostLeads;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -515,12 +714,28 @@ class SalesOverviewSection extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _LegendDot(label: 'Achivement', color: darkGreen),
-                      SizedBox(height: 8),
-                      _LegendDot(label: 'Target Pending', color: lightGreen),
+                      _LegendDot(
+                        label: 'New ($newLeads)',
+                        color: newLeadsColor,
+                      ),
+                      const SizedBox(height: 8),
+                      _LegendDot(
+                        label: 'In Progress ($inProgressLeads)',
+                        color: inProgressLeadsColor,
+                      ),
+                      const SizedBox(height: 8),
+                      _LegendDot(
+                        label: 'Won ($wonLeads)',
+                        color: wonLeadsColor,
+                      ),
+                      const SizedBox(height: 8),
+                      _LegendDot(
+                        label: 'Lost ($lostLeads)',
+                        color: lostLeadsColor,
+                      ),
                     ],
                   ),
                 ],
@@ -543,19 +758,23 @@ class SalesOverviewSection extends StatelessWidget {
                             width: s,
                             height: s,
                             child: _DonutChart(
-                              target: target,
-                              achieved: achieved,
-                              pending: pending,
-                              achievedColor: darkGreen,
-                              pendingColor: lightGreen,
+                              newLeads: newLeads.toDouble(),
+                              inProgressLeads: inProgressLeads.toDouble(),
+                              wonLeads: wonLeads.toDouble(),
+                              lostLeads: lostLeads.toDouble(),
+                              totalLeads: totalLeads,
+                              newLeadsColor: newLeadsColor,
+                              inProgressLeadsColor: inProgressLeadsColor,
+                              wonLeadsColor: wonLeadsColor,
+                              lostLeadsColor: lostLeadsColor,
                             ),
                           );
                         },
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      '28-06-25',
+                    const SizedBox(height: 10),
+                    Text(
+                      _currentRangeLabel(),
                       style: TextStyle(
                         color: darkGreen,
                         fontWeight: FontWeight.w800,
@@ -618,22 +837,28 @@ class _LegendDot extends StatelessWidget {
 }
 
 class _DonutChart extends StatelessWidget {
-  final double target, achieved, pending;
-  final Color achievedColor, pendingColor;
+  final double newLeads, inProgressLeads, wonLeads, lostLeads;
+  final int totalLeads;
+  final Color newLeadsColor, inProgressLeadsColor, wonLeadsColor, lostLeadsColor;
 
   const _DonutChart({
-    required this.target,
-    required this.achieved,
-    required this.pending,
-    required this.achievedColor,
-    required this.pendingColor,
+    required this.newLeads,
+    required this.inProgressLeads,
+    required this.wonLeads,
+    required this.lostLeads,
+    required this.totalLeads,
+    required this.newLeadsColor,
+    required this.inProgressLeadsColor,
+    required this.wonLeadsColor,
+    required this.lostLeadsColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final safeTarget = target <= 0 ? 1 : target;
-    final achievedPct = (achieved / safeTarget).clamp(0.0, 1.0);
-    final pendingPct = (pending / safeTarget).clamp(0.0, 1.0);
+    final total = math.max(
+      1.0,
+      newLeads + inProgressLeads + wonLeads + lostLeads,
+    );
 
     return Stack(
       clipBehavior: Clip.none,
@@ -641,10 +866,15 @@ class _DonutChart extends StatelessWidget {
       children: [
         CustomPaint(
           painter: _DonutPainter(
-            achievedPct: achievedPct,
-            pendingPct: pendingPct,
-            achievedColor: achievedColor,
-            pendingColor: pendingColor,
+            segments: <_DonutSegment>[
+              _DonutSegment(value: newLeads / total, color: newLeadsColor),
+              _DonutSegment(
+                value: inProgressLeads / total,
+                color: inProgressLeadsColor,
+              ),
+              _DonutSegment(value: wonLeads / total, color: wonLeadsColor),
+              _DonutSegment(value: lostLeads / total, color: lostLeadsColor),
+            ],
           ),
           size: const Size(double.infinity, double.infinity),
         ),
@@ -652,87 +882,42 @@ class _DonutChart extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Target',
+              'Total Leads',
               style: TextStyle(
                 color: Colors.black54,
                 fontWeight: FontWeight.w800,
               ),
             ),
             Text(
-              target.toStringAsFixed(0),
-              style: TextStyle(
-                color: achievedColor,
+              totalLeads.toString(),
+              style: const TextStyle(
+                color: SalesOverviewSection.darkGreen,
                 fontWeight: FontWeight.w900,
-                fontSize: 16,
+                fontSize: 20,
               ),
             ),
           ],
         ),
-        Positioned(
-          left: 0,
-          bottom: 54,
-          child: _ValueLabel(
-            value: achieved,
-            percent: achievedPct,
-            alignLeft: true,
-          ),
-        ),
-        Positioned(
-          right: 0,
-          bottom: 48,
-          child: _ValueLabel(
-            value: pending,
-            percent: pendingPct,
-            alignLeft: false,
-          ),
-        ),
       ],
     );
   }
 }
 
-class _ValueLabel extends StatelessWidget {
-  final double value, percent;
-  final bool alignLeft;
-  const _ValueLabel({
-    required this.value,
-    required this.percent,
-    required this.alignLeft,
-  });
+class _DonutSegment {
+  final double value;
+  final Color color;
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: alignLeft
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.end,
-      children: [
-        Text(
-          value.toStringAsFixed(0),
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-        ),
-        const Text(
-          '%',
-          style: TextStyle(
-            color: Colors.black54,
-            fontWeight: FontWeight.w700,
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
+  const _DonutSegment({
+    required this.value,
+    required this.color,
+  });
 }
 
 class _DonutPainter extends CustomPainter {
-  final double achievedPct, pendingPct;
-  final Color achievedColor, pendingColor;
+  final List<_DonutSegment> segments;
 
   _DonutPainter({
-    required this.achievedPct,
-    required this.pendingPct,
-    required this.achievedColor,
-    required this.pendingColor,
+    required this.segments,
   });
 
   @override
@@ -747,39 +932,29 @@ class _DonutPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..color = Colors.black12;
 
-    final achievedPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.butt
-      ..color = achievedColor;
-
-    final pendingPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.butt
-      ..color = pendingColor;
-
     canvas.drawCircle(center, radius, bgPaint);
 
-    final start = -math.pi / 2 + 0.35;
+    var start = -math.pi / 2 + 0.35;
+    for (final segment in segments) {
+      if (segment.value <= 0) {
+        continue;
+      }
 
-    final achievedSweep = 2 * math.pi * achievedPct;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      start,
-      achievedSweep,
-      false,
-      achievedPaint,
-    );
-
-    final pendingSweep = 2 * math.pi * pendingPct;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      start + achievedSweep,
-      pendingSweep,
-      false,
-      pendingPaint,
-    );
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.butt
+        ..color = segment.color;
+      final sweep = 2 * math.pi * segment.value.clamp(0.0, 1.0);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        start,
+        sweep,
+        false,
+        paint,
+      );
+      start += sweep;
+    }
 
     final holePaint = Paint()..color = Colors.white;
     canvas.drawCircle(center, radius - 42, holePaint);
@@ -787,24 +962,31 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutPainter oldDelegate) {
-    return oldDelegate.achievedPct != achievedPct ||
-        oldDelegate.pendingPct != pendingPct ||
-        oldDelegate.achievedColor != achievedColor ||
-        oldDelegate.pendingColor != pendingColor;
+    return oldDelegate.segments.length != segments.length ||
+        oldDelegate.segments
+            .asMap()
+            .entries
+            .any((entry) =>
+                entry.key >= segments.length ||
+                entry.value.color != segments[entry.key].color ||
+                entry.value.value != segments[entry.key].value);
   }
 }
 
 class _TaskCard extends StatelessWidget {
-  final String title, leadId, followUpId, number, location, status;
+  final TaskModel task;
 
   const _TaskCard({
-    required this.title,
-    required this.leadId,
-    required this.followUpId,
-    required this.number,
-    required this.location,
-    required this.status,
+    required this.task,
   });
+
+  String get title {
+    if (task.meet != null) return 'Meeting';
+    if (task.followup != null) return 'Follow Up';
+    return 'Task';
+  }
+
+  String get status => task.status;
 
   Color _getStatusColor() {
     switch (status.toLowerCase()) {
@@ -834,8 +1016,48 @@ class _TaskCard extends StatelessWidget {
     }
   }
 
+  String _valueOrFallback(String value, {String fallback = 'N/A'}) {
+    final clean = value.trim();
+    if (clean.isEmpty) return fallback;
+    return clean;
+  }
+
+  List<MapEntry<String, String>> _details() {
+    if (task.meet != null) {
+      final meet = task.meet!;
+      return <MapEntry<String, String>>[
+        MapEntry('Lead ID', _valueOrFallback(task.leadId)),
+        MapEntry('Meet Title', _valueOrFallback(meet.meetTitle)),
+        MapEntry('Meeting Type', _valueOrFallback(meet.meetingType)),
+        MapEntry('Start Time', _valueOrFallback(meet.startTime)),
+      ];
+    }
+
+    if (task.followup != null) {
+      final followup = task.followup!;
+      return <MapEntry<String, String>>[
+        MapEntry('Lead ID', _valueOrFallback(task.leadId)),
+        MapEntry(
+          'Follow-up Type',
+          _valueOrFallback(followup.followupType),
+        ),
+        MapEntry('Follow-up Time', _valueOrFallback(followup.followupTime)),
+        MapEntry('Remarks', _valueOrFallback(followup.remarks)),
+      ];
+    }
+
+    return <MapEntry<String, String>>[
+      MapEntry('Lead ID', _valueOrFallback(task.leadId)),
+      MapEntry('Task ID', _valueOrFallback(task.id.toString())),
+      MapEntry('Location', _valueOrFallback(task.location)),
+      MapEntry('Status', _getStatusLabel()),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final details = _details();
+
     return Container(
       width: 220,
       padding: const EdgeInsets.all(12),
@@ -876,10 +1098,7 @@ class _TaskCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _kv('Lead ID', leadId),
-          _kv('Follow up ID', followUpId),
-          _kv('Number', number),
-          _kv('Location', location),
+          ...details.map((detail) => _kv(detail.key, detail.value)),
         ],
       ),
     );

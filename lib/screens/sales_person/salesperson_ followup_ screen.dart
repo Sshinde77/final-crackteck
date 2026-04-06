@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:final_crackteck/model/sales_person/followup_model.dart';
 import 'package:final_crackteck/model/sales_person/followup_provider.dart';
@@ -149,6 +150,30 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                         child: Container(
                           height: 40,
                           decoration: BoxDecoration(
+                            color: const Color(0xFFE9FFE6),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              await _callFollowUp(item);
+                            },
+                            icon: const Icon(Icons.call, color: darkGreen),
+                            label: const Text(
+                              "Call",
+                              style: TextStyle(
+                                color: darkGreen,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
                             color: const Color(0xFFFFE6D6),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -225,6 +250,29 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
 
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _callFollowUp(FollowUpItem item) async {
+    final raw = item.number.trim();
+    if (raw.isEmpty || raw == '-') {
+      _snack("Phone number not available");
+      return;
+    }
+
+    final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (digits.isEmpty) {
+      _snack("Phone number not available");
+      return;
+    }
+
+    final uri = Uri.parse('tel:$digits');
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && mounted) {
+      _snack("Unable to open dialer");
+    }
   }
 
   DateTime? _parseDMY(String dmy) {

@@ -10,6 +10,7 @@ class DashboardProvider extends ChangeNotifier {
   DashboardData? sales;
   List<TaskModel> tasks = [];
   List<NotificationModel> notifications = [];
+  String? _lastLoadedUserId;
 
   bool loading = false;
   String? error;
@@ -42,8 +43,7 @@ class DashboardProvider extends ChangeNotifier {
   /// Load all dashboard data including sales overview and tasks.
   ///
   /// Uses the following endpoints:
-  /// - GET /dashboard/{userId} for sales data
-  /// - GET /task for tasks list
+  /// - GET /dashboard for sales data and today-task cards
   ///
   /// NOTE: Notifications are **not** loaded automatically anymore to avoid
   /// hitting the `/notifications` API, which is still under development.
@@ -51,6 +51,8 @@ class DashboardProvider extends ChangeNotifier {
   /// via a future, opt-in method.
   Future<void> loadDashboard(String userId) async {
     await _runWithLoading(() async {
+      _lastLoadedUserId = userId;
+
       // Fetch core dashboard data (meets/followups and any inline metrics)
       final dashboardData = await DashboardService.getDashboard(userId);
 
@@ -112,8 +114,8 @@ class DashboardProvider extends ChangeNotifier {
         'qualified: ${sales?.qualifiedLeads}, quoted: ${sales?.quotedLeads}',
       );
 
-      // Fetch tasks list used by Today Task UI
-      tasks = await DashboardService.getTasks();
+      // Build Today Task cards directly from the /dashboard response.
+      tasks = DashboardService.buildDashboardTasks(dashboardData);
     });
   }
 
@@ -132,7 +134,14 @@ class DashboardProvider extends ChangeNotifier {
   /// Refresh tasks only
   Future<void> refreshTasks() async {
     await _runWithoutLoading(() async {
-      tasks = await DashboardService.getTasks();
+      final userId = _lastLoadedUserId;
+      if (userId == null || userId.trim().isEmpty) {
+        tasks = <TaskModel>[];
+        return;
+      }
+
+      final dashboardData = await DashboardService.getDashboard(userId);
+      tasks = DashboardService.buildDashboardTasks(dashboardData);
     });
   }
 

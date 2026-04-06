@@ -62,9 +62,16 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   bool submitLoading = false;
   String? leadLoadError;
   final List<LeadModel> leadOptions = [];
+  static const List<String> _statusOptions = <String>[
+    'pending',
+    'completed',
+    'rescheduled',
+    'cancelled',
+  ];
 
   DateTime? _selectedFollowUpDate;
   TimeOfDay? _selectedFollowUpTime;
+  String? _selectedStatus = 'pending';
 
   // Theme-ish colors similar to your UI
   static const Color midGreen = Color(0xFF1F8B00);
@@ -161,6 +168,50 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     return '$hh:$mm';
   }
 
+  DateTime _todayOnly() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  DateTime _currentMinute() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, now.hour, now.minute);
+  }
+
+  DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+  }
+
+  bool _isPastFollowUpSelection(DateTime date, TimeOfDay time) {
+    return _combineDateAndTime(date, time).isBefore(_currentMinute());
+  }
+
+  String _statusLabelFromApi(String? value) {
+    const apiToLabel = <String, String>{
+      'pending': 'pending',
+      'completed': 'completed',
+      'done': 'completed',
+      'rescheduled': 'rescheduled',
+      'cancelled': 'cancelled',
+      'canceled': 'cancelled',
+    };
+    final raw = (value ?? '').trim().toLowerCase();
+    if (raw.isEmpty) return '';
+    if (apiToLabel.containsKey(raw)) return apiToLabel[raw]!;
+    return raw;
+  }
+
+  String _statusApiValue(String? label) {
+    final value = (label ?? '').trim().toLowerCase();
+    return _statusOptions.contains(value) ? value : 'pending';
+  }
+
   void _applyInitialEditValues() {
     selectedLeadId = widget.initialLeadId;
     leadIdCtrl.text =
@@ -181,6 +232,13 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     if (parsedTime != null) {
       _selectedFollowUpTime = parsedTime;
       timeCtrl.text = _displayTime(parsedTime);
+    }
+
+    final parsedStatus = _statusLabelFromApi(widget.initialFollowUpStatus);
+    if (parsedStatus.isNotEmpty && _statusOptions.contains(parsedStatus)) {
+      _selectedStatus = parsedStatus;
+    } else {
+      _selectedStatus = 'pending';
     }
   }
 
@@ -288,30 +346,75 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final today = _todayOnly();
+    final initialDate =
+        _selectedFollowUpDate != null &&
+            !_selectedFollowUpDate!.isBefore(today)
+        ? _selectedFollowUpDate!
+        : today;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedFollowUpDate ?? now,
-      firstDate: DateTime(2020, 1, 1),
+      initialDate: initialDate,
+      firstDate: today,
       lastDate: DateTime(2035, 12, 31),
     );
     if (picked != null) {
       final dd = picked.day.toString().padLeft(2, "0");
       final mm = picked.month.toString().padLeft(2, "0");
       final yyyy = picked.year.toString();
+
+      final shouldClearTime = _selectedFollowUpTime != null &&
+          _isPastFollowUpSelection(picked, _selectedFollowUpTime!);
       setState(() {
         _selectedFollowUpDate = picked;
         dateCtrl.text = "$dd/$mm/$yyyy";
+        if (shouldClearTime) {
+          _selectedFollowUpTime = null;
+          timeCtrl.clear();
+        }
       });
+      if (shouldClearTime && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please select a current or future time."),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickTime() async {
+    if (_selectedFollowUpDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select follow-up date first.")),
+      );
+      return;
+    }
+
+    final nowTime = TimeOfDay.now();
+    final initialTime =
+        _selectedFollowUpTime != null &&
+            !_isPastFollowUpSelection(
+              _selectedFollowUpDate!,
+              _selectedFollowUpTime!,
+            )
+        ? _selectedFollowUpTime!
+        : nowTime;
+
     final picked = await showTimePicker(
       context: context,
-      initialTime: _selectedFollowUpTime ?? TimeOfDay.now(),
+      initialTime: initialTime,
     );
     if (picked != null) {
+      if (_isPastFollowUpSelection(_selectedFollowUpDate!, picked)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please select a current or future time."),
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _selectedFollowUpTime = picked;
         timeCtrl.text = _displayTime(picked);
@@ -347,11 +450,21 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       return;
     }
 
-    if (_selectedFollowUpDate == null || _selectedFollowUpTime == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text("Please select follow-up date and time.")),
-      );
-      return;
+    if (!_isEditMode) {
+      if (_selectedFollowUpDate == null || _selectedFollowUpTime == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Please select follow-up date and time.")),
+        );
+        return;
+      }
+      if (_isPastFollowUpSelection(_selectedFollowUpDate!, _selectedFollowUpTime!)) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text("Please select a current or future follow-up time."),
+          ),
+        );
+        return;
+      }
     }
     if (selectedLeadId == null) {
       messenger.showSnackBar(
@@ -372,10 +485,12 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       final body = <String, dynamic>{
         'user_id': userId,
         'lead_id': selectedLeadId,
-        'followup_date': _toApiDate(_selectedFollowUpDate!),
-        'followup_time': _toApiTime(_selectedFollowUpTime!),
         'remarks': remarksCtrl.text.trim(),
-        'status': 'Pending',
+        'status': _statusApiValue(_selectedStatus),
+        if (_selectedFollowUpDate != null)
+          'followup_date': _toApiDate(_selectedFollowUpDate!),
+        if (_selectedFollowUpTime != null)
+          'followup_time': _toApiTime(_selectedFollowUpTime!),
       };
 
       final response = _isEditMode
@@ -552,6 +667,43 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     );
   }
 
+  Widget _statusDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label("Status"),
+        DropdownButtonFormField<String>(
+          value: _selectedStatus,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
+          decoration: _decor("Select status"),
+          hint: const Text(
+            "Select status",
+            style: TextStyle(color: Colors.black38, fontSize: 13),
+          ),
+          items: _statusOptions.map((status) {
+            return DropdownMenuItem<String>(
+              value: status,
+              child: Text(
+                status,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (value) => setState(() => _selectedStatus = value),
+          validator: (value) =>
+              (value == null || value.trim().isEmpty) ? "Select status" : null,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -662,18 +814,26 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   label: "Follow Up Date",
                   controller: dateCtrl,
                   readOnly: true,
-                  onTap: _pickDate,
-                  suffixIcon: const Icon(Icons.calendar_month_outlined, color: Colors.black45),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Select date" : null,
+                  onTap: _isEditMode ? null : _pickDate,
+                  suffixIcon: _isEditMode
+                      ? null
+                      : const Icon(Icons.calendar_month_outlined, color: Colors.black45),
+                  validator: _isEditMode
+                      ? null
+                      : (v) => (v == null || v.trim().isEmpty) ? "Select date" : null,
                 ),
 
                 _textField(
                   label: "Follow Up Time",
                   controller: timeCtrl,
                   readOnly: true,
-                  onTap: _pickTime,
-                  suffixIcon: const Icon(Icons.access_time_rounded, color: Colors.black45),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Select time" : null,
+                  onTap: _isEditMode ? null : _pickTime,
+                  suffixIcon: _isEditMode
+                      ? null
+                      : const Icon(Icons.access_time_rounded, color: Colors.black45),
+                  validator: _isEditMode
+                      ? null
+                      : (v) => (v == null || v.trim().isEmpty) ? "Select time" : null,
                 ),
 
                 _textField(
@@ -682,6 +842,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   hint: "",
                   maxLines: 2,
                 ),
+
+                _statusDropdown(),
 
                 const SizedBox(height: 14),
 

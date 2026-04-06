@@ -305,7 +305,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       'budget_range': budgetRangeCtrl.text.trim(),
       'urgency': (_selectedUrgency ?? '').toLowerCase(),
       'status': _isEditMode ? _leadStatus : 'New',
-      if (notes.isNotEmpty) 'notes': notes,
+      'notes': notes,
     };
   }
 
@@ -496,12 +496,15 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                   ),
                 ),
                 keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: _isEditMode
                     ? null
                     : (v) {
                         if (v == null || v.trim().isEmpty) return 'Enter phone';
-                        final digits = v.replaceAll(RegExp(r'\D'), '');
-                        if (digits.length < 10) return 'Enter valid phone';
+                        final digits = v.trim();
+                        if (digits.length != 10) {
+                          return 'Phone number must be exactly 10 digits';
+                        }
                         return null;
                       },
               ),
@@ -521,19 +524,40 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                       },
               ),
               if (!_isEditMode) ...[
-                _input('Address1', address1Ctrl),
+                _input(
+                  'Address1',
+                  address1Ctrl,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Address1 is required'
+                      : null,
+                ),
                 _input('Address2', address2Ctrl),
                 _locationPicker(),
                 _input(
                   'Pincode',
                   pincodeCtrl,
                   keyboardType: TextInputType.number,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Pincode is required'
+                      : null,
                 ),
               ],
-              _input('Requirement Type', requirementTypeCtrl),
-              _input('Budget Range', budgetRangeCtrl),
+              _input(
+                'Requirement Type',
+                requirementTypeCtrl,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Requirement type is required'
+                    : null,
+              ),
+              _input(
+                'Budget Range',
+                budgetRangeCtrl,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Budget range is required'
+                    : null,
+              ),
               _urgencyDropdown(),
-              _input('Notes', notesCtrl, maxLines: 4, readOnly: _isEditMode),
+              _input('Notes', notesCtrl, maxLines: 4),
 
               const SizedBox(height: 12),
               const SizedBox(height: 8),
@@ -655,6 +679,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     int maxLines = 1,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -664,6 +689,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         keyboardType: keyboardType,
         validator: validator,
         maxLines: maxLines,
+        inputFormatters: inputFormatters,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: prefixIcon,

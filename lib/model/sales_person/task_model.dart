@@ -100,6 +100,7 @@ class MeetTaskItem {
   final int leadId;
   final String meetTitle;
   final String meetingType;
+  final String startTime;
   final String date;
   final String time;
   final String location;
@@ -117,6 +118,7 @@ class MeetTaskItem {
     required this.leadId,
     required this.meetTitle,
     required this.meetingType,
+    required this.startTime,
     required this.date,
     required this.time,
     required this.location,
@@ -136,8 +138,9 @@ class MeetTaskItem {
       leadId: _parseInt(json['lead_id']),
       meetTitle: _parseString(json['meet_title'], ''),
       meetingType: _parseString(json['meeting_type'], ''),
+      startTime: _parseString(json['start_time'] ?? json['time'], ''),
       date: _parseString(json['date'], ''),
-      time: _parseString(json['time'], ''),
+      time: _parseString(json['time'] ?? json['start_time'], ''),
       location: _parseString(json['location'], ''),
       attachment: _parseString(json['attachment'], ''),
       meetAgenda: _parseString(json['meetAgenda'], ''),
@@ -157,6 +160,7 @@ class FollowupTaskItem {
   final int id;
   final int userId;
   final int leadId;
+  final String followupType;
   final String followupDate;
   final String followupTime;
   final String status;
@@ -169,6 +173,7 @@ class FollowupTaskItem {
     required this.id,
     required this.userId,
     required this.leadId,
+    required this.followupType,
     required this.followupDate,
     required this.followupTime,
     required this.status,
@@ -183,6 +188,7 @@ class FollowupTaskItem {
       id: _parseInt(json['id']),
       userId: _parseInt(json['user_id']),
       leadId: _parseInt(json['lead_id']),
+      followupType: _parseString(json['followup_type'], ''),
       followupDate: _parseString(json['followup_date'], ''),
       followupTime: _parseString(json['followup_time'], ''),
       status: _parseString(json['status'], ''),
@@ -220,6 +226,42 @@ class TaskModel {
     this.meet,
     this.followup,
   });
+
+  factory TaskModel.fromMeetTaskItem(MeetTaskItem meetItem) {
+    String location = _parseString(meetItem.location, '');
+    if (location.isEmpty && meetItem.leadDetails != null) {
+      location = _parseString(meetItem.leadDetails!.companyName, 'N/A');
+    }
+    if (location.isEmpty) {
+      location = 'N/A';
+    }
+
+    return TaskModel(
+      id: meetItem.id,
+      title: _parseString(meetItem.meetTitle, 'Meeting'),
+      leadId: meetItem.leadId == 0 ? 'N/A' : meetItem.leadId.toString(),
+      followUpId: _parseString(meetItem.followUp, 'N/A'),
+      phone: _parseString(meetItem.leadDetails?.phone, 'N/A'),
+      location: location,
+      status: _parseString(meetItem.status, 'pending'),
+      leadDetails: meetItem.leadDetails,
+      meet: meetItem,
+    );
+  }
+
+  factory TaskModel.fromFollowupTaskItem(FollowupTaskItem followupItem) {
+    return TaskModel(
+      id: followupItem.id,
+      title: _parseString(followupItem.followupType, 'Follow-up'),
+      leadId: followupItem.leadId == 0 ? 'N/A' : followupItem.leadId.toString(),
+      followUpId: followupItem.id == 0 ? 'N/A' : followupItem.id.toString(),
+      phone: _parseString(followupItem.leadDetails?.phone, 'N/A'),
+      location: _parseString(followupItem.leadDetails?.companyName, 'N/A'),
+      status: _parseString(followupItem.status, 'pending'),
+      leadDetails: followupItem.leadDetails,
+      followup: followupItem,
+    );
+  }
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     final hasMeetFields =

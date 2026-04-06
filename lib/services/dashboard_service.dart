@@ -45,6 +45,14 @@ class DashboardService {
     return tasks;
   }
 
+  /// Build dashboard task cards directly from the `/dashboard` response.
+  static List<TaskModel> buildDashboardTasks(DashboardData dashboardData) {
+    return <TaskModel>[
+      ...dashboardData.meets.map(TaskModel.fromMeetTaskItem),
+      ...dashboardData.followups.map(TaskModel.fromFollowupTaskItem),
+    ];
+  }
+
   /// Fetch list of notifications
   /// Endpoint: GET /notifications
   /// Returns list of [NotificationModel] objects

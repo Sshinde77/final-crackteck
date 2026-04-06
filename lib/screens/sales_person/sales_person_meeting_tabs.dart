@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:final_crackteck/model/sales_person/meeting_model.dart';
 import 'package:final_crackteck/model/sales_person/meetings_provider.dart';
@@ -586,6 +587,32 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _callMeeting(_MeetingItem item) async {
+    final fallback = item.contactEmailOrPhone.contains('@')
+        ? ''
+        : item.contactEmailOrPhone;
+    final raw = item.phone.trim().isNotEmpty ? item.phone.trim() : fallback.trim();
+    if (raw.isEmpty || raw == '--') {
+      _snack('Meeting phone number not available');
+      return;
+    }
+
+    final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (digits.isEmpty) {
+      _snack('Meeting phone number not available');
+      return;
+    }
+
+    final uri = Uri.parse('tel:$digits');
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && mounted) {
+      _snack('Unable to open dialer');
+    }
+  }
+
   Future<void> _openNewMeeting() async {
     final created = await Navigator.push<bool>(
       context,
@@ -827,6 +854,10 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                               barrierDismissible: true,
                               builder: (_) => _MeetingCenterDialog(
                                 item: item,
+                                onCall: () async {
+                                  Navigator.pop(context);
+                                  await _callMeeting(item);
+                                },
                                 onEdit: () {
                                   Navigator.pop(context);
                                   _openMeetingEditor(item);
@@ -1192,10 +1223,16 @@ const Color kDarkGreen = Color(0xFF145A00);
 
 class _MeetingCenterDialog extends StatelessWidget {
   final _MeetingItem item;
+  final VoidCallback? onCall;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
-  const _MeetingCenterDialog({required this.item, this.onEdit, this.onDelete});
+  const _MeetingCenterDialog({
+    required this.item,
+    this.onCall,
+    this.onEdit,
+    this.onDelete,
+  });
 
   List<String> _splitTimeRange(String value) {
     final raw = value.trim();
@@ -1379,6 +1416,16 @@ class _MeetingCenterDialog extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _SoftActionButton(
+                        icon: Icons.call_outlined,
+                        label: "Call",
+                        bg: const Color(0xFFE9FFE6),
+                        fg: kDarkGreen,
+                        onTap: onCall ?? () {},
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SoftActionButton(
                         icon: Icons.edit_outlined,
                         label: "Edit",
                         bg: const Color(0xFFFFE6D6),
@@ -1386,7 +1433,7 @@ class _MeetingCenterDialog extends StatelessWidget {
                         onTap: onEdit ?? () {},
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _SoftActionButton(
                         icon: Icons.delete_outline,

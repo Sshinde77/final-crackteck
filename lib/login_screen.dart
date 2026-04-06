@@ -103,6 +103,22 @@ class _LoginScreenState extends State<LoginScreen> {
     return true;
   }
 
+  bool _isPhoneNotFoundMessage(String? message) {
+    final normalized = message?.trim().toLowerCase() ?? '';
+    return normalized.contains('user not found') ||
+        normalized.contains('phone not found') ||
+        normalized.contains('phone number is not found');
+  }
+
+  bool _isNetworkMessage(String? message) {
+    final normalized = message?.trim().toLowerCase() ?? '';
+    return normalized.contains('network error') ||
+        normalized.contains('no internet') ||
+        normalized.contains('request timeout') ||
+        normalized.contains('ssl error') ||
+        normalized.contains('request failed');
+  }
+
   Future<void> _handleLogin() async {
     if (!_validatePhoneNumber()) return;
 
@@ -142,13 +158,20 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else {
-        if (response.message != null &&
-            response.message!.toLowerCase().contains('network error')) {
+        final message =
+            response.message?.trim().isNotEmpty == true
+                ? response.message!.trim()
+                : AppStrings.somethingWentWrong;
+
+        if (_isNetworkMessage(message)) {
+          setState(() {
+            _errorText = message;
+          });
           showErrorDialog(
             context: context,
-            message: response.message ?? AppStrings.networkError,
+            message: message,
           );
-        } else {
+        } else if (_isPhoneNotFoundMessage(message)) {
           await showPhoneNotFoundDialog(
             context: context,
             onSignUpPressed: () {
@@ -162,6 +185,10 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             },
           );
+        } else {
+          setState(() {
+            _errorText = message;
+          });
         }
       }
     } catch (e) {

@@ -524,9 +524,9 @@ class ApiService {
         "phone": phone,
         "email": email,
         "address": address,
-        "aadhar_no": aadhar,
-        "pan_no": pan,
-        "education": education,
+        "aadhar_number": aadhar,
+        "pan_number": pan,
+        "qualification": education,
       };
 
       if (dob != null && dob.trim().isNotEmpty) {
@@ -568,10 +568,16 @@ class ApiService {
       final request = http.MultipartRequest("POST", uri)
         ..fields.addAll(fields)
         ..files.add(
-          await http.MultipartFile.fromPath("aadhar_document", aadharFile.path),
+          await http.MultipartFile.fromPath(
+            "aadhar_front_path",
+            aadharFile.path,
+          ),
         )
         ..files.add(
-          await http.MultipartFile.fromPath("pan_document", panFile.path),
+          await http.MultipartFile.fromPath(
+            "pan_card_front_path",
+            panFile.path,
+          ),
         );
 
       debugPrint('Signup request fields: ${request.fields}');
@@ -579,7 +585,7 @@ class ApiService {
       if (aadharBackFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            "aadhar_back_document",
+            "aadhar_back_path",
             aadharBackFile.path,
           ),
         );
@@ -588,7 +594,7 @@ class ApiService {
       if (panBackFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            "pan_back_document",
+            "pan_card_back_path",
             panBackFile.path,
           ),
         );
@@ -614,14 +620,17 @@ class ApiService {
 
       if (resultFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath("result_file", resultFile.path),
+          await http.MultipartFile.fromPath(
+            "qualification_certifications",
+            resultFile.path,
+          ),
         );
       }
 
       if (addressProofFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            "address_proof_file",
+            "address_proof",
             addressProofFile.path,
           ),
         );
@@ -1021,7 +1030,10 @@ class ApiService {
     return lower.startsWith('<!doctype html') || lower.startsWith('<html');
   }
 
-  static bool _isUnauthorizedResponse(http.Response response) {
+  static bool _isUnauthorizedResponse(
+    http.Response response, {
+    bool treatHtmlAsUnauthorized = true,
+  }) {
     if (response.statusCode == 401 || response.statusCode == 403) {
       return true;
     }
@@ -1029,7 +1041,7 @@ class ApiService {
     // Some backends redirect unauthorized requests to an HTML login page
     // while still returning 200. Detect that and treat as unauthorized so we
     // trigger refresh-token/logout instead of trying to parse HTML as JSON.
-    if (_looksLikeHtml(response.body)) {
+    if (treatHtmlAsUnauthorized && _looksLikeHtml(response.body)) {
       debugPrint(
         '🔴 HTML login page detected from ${response.request?.url}. '
         'Treating as unauthorized.',
@@ -1159,7 +1171,10 @@ class ApiService {
     return true;
   }
 
-  static Future<http.Response> _performAuthenticatedGet(Uri url) async {
+  static Future<http.Response> _performAuthenticatedGet(
+    Uri url, {
+    bool treatHtmlAsUnauthorized = true,
+  }) async {
     int retryCount = 0;
     while (true) {
       final accessToken = await SecureStorageService.getAccessToken();
@@ -1173,7 +1188,11 @@ class ApiService {
           .get(url, headers: headers)
           .timeout(ApiConstants.requestTimeout);
 
-      if (!_isUnauthorizedResponse(response)) {
+      if (
+          !_isUnauthorizedResponse(
+            response,
+            treatHtmlAsUnauthorized: treatHtmlAsUnauthorized,
+          )) {
         return response;
       }
 
@@ -1956,7 +1975,7 @@ class ApiService {
 
       if (_looksLikeHtml(response.body)) {
         debugPrint(
-          'ðŸ”´ HTML response detected for $url. Treating as authentication failure.',
+          '🔴 HTML response detected for $url. Treating as authentication failure.',
         );
         await _handleAuthFailure();
         throw Exception('Authentication error. Please log in again.');
@@ -4943,7 +4962,7 @@ class ApiService {
 
       if (_looksLikeHtml(response.body)) {
         debugPrint(
-          'ðŸ”´ HTML response detected for $url. Treating as authentication failure.',
+          '🔴 HTML response detected for $url. Treating as authentication failure.',
         );
         await _handleAuthFailure();
         throw Exception('Authentication error. Please log in again.');
@@ -6089,21 +6108,45 @@ class ApiService {
         item.containsKey('quotation_id');
   }
 
+  static String _quotationHtmlResponseMessage(
+    Uri url, {
+    required int statusCode,
+  }) {
+    return 'Server configuration issue: quotations API returned HTML instead of '
+        'JSON for ${url.path} (status $statusCode). Please contact your system '
+        'administrator.';
+  }
+
+  static List<Uri> _quotationFallbackUrls(Uri url) {
+    return <Uri>[
+      url.replace(
+        path: _replaceTrailingPathSegment(url.path, 'quotation', 'quotations'),
+      ),
+      url.replace(
+        path: _replaceTrailingPathSegment(url.path, 'quotation', 'quote'),
+      ),
+    ];
+  }
+
   static Future<Map<String, dynamic>> _tryFetchQuotationsFromUrl(
     Uri url,
   ) async {
     debugPrint('🟠 Fallback API Request: GET $url');
-    final response = await _performAuthenticatedGet(url);
+    final response = await _performAuthenticatedGet(
+      url,
+      treatHtmlAsUnauthorized: false,
+    );
     debugPrint('🟠 Fallback API Response Status: ${response.statusCode}');
     debugPrint('🟠 Fallback API Response Body: ${response.body}');
 
     if (_looksLikeHtml(response.body)) {
       debugPrint(
         '🔴 HTML response detected for fallback $url. '
-        'Treating as authentication failure.',
+        'Treating as server configuration issue.',
       );
-      await _handleAuthFailure();
-      throw Exception('Authentication error. Please log in again.');
+      throw Exception(
+        _quotationHtmlResponseMessage(url, statusCode: response.statusCode),
+      );
     }
 
     if (response.statusCode != 200) {
@@ -6165,10 +6208,50 @@ class ApiService {
     try {
       debugPrint('🔵 API Request: GET $url');
 
-      final response = await _performAuthenticatedGet(url);
+      final response = await _performAuthenticatedGet(
+        url,
+        treatHtmlAsUnauthorized: false,
+      );
 
       debugPrint('🟡 API Response Status: ${response.statusCode}');
       debugPrint('🟡 API Response Body: ${response.body}');
+
+      final responseLooksLikeHtml = _looksLikeHtml(response.body);
+      // if (responseLooksLikeHtml || response.statusCode == 404) {
+      //   if (responseLooksLikeHtml) {
+      //     debugPrint(
+      //       'Quotations API returned HTML for $url. '
+      //       'Trying fallback quotation endpoints before failing.',
+      //     );
+      //   }
+      //
+      //   final seen = <String>{url.toString()};
+      //   for (final fallbackUrl in _quotationFallbackUrls(url)) {
+      //     if (!seen.add(fallbackUrl.toString())) {
+      //       continue;
+      //     }
+      //
+      //     try {
+      //       return await _tryFetchQuotationsFromUrl(fallbackUrl);
+      //     } on Exception catch (e) {
+      //       final msg = e.toString();
+      //       if (msg.contains('404') ||
+      //           msg.contains('Server configuration issue:')) {
+      //         continue;
+      //       }
+      //       rethrow;
+      //     }
+      //   }
+      //
+      //   if (responseLooksLikeHtml) {
+      //     throw Exception(
+      //       _quotationHtmlResponseMessage(
+      //         url,
+      //         statusCode: response.statusCode,
+      //       ),
+      //     );
+      //   }
+      // }
 
       if (_looksLikeHtml(response.body)) {
         debugPrint(
@@ -6190,38 +6273,6 @@ class ApiService {
         }
 
         return _normalizeQuotationsResponse(decoded);
-      }
-
-      if (response.statusCode == 404) {
-        final fallbackUrls = <Uri>[
-          url.replace(
-            path: _replaceTrailingPathSegment(
-              url.path,
-              'quotation',
-              'quotations',
-            ),
-          ),
-          url.replace(
-            path: _replaceTrailingPathSegment(url.path, 'quotation', 'quote'),
-          ),
-        ];
-
-        final seen = <String>{url.toString()};
-        for (final fallbackUrl in fallbackUrls) {
-          if (!seen.add(fallbackUrl.toString())) {
-            continue;
-          }
-
-          try {
-            return _tryFetchQuotationsFromUrl(fallbackUrl);
-          } on Exception catch (e) {
-            final msg = e.toString();
-            if (msg.contains('404')) {
-              continue;
-            }
-            rethrow;
-          }
-        }
       }
 
       throw Exception('Failed to load quotations: ${response.statusCode}');
