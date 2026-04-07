@@ -12,6 +12,10 @@ class ApiConstants {
     'API_BASE_URL',
     defaultValue: 'https://crackteck.co.in/api/v1',
   );
+  static const String siteBaseUrl = String.fromEnvironment(
+    'SITE_BASE_URL',
+    defaultValue: 'https://crackteck.co.in',
+  );
 
   // Authentication Endpoints
   static const String login = '$baseUrl/send-otp';

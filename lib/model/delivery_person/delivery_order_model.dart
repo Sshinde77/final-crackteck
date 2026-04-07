@@ -1,4 +1,4 @@
-enum DeliveryOrderStatus { pending, cancelled }
+enum DeliveryOrderStatus { pending, delivered, cancelled }
 
 enum DeliveryOrderCategory {
   productDelivery,
@@ -10,6 +10,7 @@ enum DeliveryOrderCategory {
 class DeliveryOrderModel {
   DeliveryOrderModel({
     required this.id,
+    required this.displayId,
     required this.date,
     required this.time,
     required this.from,
@@ -20,6 +21,7 @@ class DeliveryOrderModel {
   });
 
   final String id;
+  final String displayId;
   final String date;
   final String time;
   final String from;
@@ -37,20 +39,20 @@ class DeliveryOrderModel {
       ''
     ).toString().toLowerCase();
 
-    final from = (json['from_address'] ??
-            json['pickup_address'] ??
-            json['warehouse_address'] ??
-            json['from'] ??
-            json['source'] ??
-            'Warehouse')
-        .toString();
-    final to = (json['to_address'] ??
-            json['delivery_address'] ??
-            json['customer_address'] ??
-            json['address'] ??
-            json['to'] ??
-            'Customer address not available')
-        .toString();
+    final from = _readAddress(json, <String>[
+      'from_address',
+      'pickup_address',
+      'warehouse_address',
+      'from',
+      'source',
+    ], fallback: _warehouseName(json) ?? _formatNestedAddress(json['warehouse_details']) ?? 'Warehouse');
+    final to = _readAddress(json, <String>[
+      'to_address',
+      'delivery_address',
+      'customer_address',
+      'address',
+      'to',
+    ], fallback: _formatNestedAddress(json['shipping_address']) ?? 'Customer address not available');
     final rawDate =
         json['date'] ??
         json['order_date'] ??
@@ -65,10 +67,18 @@ class DeliveryOrderModel {
             'NA')
         .toString();
     final normalizedId = rawId.startsWith('#') ? rawId : '#$rawId';
+    final displayId = (json['order_number'] ??
+            json['display_id'] ??
+            json['order_id'] ??
+            json['id'] ??
+            json['request_id'] ??
+            'NA')
+        .toString();
     final category = _parseCategory(json);
 
     return DeliveryOrderModel(
       id: normalizedId,
+      displayId: displayId,
       date: parsed == null
           ? (rawDate.toString().isEmpty ? '--' : rawDate.toString())
           : '${parsed.day}-${parsed.month}-${parsed.year}',
@@ -81,9 +91,12 @@ class DeliveryOrderModel {
           statusText.contains('accept') ||
           statusText.contains('assigned') ||
           statusText.contains('picked') ||
-          statusText.contains('in_progress'),
+          statusText.contains('in_progress') ||
+          statusText.contains('deliver'),
       status: statusText.contains('cancel')
           ? DeliveryOrderStatus.cancelled
+          : statusText.contains('deliver')
+          ? DeliveryOrderStatus.delivered
           : DeliveryOrderStatus.pending,
       category: category,
     );
@@ -91,6 +104,7 @@ class DeliveryOrderModel {
 
   DeliveryOrderModel copyWith({
     String? id,
+    String? displayId,
     String? date,
     String? time,
     String? from,
@@ -101,6 +115,7 @@ class DeliveryOrderModel {
   }) {
     return DeliveryOrderModel(
       id: id ?? this.id,
+      displayId: displayId ?? this.displayId,
       date: date ?? this.date,
       time: time ?? this.time,
       from: from ?? this.from,
@@ -137,6 +152,61 @@ class DeliveryOrderModel {
       return DeliveryOrderCategory.returnRequest;
     }
     return DeliveryOrderCategory.productDelivery;
+  }
+
+  static String _readAddress(
+    Map<String, dynamic> json,
+    List<String> keys, {
+    required String fallback,
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
+      }
+    }
+    return fallback;
+  }
+
+  static String? _formatNestedAddress(dynamic value) {
+    if (value is! Map) return null;
+    final map = Map<String, dynamic>.from(value);
+    final parts = <String>[
+      map['branch_name']?.toString() ?? '',
+      map['address1']?.toString() ?? '',
+      map['address2']?.toString() ?? '',
+      map['city']?.toString() ?? '',
+      map['state']?.toString() ?? '',
+      map['pincode']?.toString() ?? '',
+    ].where((part) => part.trim().isNotEmpty).toList();
+
+    if (parts.isEmpty) return null;
+    return parts.join(', ');
+  }
+
+  static String? _warehouseName(Map<String, dynamic> json) {
+    final warehouseDetails = json['warehouse_details'];
+    if (warehouseDetails is Map && warehouseDetails['name'] != null) {
+      final name = warehouseDetails['name'].toString().trim();
+      if (name.isNotEmpty) return name;
+    }
+
+    final orderItems = json['order_items'];
+    if (orderItems is List && orderItems.isNotEmpty) {
+      final firstItem = orderItems.first;
+      if (firstItem is Map) {
+        final productDetails = firstItem['product_details'];
+        if (productDetails is Map) {
+          final warehouse = productDetails['warehouse'];
+          if (warehouse is Map && warehouse['name'] != null) {
+            final name = warehouse['name'].toString().trim();
+            if (name.isNotEmpty) return name;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   static String formatTime(DateTime dateTime) {

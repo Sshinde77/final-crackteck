@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -37,6 +38,51 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
 
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _openGoogleMaps(String address) async {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) {
+      _showSnack('Customer address not available');
+      return;
+    }
+
+    final encodedAddress = Uri.encodeComponent(trimmed.replaceAll('\n', ', '));
+    final url = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$encodedAddress',
+    );
+
+    final launched = await launchUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched) {
+      _showSnack('Unable to open Google Maps');
+    }
+  }
+
+  Future<void> _callCustomer() async {
+    final raw = widget.customerPhone.trim();
+    if (raw.isEmpty || raw == '-') {
+      _showSnack('Customer phone number not available');
+      return;
+    }
+
+    final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri.parse('tel:$digits');
+    final canLaunchDialer = await canLaunchUrl(uri);
+    if (!canLaunchDialer) {
+      _showSnack('Unable to open dialer');
+      return;
+    }
+
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched) {
+      _showSnack('Unable to open dialer');
+    }
   }
 
   Future<void> _sendOtp() async {
@@ -157,26 +203,22 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.asset(
-                    'assets/images/map_placeholder.jpg',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (_, __, ___) {
-                      return Container(
-                        color: Colors.grey.shade200,
-                        alignment: Alignment.center,
-                        child: const Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.map_outlined, size: 56, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('Map preview unavailable', style: TextStyle(color: Colors.grey)),
-                          ],
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => _openGoogleMaps(widget.customerAddress),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(
+                        'assets/images/map_placeholder.jpg',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey.shade200,
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -223,6 +265,8 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                         children: [
                           Text(
                             widget.customerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -230,14 +274,21 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Request ID: ${widget.requestId}',
+                            'Order No: ${widget.requestId}',
+                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.customerPhone.trim().isEmpty
+                                ? 'Phone: -'
+                                : 'Phone: ${widget.customerPhone}',
                             style: const TextStyle(fontSize: 12, color: Colors.black54),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      onPressed: () => _showSnack('Calling ${widget.customerPhone}'),
+                      onPressed: _callCustomer,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFFEAF5E7),
                         padding: const EdgeInsets.all(12),
@@ -252,7 +303,7 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => _showSnack('Opening map (mocked)'),
+                      onPressed: () => _openGoogleMaps(widget.customerAddress),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
                         side: const BorderSide(color: _primaryGreen, width: 1.4),
@@ -261,7 +312,7 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                         ),
                       ),
                       child: const Text(
-                        'Open Map',
+                        'Navigate',
                         style: TextStyle(
                           color: _primaryGreen,
                           fontWeight: FontWeight.w700,

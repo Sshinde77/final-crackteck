@@ -43,7 +43,6 @@ class DeliveryHomeProvider extends ChangeNotifier {
 
       final mergedOrders = <DeliveryOrderModel>[
         ...results[0]
-            .where(_shouldIncludeOrder)
             .map(DeliveryOrderModel.fromJson)
             .map(
               (order) => order.copyWith(
@@ -51,7 +50,6 @@ class DeliveryHomeProvider extends ChangeNotifier {
               ),
             ),
         ...results[1]
-            .where(_shouldIncludeOrder)
             .map(DeliveryOrderModel.fromJson)
             .map(
               (order) => order.copyWith(
@@ -59,7 +57,6 @@ class DeliveryHomeProvider extends ChangeNotifier {
               ),
             ),
         ...results[2]
-            .where(_shouldIncludeOrder)
             .map(DeliveryOrderModel.fromJson)
             .map(
               (order) => order.copyWith(
@@ -67,7 +64,6 @@ class DeliveryHomeProvider extends ChangeNotifier {
               ),
             ),
         ...results[3]
-            .where(_shouldIncludeOrder)
             .map(DeliveryOrderModel.fromJson)
             .map(
               (order) => order.copyWith(
@@ -83,24 +79,6 @@ class DeliveryHomeProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  bool _shouldIncludeOrder(Map<String, dynamic> order) {
-    final statusText = <dynamic>[
-      order['status'],
-      order['order_status'],
-      order['delivery_status'],
-      order['state'],
-    ].firstWhere(
-      (value) => value != null && value.toString().trim().isNotEmpty,
-      orElse: () => '',
-    ).toString().toLowerCase();
-
-    final normalizedStatus = statusText.replaceAll(RegExp(r'[^a-z]'), '');
-    return normalizedStatus != 'delivered' &&
-        normalizedStatus != 'orderdelivered' &&
-        normalizedStatus != 'deliverycompleted' &&
-        normalizedStatus != 'completeddelivery';
   }
 
   void markOrderAccepted(String orderId) {

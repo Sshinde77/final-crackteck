@@ -149,7 +149,8 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       if (!matchesTab) return false;
       if (q.isEmpty) return true;
 
-      return o.id.toLowerCase().contains(q) ||
+      return o.displayId.toLowerCase().contains(q) ||
+          o.id.toLowerCase().contains(q) ||
           o.from.toLowerCase().contains(q) ||
           o.to.toLowerCase().contains(q);
     }).toList();
@@ -663,7 +664,7 @@ class OrderCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'ID:  ${order.id}',
+                    'Order No: ${order.displayId}',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
@@ -765,7 +766,7 @@ class OrderCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'ID: ${order.id}',
+                      'Order No: ${order.displayId}',
                       style: const TextStyle(fontWeight: FontWeight.w800),
                       overflow: TextOverflow.ellipsis,
                     ),

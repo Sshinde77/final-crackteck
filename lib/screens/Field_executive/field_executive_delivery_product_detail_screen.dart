@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../constants/api_constants.dart';
 import '../../routes/app_routes.dart';
@@ -222,21 +221,6 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     return cleaned.join(separator);
   }
 
-  String _requestTypeLabelFromApi(String rawType) {
-    switch (rawType.trim().toLowerCase()) {
-      case 'request_part':
-        return 'Part Request';
-      case 'pickup_request':
-        return 'Pickup Request';
-      case 'return_request':
-        return 'Return Request';
-      case 'product_delivery':
-        return 'Product Delivery';
-      default:
-        return '';
-    }
-  }
-
   String _normalizePrice(String raw) {
     final value = raw.trim();
     if (value.isEmpty || value == 'N/A') return 'N/A';
@@ -244,49 +228,26 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     return '\u20B9 $value';
   }
 
+  String _formatAddress(Map<String, dynamic> source, {String fallback = 'N/A'}) {
+    final parts = <String>[
+      _asText(source['name']),
+      _asText(source['branch_name']),
+      _asText(source['address1']),
+      _asText(source['address2']),
+      _asText(source['city']),
+      _asText(source['state']),
+      _asText(source['country']),
+      _asText(source['pincode']),
+    ].where((part) => part.isNotEmpty && part.toLowerCase() != 'null').toList();
+
+    if (parts.isEmpty) return fallback;
+    return parts.join(', ');
+  }
+
   String _normalizeRequestId(String raw) {
     final value = raw.trim();
     if (value.isEmpty || value == 'N/A') return 'N/A';
     return value.startsWith('#') ? value : '#$value';
-  }
-
-  DateTime? _parseDateTime(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty || value == 'N/A') return null;
-    return DateTime.tryParse(value);
-  }
-
-  String _formatDisplayDate(DateTime dateTime) {
-    return DateFormat('d-M-yyyy').format(dateTime);
-  }
-
-  String _formatDisplayTime(DateTime dateTime) {
-    return DateFormat('h:mm a').format(dateTime).toLowerCase();
-  }
-
-  String _compactText(String value) {
-    return value.replaceAll(RegExp(r'\s+'), ' ').trim();
-  }
-
-  List<String> _buildHighlights() {
-    final candidates = <String>[
-      _displayRequestType,
-      _displayModelNo,
-      _displayStatus,
-      _displayDescription,
-    ];
-
-    final result = <String>[];
-    for (final candidate in candidates) {
-      final text = _compactText(candidate);
-      if (text.isEmpty || text == 'N/A') continue;
-      if (result.any((item) => item.toLowerCase() == text.toLowerCase())) {
-        continue;
-      }
-      result.add(text);
-      if (result.length == 3) break;
-    }
-    return result;
   }
 
   String get _normalizedDeliveryType =>
@@ -304,16 +265,6 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   Map<String, dynamic> get _customerAddress =>
       _mapFrom(_detailSafe['customer_address']);
 
-  String get _displayRequestType {
-    final apiRequestType = _firstNonEmpty(
-      <dynamic>[_detailSafe['request_type']],
-      fallback: '',
-    );
-    final apiLabel = _requestTypeLabelFromApi(apiRequestType);
-    if (apiLabel.isNotEmpty) return apiLabel;
-    return DeliveryRequestTypes.labelFor(widget.deliveryType);
-  }
-
   String get _displayRequestId => _normalizeRequestId(
         _firstNonEmpty(
           <dynamic>[
@@ -325,9 +276,20 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         ),
       );
 
+  String get _displayHeaderId => _firstNonEmpty(
+        <dynamic>[
+          if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery)
+            _payload['order_number'],
+          _detailSafe['request_id'],
+          widget.requestId,
+          widget.deliveryId,
+        ],
+      );
+
   String get _displayImageUrl {
     final raw = _firstNonEmpty(
       <dynamic>[
+        _mapFrom(_product['product_details'])['main_product_image'],
         _product['main_product_image'],
         _product['product_image'],
         _product['image'],
@@ -337,13 +299,14 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
     if (raw.isEmpty) return '';
     if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('/')) return '${ApiConstants.baseUrl}$raw';
-    return '${ApiConstants.baseUrl}/$raw';
+    if (raw.startsWith('/')) return '${ApiConstants.siteBaseUrl}$raw';
+    return '${ApiConstants.siteBaseUrl}/$raw';
   }
 
   String get _displayProductName => _firstNonEmpty(
         <dynamic>[
           _isPartDeliveryType ? _product['product_name'] : _product['name'],
+          _mapFrom(_product['product_details'])['product_name'],
           _product['name'],
           widget.productName,
         ],
@@ -351,18 +314,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayModelNo => _firstNonEmpty(
         <dynamic>[
+          _mapFrom(_product['product_details'])['model_no'],
           _product['model_no'],
           _product['model'],
-        ],
-      );
-
-  String get _displayDescription => _firstNonEmpty(
-        <dynamic>[
-          _isPartDeliveryType
-              ? _product['short_description']
-              : _product['description'],
-          _product['full_description'],
-          _product['product_sku'],
         ],
       );
 
@@ -415,8 +369,29 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         ],
       );
 
+  Map<String, dynamic> get _shippingAddress => _mapFrom(_payload['shipping_address']);
+  Map<String, dynamic> get _warehouseDetails {
+    final direct = _mapFrom(_product['warehouse_details']);
+    if (direct.isNotEmpty) return direct;
+
+    final nestedProduct = _mapFrom(_product['product_details']);
+    final nestedWarehouse = _mapFrom(nestedProduct['warehouse']);
+    if (nestedWarehouse.isNotEmpty) return nestedWarehouse;
+
+    return _mapFrom(_payload['warehouse_details']);
+  }
+
+  String get _displayWarehouseName => _firstNonEmpty(
+        <dynamic>[
+          _warehouseDetails['name'],
+          _warehouseDetails['branch_name'],
+        ],
+        fallback: 'Warehouse',
+      );
+
   String get _displayBranchName => _firstNonEmpty(
         <dynamic>[
+          _shippingAddress['branch_name'],
           _customerAddress['branch_name'],
           _payload['branch_name'],
           widget.location,
@@ -427,6 +402,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayAddressLine {
     final address1 = _firstNonEmpty(
       <dynamic>[
+        _shippingAddress['address1'],
         _customerAddress['address1'],
         _customerAddress['address_1'],
       ],
@@ -434,6 +410,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     );
     final address2 = _firstNonEmpty(
       <dynamic>[
+        _shippingAddress['address2'],
         _customerAddress['address2'],
         _customerAddress['address_2'],
       ],
@@ -454,33 +431,29 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   String get _displayCity => _firstNonEmpty(
-        <dynamic>[_customerAddress['city']],
+        <dynamic>[_shippingAddress['city'], _customerAddress['city']],
       );
 
   String get _displayState => _firstNonEmpty(
-        <dynamic>[_customerAddress['state']],
+        <dynamic>[_shippingAddress['state'], _customerAddress['state']],
       );
 
   String get _displayCountry => _firstNonEmpty(
-        <dynamic>[_customerAddress['country']],
+        <dynamic>[_shippingAddress['country'], _customerAddress['country']],
       );
 
   String get _displayPincode => _firstNonEmpty(
         <dynamic>[
+          _shippingAddress['pincode'],
           _customerAddress['pincode'],
           _customerAddress['pin_code'],
         ],
       );
 
-  String get _displayStatus => _firstNonEmpty(
-        <dynamic>[
-          _payload['status'],
-          _product['item_status'],
-          widget.status,
-        ],
-      );
-
   String get _displayFromLocation {
+    if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
+      return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
+    }
     if (_displayBranchName != 'N/A' && _displayBranchName.isNotEmpty) {
       return _displayBranchName;
     }
@@ -491,6 +464,12 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   String get _displayToLocation {
+    if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
+      return _formatAddress(
+        _shippingAddress,
+        fallback: 'Customer address not available',
+      );
+    }
     final parts = <String>[
       _displayAddressLine,
       _displayCity,
@@ -508,39 +487,10 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     return 'Customer address not available';
   }
 
-  DateTime? get _displayDateTime {
-    for (final key in const [
-      'delivery_date',
-      'expected_delivery_date',
-      'delivery_time',
-      'scheduled_at',
-      'scheduled_date',
-      'requested_at',
-      'request_date',
-      'created_at',
-      'updated_at',
-    ]) {
-      final root = _parseDateTime(_asText(_payload[key]));
-      if (root != null) return root;
-      final nested = _parseDateTime(_asText(_serviceRequest[key]));
-      if (nested != null) return nested;
-    }
-    return null;
-  }
-
-  String get _displayDateLabel {
-    final value = _displayDateTime;
-    if (value == null) return _displayRequestType;
-    return _formatDisplayDate(value);
-  }
-
-  String get _displayTimeLabel {
-    final value = _displayDateTime;
-    if (value == null) return _displayStatus;
-    return _formatDisplayTime(value);
-  }
-
   String get _displayCustomerAddressForNavigation {
+    if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
+      return _formatAddress(_shippingAddress, fallback: 'N/A');
+    }
     final parts = <String>[
       _displayAddressLine,
       _displayCity,
@@ -771,28 +721,12 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                flex: 5,
                 child: _summaryPair(
-                  label: 'ID',
-                  value: _displayRequestId,
-                ),
-              ),
-              SizedBox(width: _isCompactLayout ? 8 : 12),
-              Expanded(
-                flex: 3,
-                child: _summaryPair(
-                  label: '',
-                  value: _displayDateLabel,
-                  alignEnd: true,
-                ),
-              ),
-              SizedBox(width: _isCompactLayout ? 8 : 12),
-              Expanded(
-                flex: 2,
-                child: _summaryPair(
-                  label: '',
-                  value: _displayTimeLabel,
-                  alignEnd: true,
+                  label: _normalizedDeliveryType ==
+                          DeliveryRequestTypes.productDelivery
+                      ? 'Order No'
+                      : 'Request ID',
+                  value: _displayHeaderId,
                 ),
               ),
             ],
@@ -887,7 +821,6 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   Widget _buildProductCard() {
-    final highlights = _buildHighlights();
     final compact = _isCompactLayout;
     final imageSize = compact ? 88.0 : 100.0;
     final cardRadius = compact ? 18.0 : 20.0;
@@ -954,7 +887,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildProductMeta(highlights, compact),
+                          _buildProductMeta(compact),
                           const SizedBox(height: 10),
                           qtyWidget,
                         ],
@@ -962,7 +895,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                     : Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildProductMeta(highlights, compact)),
+                          Expanded(child: _buildProductMeta(compact)),
                           const SizedBox(width: 10),
                           qtyWidget,
                         ],
@@ -975,7 +908,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     );
   }
 
-  Widget _buildProductMeta(List<String> highlights, bool compact) {
+  Widget _buildProductMeta(bool compact) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -998,47 +931,38 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
             fontWeight: FontWeight.w800,
           ),
         ),
-        if (highlights.isNotEmpty) ...[
-          SizedBox(height: compact ? 8 : 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: highlights
-                .map(
-                  (item) => Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 8 : 10,
-                      vertical: compact ? 5 : 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F6F1),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Text(
-                      item,
-                      style: TextStyle(
-                        fontSize: compact ? 10.5 : 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF244321),
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
       ],
     );
   }
 
   Widget _buildExtraDetailsCard() {
+    final productDetails = _mapFrom(_product['product_details']);
     final items = <MapEntry<String, String>>[
+      MapEntry('Order No', _displayHeaderId),
       MapEntry('Customer', _displayCustomerName),
       MapEntry('Phone', _displayCustomerPhone),
       MapEntry('Email', _displayCustomerEmail),
+      MapEntry('Shipping Branch', _firstNonEmpty(<dynamic>[_shippingAddress['branch_name']])),
+      MapEntry('Payment Status', _firstNonEmpty(<dynamic>[_payload['payment_status']])),
+      MapEntry('Total Amount', _normalizePrice(_firstNonEmpty(<dynamic>[_payload['total_amount']]))),
+      MapEntry('Unit Price', _normalizePrice(_firstNonEmpty(<dynamic>[_product['unit_price'], _product['line_total']]))),
+      MapEntry('Quantity', _displayQuantity),
       MapEntry('Model No', _displayModelNo),
-      MapEntry('Status', _displayStatus),
-      MapEntry('Request Type', _displayRequestType),
+      MapEntry('HSN Code', _firstNonEmpty(<dynamic>[_product['hsn_code'], productDetails['hsn_code']])),
+      MapEntry('Weight', _firstNonEmpty(<dynamic>[_product['weight'], productDetails['weight']])),
+      MapEntry('Dimensions', _firstNonEmpty(<dynamic>[_product['dimensions'], productDetails['dimensions']])),
+      MapEntry('Shipping Time', _firstNonEmpty(<dynamic>[_product['shipping_time'], productDetails['shipping_time']])),
+      MapEntry('Brand Warranty', _firstNonEmpty(<dynamic>[productDetails['brand_warranty']])),
+      MapEntry('COD', _firstNonEmpty(<dynamic>[_product['cod'], productDetails['cod']])),
+      MapEntry('Installation', _firstNonEmpty(<dynamic>[_product['installation'], productDetails['installation']])),
+      MapEntry('Warehouse', _displayWarehouseName),
+      MapEntry('Warehouse Code', _firstNonEmpty(<dynamic>[_warehouseDetails['warehouse_code']])),
+      MapEntry('Warehouse Contact', _firstNonEmpty(<dynamic>[_warehouseDetails['phone_number']])),
+      MapEntry('Warehouse Address', _formatAddress(_warehouseDetails)),
+      MapEntry('Shipping Address', _formatAddress(_shippingAddress)),
+      MapEntry('Expected Delivery', _firstNonEmpty(<dynamic>[_payload['expected_delivery_date']])),
+      MapEntry('Customer Notes', _firstNonEmpty(<dynamic>[_payload['customer_notes']], fallback: '')),
+      MapEntry('Admin Notes', _firstNonEmpty(<dynamic>[_payload['admin_notes']], fallback: '')),
     ].where((item) => item.value.isNotEmpty && item.value != 'N/A').toList();
 
     if (items.isEmpty) {

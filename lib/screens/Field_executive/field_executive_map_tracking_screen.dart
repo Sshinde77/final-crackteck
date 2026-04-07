@@ -175,7 +175,16 @@ class _FieldExecutiveMapTrackingScreenState
 
     final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$digits');
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final canLaunchDialer = await canLaunchUrl(uri);
+    if (!canLaunchDialer) {
+      _snack('Unable to open dialer');
+      return;
+    }
+
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
     if (!launched) {
       _snack('Unable to open dialer');
     }
@@ -280,27 +289,9 @@ class _FieldExecutiveMapTrackingScreenState
                         child: Image.asset(
                           'assets/images/map_placeholder.jpg',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) {
-                            return Container(
-                              color: Colors.grey.shade200,
-                              alignment: Alignment.center,
-                              child: const Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.map_outlined,
-                                    color: Colors.grey,
-                                    size: 56,
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    'Map preview unavailable',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey.shade200,
+                          ),
                         ),
                       ),
                     ),
@@ -369,7 +360,17 @@ class _FieldExecutiveMapTrackingScreenState
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Service ID: $serviceId',
+                            'Order No: $serviceId',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _customerPhone.isEmpty
+                                ? 'Phone: -'
+                                : 'Phone: $_customerPhone',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.black54,
