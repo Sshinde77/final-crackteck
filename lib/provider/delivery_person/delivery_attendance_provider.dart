@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../../model/Delivery_person/delivery_attendance_model.dart';
 import '../../services/delivery_person/delivery_attendance_service.dart';
 
 class DeliveryAttendanceProvider extends ChangeNotifier {
@@ -9,12 +8,10 @@ class DeliveryAttendanceProvider extends ChangeNotifier {
 
   final DeliveryAttendanceService _service;
 
-  DeliveryAttendanceModel _attendance = DeliveryAttendanceModel.empty();
   List<Map<String, dynamic>> _logs = const <Map<String, dynamic>>[];
   bool _isLoading = false;
   bool _isUpdating = false;
 
-  DeliveryAttendanceModel get attendance => _attendance;
   List<Map<String, dynamic>> get logs => _logs;
   bool get isLoading => _isLoading;
   bool get isUpdating => _isUpdating;
@@ -23,13 +20,7 @@ class DeliveryAttendanceProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final results = await Future.wait<dynamic>(<Future<dynamic>>[
-        _service.fetchAttendance(),
-        _service.fetchAttendanceLogs(),
-      ]);
-      final data = results[0] as Map<String, dynamic>;
-      _attendance = DeliveryAttendanceModel.fromJson(data);
-      _logs = (results[1] as List<Map<String, dynamic>>)
+      _logs = (await _service.fetchAttendanceLogs())
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
     } finally {

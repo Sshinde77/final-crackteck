@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../constants/api_constants.dart';
 import '../../model/Delivery_person/delivery_order_model.dart';
+import '../../provider/attendance_provider.dart';
 import '../../provider/delivery_person/delivery_home_provider.dart';
 import '../../routes/app_routes.dart';
+import '../../services/delivery_person/delivery_attendance_service.dart';
 import '../Field_executive/field_executive_delivery_product_detail_screen.dart';
 
 class DeliveryPersonHomeTab extends StatefulWidget {
@@ -23,6 +25,7 @@ class DeliveryPersonHomeTab extends StatefulWidget {
 
 class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   final TextEditingController _searchCtrl = TextEditingController();
+  final DeliveryAttendanceService _attendanceService = DeliveryAttendanceService();
   OrdersTab _activeTab = OrdersTab.productDelivery;
 
   @override
@@ -31,6 +34,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<DeliveryHomeProvider>().loadHomeData();
+      context.read<AttendanceProvider>().initialize(roleId: widget.roleId);
     });
   }
 
@@ -50,6 +54,16 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   String _fmtTime(DateTime? dt) {
     if (dt == null) return '--:-- --';
     return DeliveryOrderModel.formatTime(dt);
+  }
+
+  Future<void> _refreshData() async {
+    await Future.wait<void>([
+      context.read<DeliveryHomeProvider>().loadHomeData(),
+      context.read<AttendanceProvider>().initialize(
+        roleId: widget.roleId,
+        forceRefresh: true,
+      ),
+    ]);
   }
 
   String _deliveryTypeForOrder(DeliveryOrderModel order) {
@@ -95,10 +109,17 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   }
 
   Future<void> _handleAttendance({required bool login}) async {
-    final message = await context.read<DeliveryHomeProvider>().updateAttendance(
-      login: login,
-    );
-    if (!mounted || message == null) return;
+    final attendance = context.read<AttendanceProvider>();
+    final message = login
+        ? await attendance.clockIn(
+            roleId: widget.roleId,
+            apiCall: _attendanceService.attendanceLogin,
+          )
+        : await attendance.clockOut(
+            roleId: widget.roleId,
+            apiCall: _attendanceService.attendanceLogout,
+          );
+    if (!mounted) return;
     _toast(message);
   }
 
@@ -106,6 +127,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   Widget build(BuildContext context) {
     const green = Color(0xFF1E7C10);
     final provider = context.watch<DeliveryHomeProvider>();
+    final attendanceProvider = context.watch<AttendanceProvider>();
 
     final q = _searchCtrl.text.trim().toLowerCase();
     final productDeliveryCount = provider.countByCategory(
@@ -138,7 +160,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       backgroundColor: const Color(0xFFFFFFFF),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: provider.loadHomeData,
+          onRefresh: _refreshData,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -164,11 +186,21 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                   child: Column(
                     children: [
                       AttendanceSection(
-                        loginTimeText: _fmtTime(provider.attendance.loginAt),
-                        logoutTimeText: _fmtTime(provider.attendance.logoutAt),
-                        isBusy: provider.isAttendanceLoading,
-                        onLogin: () => _handleAttendance(login: true),
-                        onLogout: () => _handleAttendance(login: false),
+                        loginTimeText: _fmtTime(
+                          attendanceProvider.attendance.clockInAt,
+                        ),
+                        logoutTimeText: _fmtTime(
+                          attendanceProvider.attendance.clockOutAt,
+                        ),
+                        isBusy:
+                            attendanceProvider.isUpdating ||
+                            attendanceProvider.isLoading,
+                        onLogin: attendanceProvider.canClockIn
+                            ? () => _handleAttendance(login: true)
+                            : null,
+                        onLogout: attendanceProvider.canClockOut
+                            ? () => _handleAttendance(login: false)
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       StatsTabsSection(
@@ -185,13 +217,13 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                         _HomeStateCard(
                           message: provider.error!,
                           actionLabel: 'Retry',
-                          onTap: provider.loadHomeData,
+                          onTap: () => _refreshData(),
                         )
                       else if (visibleOrders.isEmpty)
                         _HomeStateCard(
                           message: 'No orders available right now.',
                           actionLabel: 'Refresh',
-                          onTap: provider.loadHomeData,
+                          onTap: () => _refreshData(),
                         )
                       else
                         OrdersSection(
@@ -314,8 +346,8 @@ class AttendanceSection extends StatelessWidget {
   final String loginTimeText;
   final String logoutTimeText;
   final bool isBusy;
-  final VoidCallback onLogin;
-  final VoidCallback onLogout;
+  final VoidCallback? onLogin;
+  final VoidCallback? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -394,50 +426,53 @@ class _AttendanceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Container(
-        height: 72,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.black12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: pillColor,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, color: Colors.white, size: 14),
-                  const SizedBox(width: 15),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+    return Opacity(
+      opacity: onTap == null ? 0.55 : 1,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.black12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: pillColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  children: [
+                    Icon(icon, color: Colors.white, size: 14),
+                    const SizedBox(width: 15),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Spacer(),
-            Text(
-              timeText,
-              style: const TextStyle(
-                color: Colors.black45,
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
+              const Spacer(),
+              Text(
+                timeText,
+                style: const TextStyle(
+                  color: Colors.black45,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

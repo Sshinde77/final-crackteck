@@ -123,7 +123,7 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
       appBar: AppBar(
         backgroundColor: green,
         elevation: 0,
-       g
+
         title: const Text(
           'Personal Information',
           style: TextStyle(

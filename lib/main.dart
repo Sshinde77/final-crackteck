@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'model/sales_person/dashboard_provider.dart';
+import 'provider/attendance_provider.dart';
 
 import 'constants/app_strings.dart';
 import 'core/navigation_service.dart';
@@ -29,6 +30,7 @@ class _CrackTechAppState extends State<CrackTechApp> {
   void initState() {
     super.initState();
     _initializeNotifications();
+    
   }
 
   Future<void> _initializeNotifications() async {
@@ -42,8 +44,15 @@ class _CrackTechAppState extends State<CrackTechApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<DashboardProvider>(
-      create: (_) => DashboardProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<DashboardProvider>(
+          create: (_) => DashboardProvider(),
+        ),
+        ChangeNotifierProvider<AttendanceProvider>(
+          create: (_) => AttendanceProvider(),
+        ),
+      ],
       child: MaterialApp(
         navigatorKey: NavigationService.navigatorKey,
         title: AppStrings.appName,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../constants/api_constants.dart';
 import '../../core/secure_storage_service.dart';
+import '../../provider/attendance_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 import 'field_excutive_attendance.dart';
@@ -33,18 +35,17 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
   bool _isLoggingOut = false;
-  bool _isClockingIn = false;
-  bool _isClockingOut = false;
   late String _displayName;
-
-  String loginTime = "00:00 AM";
-  String logoutTime = "00:00 PM";
 
   @override
   void initState() {
     super.initState();
     _displayName = widget.userName.trim();
     _loadProfileName();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AttendanceProvider>().initialize(roleId: widget.roleId);
+    });
   }
 
   String _readString(Map<String, dynamic> data, List<String> keys) {
@@ -89,94 +90,16 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
     return DateFormat('hh:mm a').format(dateTime.toLocal());
   }
 
-  DateTime? _parseClockInDateTime(dynamic source, {int depth = 0}) {
-    if (source == null || depth > 4) return null;
-
-    if (source is Map<String, dynamic>) {
-      final raw = source['login_at'] ?? source['check_in_at'] ?? source['clock_in_at'];
-      if (raw is String && raw.trim().isNotEmpty) {
-        final parsed = DateTime.tryParse(raw.trim());
-        if (parsed != null) return parsed;
-      }
-
-      final nestedAuthLog = source['auth_log'];
-      final nestedParsed = _parseClockInDateTime(nestedAuthLog, depth: depth + 1);
-      if (nestedParsed != null) return nestedParsed;
-
-      for (final value in source.values) {
-        final parsed = _parseClockInDateTime(value, depth: depth + 1);
-        if (parsed != null) return parsed;
-      }
-      return null;
-    }
-
-    if (source is List) {
-      for (final item in source) {
-        final parsed = _parseClockInDateTime(item, depth: depth + 1);
-        if (parsed != null) return parsed;
-      }
-    }
-
-    return null;
-  }
-
-  DateTime? _parseClockOutDateTime(dynamic source, {int depth = 0}) {
-    if (source == null || depth > 4) return null;
-
-    if (source is Map<String, dynamic>) {
-      final raw = source['logout_at'] ?? source['check_out_at'] ?? source['clock_out_at'];
-      if (raw is String && raw.trim().isNotEmpty) {
-        final parsed = DateTime.tryParse(raw.trim());
-        if (parsed != null) return parsed;
-      }
-
-      final nestedAuthLog = source['auth_log'];
-      final nestedParsed = _parseClockOutDateTime(nestedAuthLog, depth: depth + 1);
-      if (nestedParsed != null) return nestedParsed;
-
-      for (final value in source.values) {
-        final parsed = _parseClockOutDateTime(value, depth: depth + 1);
-        if (parsed != null) return parsed;
-      }
-      return null;
-    }
-
-    if (source is List) {
-      for (final item in source) {
-        final parsed = _parseClockOutDateTime(item, depth: depth + 1);
-        if (parsed != null) return parsed;
-      }
-    }
-
-    return null;
-  }
-
   Future<void> _handleClockIn() async {
-    if (_isClockingIn) return;
-
-    setState(() => _isClockingIn = true);
-
     try {
-      final response = await ApiService.instance.clockIn(roleId: widget.roleId);
+      final response = await context.read<AttendanceProvider>().clockIn(
+        roleId: widget.roleId,
+        apiCall: () => ApiService.instance.clockIn(roleId: widget.roleId),
+      );
       if (!mounted) return;
-
-      if (!response.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message ?? 'Clock-in failed. Please try again.'),
-          ),
-        );
-        return;
-      }
-
-      final parsedLoginAt = _parseClockInDateTime(response.data);
-      setState(() {
-        loginTime = _formatTime(parsedLoginAt ?? DateTime.now());
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Clock-in successful.'),
+          content: Text(response),
         ),
       );
     } catch (_) {
@@ -186,39 +109,19 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
           content: Text('Something went wrong during clock-in. Please try again.'),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isClockingIn = false);
-      }
     }
   }
 
   Future<void> _handleClockOut() async {
-    if (_isClockingOut) return;
-
-    setState(() => _isClockingOut = true);
-
     try {
-      final response = await ApiService.instance.clockOut(roleId: widget.roleId);
+      final response = await context.read<AttendanceProvider>().clockOut(
+        roleId: widget.roleId,
+        apiCall: () => ApiService.instance.clockOut(roleId: widget.roleId),
+      );
       if (!mounted) return;
-
-      if (!response.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message ?? 'Clock-out failed. Please try again.'),
-          ),
-        );
-        return;
-      }
-
-      final parsedLogoutAt = _parseClockOutDateTime(response.data);
-      setState(() {
-        logoutTime = _formatTime(parsedLogoutAt ?? DateTime.now());
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Clock-out successful.'),
+          content: Text(response),
         ),
       );
     } catch (_) {
@@ -228,10 +131,6 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
           content: Text('Something went wrong during clock-out. Please try again.'),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isClockingOut = false);
-      }
     }
   }
 
@@ -299,6 +198,14 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final attendanceProvider = context.watch<AttendanceProvider>();
+    final loginTime = attendanceProvider.attendance.clockInAt == null
+        ? '00:00 AM'
+        : _formatTime(attendanceProvider.attendance.clockInAt!);
+    final logoutTime = attendanceProvider.attendance.clockOutAt == null
+        ? '00:00 PM'
+        : _formatTime(attendanceProvider.attendance.clockOutAt!);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -356,9 +263,9 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         time: loginTime,
                         bg: const Color(0xFFE9FFE6),
                         iconBg: const Color(0xFF2E7D32),
-                        icon: _isClockingIn ? Icons.sync : Icons.login,
+                        icon: attendanceProvider.isUpdating ? Icons.sync : Icons.login,
                         titleColor: const Color(0xFF2E7D32),
-                        onTap: _isClockingIn ? () {} : _handleClockIn,
+                        onTap: attendanceProvider.canClockIn ? _handleClockIn : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -368,9 +275,9 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         time: logoutTime,
                         bg: const Color(0xFFFFE9E9),
                         iconBg: const Color(0xFFD32F2F),
-                        icon: _isClockingOut ? Icons.sync : Icons.logout,
+                        icon: attendanceProvider.isUpdating ? Icons.sync : Icons.logout,
                         titleColor: const Color(0xFFD32F2F),
-                        onTap: _isClockingOut ? () {} : _handleClockOut,
+                        onTap: attendanceProvider.canClockOut ? _handleClockOut : null,
                       ),
                     ),
                   ],
@@ -532,7 +439,7 @@ class _TimeCard extends StatelessWidget {
   final Color iconBg;
   final IconData icon;
   final Color titleColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _TimeCard({
     required this.title,
@@ -546,34 +453,53 @@ class _TimeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        height: 74,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.black12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(6)),
-                  child: Icon(icon, color: Colors.white, size: 16),
+    return Opacity(
+      opacity: onTap == null ? 0.55 : 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 74,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: titleColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                time,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(width: 8),
-                Text(title, style: TextStyle(color: titleColor, fontSize: 12, fontWeight: FontWeight.w600)),
-              ],
-            ),
-            const Spacer(),
-            Text(time, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

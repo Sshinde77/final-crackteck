@@ -257,6 +257,7 @@ class DeliveryApiClient {
     if (decoded is Map<String, dynamic>) {
       final candidates = <dynamic>[
         decoded['data'],
+        decoded['logs'],
         decoded['orders'],
         decoded['return_orders'],
         decoded['requests'],

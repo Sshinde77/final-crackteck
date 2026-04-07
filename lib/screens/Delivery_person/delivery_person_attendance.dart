@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../provider/attendance_provider.dart';
 import '../../provider/delivery_person/delivery_attendance_provider.dart';
 
 class DeliveryPersonAttendanceScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class _DeliveryPersonAttendanceScreenState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      context.read<AttendanceProvider>().initialize(roleId: widget.roleId);
       context.read<DeliveryAttendanceProvider>().load();
     });
   }
