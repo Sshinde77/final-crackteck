@@ -123,10 +123,7 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
       appBar: AppBar(
         backgroundColor: green,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+       g
         title: const Text(
           'Personal Information',
           style: TextStyle(
