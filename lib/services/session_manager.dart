@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/navigation_service.dart';
 import '../core/secure_storage_service.dart';
 import '../routes/app_routes.dart';
 
@@ -67,14 +68,15 @@ class SessionManager {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      await SecureStorageService.saveAccessToken(accessToken);
-      await SecureStorageService.saveRoleId(roleId);
+      await SecureStorageService.saveToken(accessToken);
 
       if (refreshToken != null && refreshToken.trim().isNotEmpty) {
         await SecureStorageService.saveRefreshToken(refreshToken);
       }
       if (userId != null) {
-        await SecureStorageService.saveUserId(userId);
+        await SecureStorageService.saveUserData(userId: userId, roleId: roleId);
+      } else {
+        await SecureStorageService.saveRoleId(roleId);
       }
       if (userProfile != null) {
         await SecureStorageService.saveUserProfile(userProfile);
@@ -119,13 +121,13 @@ class SessionManager {
       final prefs = await SharedPreferences.getInstance();
 
       if (normalizedToken.isEmpty) {
-        await SecureStorageService.saveAccessToken('');
+        await SecureStorageService.saveToken('');
         await prefs.remove(_tokenExpiryEpochKey);
         debugPrint('SessionManager.saveToken cleared empty token');
         return;
       }
 
-      await SecureStorageService.saveAccessToken(normalizedToken);
+      await SecureStorageService.saveToken(normalizedToken);
 
       final expiry = _readJwtExpiry(normalizedToken);
       if (expiry != null) {
@@ -191,7 +193,10 @@ class SessionManager {
     return userId;
   }
 
-  static Future<bool> isLoggedIn({int? expectedRoleId}) async {
+  static Future<bool> isLoggedIn({
+    int? expectedRoleId,
+    bool checkExpiry = false,
+  }) async {
     await _awaitPendingSessionWrite();
     await Future<void>.delayed(_authCheckDelay);
 
@@ -203,7 +208,7 @@ class SessionManager {
       return false;
     }
 
-    if (isTokenExpired(token)) {
+    if (checkExpiry && isTokenExpired(token)) {
       debugPrint('SessionManager.isLoggedIn -> false (expired token)');
       return false;
     }
@@ -274,6 +279,11 @@ class SessionManager {
     }
 
     await logSessionState('clearSession');
+  }
+
+  static Future<void> logoutAndNavigate({int? roleId}) async {
+    await clearSession();
+    await NavigationService.navigateToAuthRoot(roleId: roleId);
   }
 
   static bool isTokenExpired(

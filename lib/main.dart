@@ -8,6 +8,7 @@ import 'provider/attendance_provider.dart';
 
 import 'constants/app_strings.dart';
 import 'core/navigation_service.dart';
+import 'core/secure_storage_service.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
@@ -26,11 +27,19 @@ class CrackTechApp extends StatefulWidget {
 }
 
 class _CrackTechAppState extends State<CrackTechApp> {
+  final WidgetsBindingObserver _lifecycleObserver = _AppLifecycleObserver();
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     _initializeNotifications();
-    
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    super.dispose();
   }
 
   Future<void> _initializeNotifications() async {
@@ -61,9 +70,18 @@ class _CrackTechAppState extends State<CrackTechApp> {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        initialRoute: AppRoutes.roleSelection,
+        initialRoute: AppRoutes.splash,
         onGenerateRoute: RouteGenerator.generateRoute,
       ),
     );
+  }
+}
+
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      SecureStorageService.refreshSessionCache();
+    }
   }
 }

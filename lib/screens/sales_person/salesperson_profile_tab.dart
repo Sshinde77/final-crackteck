@@ -5,7 +5,7 @@ import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 import '../../model/sales_person/profile_provider.dart';
 import '../../services/api_service.dart';
-import '../../core/secure_storage_service.dart';
+import '../../services/session_manager.dart';
 import '../reimbursement/reimbursement_screen.dart';
 
 class SalesPersonMoreScreen extends StatefulWidget {
@@ -88,14 +88,9 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
         return;
       }
 
-      await SecureStorageService.clearTokens();
+      await SessionManager.logoutAndNavigate(roleId: widget.roleId);
       if (!mounted) return;
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.roleSelection,
-        (route) => false,
-      );
+      return;
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoggingOut = false);

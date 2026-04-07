@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/secure_storage_service.dart';
 import '../../provider/delivery_person/delivery_attendance_provider.dart';
 import '../../provider/delivery_person/delivery_documents_provider.dart';
 import '../../provider/delivery_person/delivery_kyc_provider.dart';
@@ -9,6 +8,7 @@ import '../../provider/delivery_person/delivery_personal_info_provider.dart';
 import '../../provider/delivery_person/delivery_profile_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
+import '../../services/session_manager.dart';
 import '../../widgets/placeholder.dart';
 import 'delivery_feedback.dart';
 import 'delivery_kyc_screen.dart';
@@ -91,14 +91,9 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
         return;
       }
 
-      await SecureStorageService.clearTokens();
+      await SessionManager.logoutAndNavigate(roleId: widget.roleId);
       if (!mounted) return;
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.roleSelection,
-        (route) => false,
-      );
+      return;
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoggingOut = false);

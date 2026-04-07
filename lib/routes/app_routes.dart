@@ -7,7 +7,8 @@ class AppRoutes {
   AppRoutes._(); // Private constructor to prevent instantiation
 
   // Initial Route
-  static const String roleSelection = '/';
+  static const String splash = '/';
+  static const String roleSelection = '/role-selection';
 
   // Login Route (unified for all roles)
   static const String login = '/login';

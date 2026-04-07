@@ -22,6 +22,63 @@ class DeliveryOrdersService extends DeliveryApiClient {
     return extractList(decodeBody(response.body));
   }
 
+  Future<List<Map<String, dynamic>>> fetchPickupRequests() async {
+    final validation = await validateAuthState();
+    if (validation != null) {
+      throw Exception(validation.message);
+    }
+    final response = await performAuthenticatedGet(
+      buildUri(
+        ApiConstants.deliverypickuprequestlist,
+        await requiredQuery(roleId: 2),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load pickup requests: ${response.statusCode}',
+      );
+    }
+    return extractList(decodeBody(response.body));
+  }
+
+  Future<List<Map<String, dynamic>>> fetchReturnRequests() async {
+    final validation = await validateAuthState();
+    if (validation != null) {
+      throw Exception(validation.message);
+    }
+    final response = await performAuthenticatedGet(
+      buildUri(
+        ApiConstants.deliveryreturnrequestlist,
+        await requiredQuery(roleId: 2),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load return requests: ${response.statusCode}',
+      );
+    }
+    return extractList(decodeBody(response.body));
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPartRequests() async {
+    final validation = await validateAuthState();
+    if (validation != null) {
+      throw Exception(validation.message);
+    }
+    final response = await performAuthenticatedGet(
+      buildUri(
+        ApiConstants.deliverypartrequestlist,
+        await requiredQuery(roleId: 2),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load part requests: ${response.statusCode}',
+      );
+    }
+    return extractList(decodeBody(response.body));
+  }
+
   Future<Map<String, dynamic>> fetchOrderDetail(String orderId) async {
     final response = await performAuthenticatedGet(
       buildUri(

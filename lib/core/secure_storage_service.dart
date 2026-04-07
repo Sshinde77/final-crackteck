@@ -130,6 +130,10 @@ class SecureStorageService {
     }
   }
 
+  static Future<void> saveToken(String token) async {
+    await saveAccessToken(token);
+  }
+
   /// Get the currently stored refresh token (if any).
   static Future<String?> getRefreshToken({bool forceReload = false}) async {
     if (!forceReload && _refreshToken != null && _refreshToken!.isNotEmpty) {
@@ -137,6 +141,10 @@ class SecureStorageService {
     }
     _refreshToken = _normalizeToken(await _storage.read(key: _refreshTokenKey));
     return _refreshToken;
+  }
+
+  static Future<String?> getToken({bool forceReload = false}) async {
+    return getAccessToken(forceReload: forceReload);
   }
 
   /// Persist a new refresh token.
@@ -212,6 +220,16 @@ class SecureStorageService {
         _pendingUserIdWrite = null;
       }
     }
+  }
+
+  static Future<void> saveUserData({
+    required int userId,
+    required int roleId,
+  }) async {
+    await Future.wait<void>([
+      saveUserId(userId),
+      saveRoleId(roleId),
+    ]);
   }
 
   /// Clear the current user id while keeping tokens unchanged.
@@ -377,5 +395,18 @@ class SecureStorageService {
       _storage.delete(key: _lastSyncedFcmTokenKey),
       _storage.delete(key: _deviceIdKey),
     ]);
+  }
+
+  static Future<void> clearStorage() async {
+    await clearTokens();
+  }
+
+  static Future<void> refreshSessionCache() async {
+    _accessToken = await _readNormalizedValue(_accessTokenKey);
+    _refreshToken = _normalizeToken(await _storage.read(key: _refreshTokenKey));
+    final rawRoleId = await _storage.read(key: _roleIdKey);
+    final rawUserId = await _storage.read(key: _userIdKey);
+    _roleId = rawRoleId == null ? null : int.tryParse(rawRoleId);
+    _userId = rawUserId == null ? null : int.tryParse(rawUserId);
   }
 }

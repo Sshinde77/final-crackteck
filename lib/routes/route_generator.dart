@@ -27,6 +27,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_strings.dart';
 import '../login_screen.dart';
 import '../role_screen.dart';
+import '../screens/splash_screen.dart';
 import '../screens/Delivery_person/delivery_dashboard.dart';
 import '../screens/Delivery_person/delivery_detail_screen.dart';
 import '../screens/Field_executive/field_excutive_attendance.dart';
@@ -81,6 +82,12 @@ class RouteGenerator {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.splash:
+        return MaterialPageRoute(
+          builder: (_) => const SplashScreen(),
+          settings: settings,
+        );
+
       case AppRoutes.roleSelection:
         return MaterialPageRoute(
           builder: (_) => const rolesccreen(),

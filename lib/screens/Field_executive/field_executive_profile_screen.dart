@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../constants/api_constants.dart';
-import '../../core/secure_storage_service.dart';
 import '../../provider/attendance_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
+import '../../services/session_manager.dart';
 import 'field_excutive_attendance.dart';
 import 'field_executive_feedback.dart';
 import 'field_executive_personal_info.dart';
@@ -177,14 +177,9 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
         return;
       }
 
-      await SecureStorageService.clearTokens();
+      await SessionManager.logoutAndNavigate(roleId: widget.roleId);
       if (!mounted) return; 
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.roleSelection,
-        (route) => false,
-      );
+      return;
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoggingOut = false);
