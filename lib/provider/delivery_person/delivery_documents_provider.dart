@@ -25,32 +25,207 @@ class DeliveryDocumentsProvider extends ChangeNotifier {
   String? get error => _error;
   bool get lastSaveSucceeded => _lastSaveSucceeded;
 
+  Map<String, dynamic> _normalizeDocument(dynamic value) {
+    final source = _mapFrom(value);
+    if (source.isEmpty) {
+      return const <String, dynamic>{};
+    }
+
+    final normalized = Map<String, dynamic>.from(source);
+    for (final key in const <String>[
+      'data',
+      'document',
+      'details',
+      'vehicle',
+      'vehicle_details',
+      'aadhar',
+      'aadhaar',
+      'aadhar_details',
+      'pan',
+      'pan_card',
+      'pan_card_details',
+      'registration',
+      'result',
+      'item',
+      'record',
+      'documents',
+      'files',
+      'attributes',
+    ]) {
+      final nested = _normalizeDocument(source[key]);
+      if (nested.isNotEmpty) {
+        normalized.addAll(nested);
+      }
+    }
+
+    _applyAliases(normalized);
+    return normalized;
+  }
+
+  Map<String, dynamic> _mapFrom(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    if (value is List) {
+      for (final item in value) {
+        final mapped = _mapFrom(item);
+        if (mapped.isNotEmpty) {
+          return mapped;
+        }
+      }
+    }
+    return const <String, dynamic>{};
+  }
+
+  void _copyIfMissing(
+    Map<String, dynamic> map,
+    String targetKey,
+    List<String> sourceKeys,
+  ) {
+    final existing = map[targetKey];
+    if (existing != null && existing.toString().trim().isNotEmpty) {
+      return;
+    }
+    for (final sourceKey in sourceKeys) {
+      final value = map[sourceKey];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        map[targetKey] = value;
+        return;
+      }
+    }
+  }
+
+  void _applyAliases(Map<String, dynamic> map) {
+    _copyIfMissing(map, 'aadhar_number', const [
+      'aadhar_no',
+      'aadhaar_number',
+      'aadhaar_no',
+      'aadharNumber',
+      'aadhaarNumber',
+      'document_no',
+      'document_number',
+    ]);
+    _copyIfMissing(map, 'pan_number', const [
+      'pan_no',
+      'panNumber',
+      'document_no',
+      'document_number',
+    ]);
+    _copyIfMissing(map, 'vehicle_type', const [
+      'vehicleType',
+      'brand',
+      'type',
+    ]);
+    _copyIfMissing(map, 'vehicle_number', const [
+      'vehicleNumber',
+      'registration_number',
+      'registration_no',
+      'vehicle_no',
+    ]);
+    _copyIfMissing(map, 'driving_license_no', const [
+      'driving_licence_no',
+      'drivingLicenseNo',
+      'licence_no',
+      'license_no',
+      'license_number',
+      'licence_number',
+    ]);
+    _copyIfMissing(map, 'aadhar_front_path', const [
+      'aadhar_front',
+      'aadhaar_front_path',
+      'aadhaar_front',
+      'front_path',
+      'front_image',
+      'document_file',
+      'document_path',
+      'document_url',
+      'file',
+      'file_path',
+    ]);
+    _copyIfMissing(map, 'aadhar_back_path', const [
+      'aadhar_back',
+      'aadhaar_back_path',
+      'aadhaar_back',
+      'back_path',
+      'back_image',
+    ]);
+    _copyIfMissing(map, 'pan_card_front_path', const [
+      'pan_front',
+      'pan_front_path',
+      'front_path',
+      'front_image',
+      'document_file',
+      'document_path',
+      'document_url',
+      'file',
+      'file_path',
+    ]);
+    _copyIfMissing(map, 'pan_card_back_path', const [
+      'pan_back',
+      'pan_back_path',
+      'back_path',
+      'back_image',
+    ]);
+    _copyIfMissing(map, 'driving_license_front_path', const [
+      'driving_licence_front_path',
+      'drivingLicenseFrontPath',
+      'licence_front_image',
+      'license_front_image',
+      'licence_front_path',
+      'license_front_path',
+      'front_path',
+      'front_image',
+      'document_file',
+      'document_path',
+      'document_url',
+      'file',
+      'file_path',
+    ]);
+    _copyIfMissing(map, 'driving_license_back_path', const [
+      'driving_licence_back_path',
+      'drivingLicenseBackPath',
+      'licence_back_image',
+      'license_back_image',
+      'licence_back_path',
+      'license_back_path',
+      'back_path',
+      'back_image',
+    ]);
+  }
+
   Future<void> loadAll() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+    final errors = <String>[];
+
     try {
-      final results = await Future.wait<dynamic>(<Future<dynamic>>[
-        _service.fetchAadharDetails(),
-        _service.fetchPanDetails(),
-        _service.fetchVehicleDetails(),
-      ]);
-      _aadhar = results[0] as Map<String, dynamic>;
-      _pan = results[1] as Map<String, dynamic>;
-      _vehicle = results[2] as Map<String, dynamic>;
+      _aadhar = _normalizeDocument(await _service.fetchAadharDetails());
     } catch (error) {
-      _error = error.toString().replaceFirst('Exception: ', '');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      errors.add(error.toString().replaceFirst('Exception: ', ''));
     }
+
+    try {
+      _pan = _normalizeDocument(await _service.fetchPanDetails());
+    } catch (error) {
+      errors.add(error.toString().replaceFirst('Exception: ', ''));
+    }
+
+    try {
+      _vehicle = _normalizeDocument(await _service.fetchVehicleDetails());
+    } catch (error) {
+      errors.add(error.toString().replaceFirst('Exception: ', ''));
+    }
+
+    _error = errors.isEmpty ? null : errors.join('\n');
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> loadAadhar() async {
     _isLoading = true;
     notifyListeners();
     try {
-      _aadhar = await _service.fetchAadharDetails();
+      _aadhar = _normalizeDocument(await _service.fetchAadharDetails());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -61,7 +236,7 @@ class DeliveryDocumentsProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _pan = await _service.fetchPanDetails();
+      _pan = _normalizeDocument(await _service.fetchPanDetails());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -72,7 +247,7 @@ class DeliveryDocumentsProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _vehicle = await _service.fetchVehicleDetails();
+      _vehicle = _normalizeDocument(await _service.fetchVehicleDetails());
     } finally {
       _isLoading = false;
       notifyListeners();

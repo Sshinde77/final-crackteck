@@ -66,6 +66,7 @@ class _WalletScreenState extends State<WalletScreen> {
     for (final key in keys) {
       final value = map[key];
       if (value == null) continue;
+      if (value is Map || value is List) continue;
       final text = value.toString().trim();
       if (text.isNotEmpty && text.toLowerCase() != 'null') {
         return text;
@@ -107,16 +108,73 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+  Map<String, dynamic>? _readMap(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is Map) {
+        return Map<String, dynamic>.from(value as Map);
+      }
+    }
+    return null;
+  }
+
+  String _customerNameFor(Map<String, dynamic> entry) {
+    final direct = _readString(entry, const ['customer_name', 'party_name', 'name']);
+    if (direct.isNotEmpty) return direct;
+
+    final customerMap = _readMap(
+      entry,
+      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
+    );
+    if (customerMap == null) return '';
+
+    return _readString(
+      customerMap,
+      const ['customer_name', 'party_name', 'name', 'full_name'],
+    );
+  }
+
+  String _customerPhoneFor(Map<String, dynamic> entry) {
+    final direct = _readString(
+      entry,
+      const ['customer_phone', 'customer_mobile', 'mobile', 'phone', 'phone_no'],
+    );
+    if (direct.isNotEmpty) return direct;
+
+    final customerMap = _readMap(
+      entry,
+      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
+    );
+    if (customerMap == null) return '';
+
+    return _readString(
+      customerMap,
+      const [
+        'mobile',
+        'mobile_no',
+        'phone',
+        'phone_no',
+        'contact',
+        'contact_no',
+      ],
+    );
+  }
+
+  String _customerDisplayLine(Map<String, dynamic> entry) {
+    final name = _customerNameFor(entry);
+    final phone = _customerPhoneFor(entry);
+    if (name.isEmpty && phone.isEmpty) return '';
+    if (name.isNotEmpty && phone.isNotEmpty) return '$name • $phone';
+    return name.isNotEmpty ? name : phone;
+  }
+
   String _titleFor(Map<String, dynamic> entry) {
     final orderId = _orderId(entry);
     if (orderId.isNotEmpty) {
       return 'Order #$orderId';
     }
 
-    final customer = _readString(
-      entry,
-      const ['customer_name', 'name', 'customer', 'party_name'],
-    );
+    final customer = _customerNameFor(entry);
     if (customer.isNotEmpty) {
       return customer;
     }
@@ -143,6 +201,56 @@ class _WalletScreenState extends State<WalletScreen> {
     if (method.isNotEmpty) return method;
     if (dateText.isNotEmpty) return dateText;
     return 'Tap to view detail';
+  }
+
+  Widget _buildEntrySubtitle(Map<String, dynamic> entry) {
+    final orderId = _orderId(entry);
+    final customerName = _customerNameFor(entry);
+    final customerPhone = _customerPhoneFor(entry);
+    final customerLine = orderId.isNotEmpty
+        ? _customerDisplayLine(entry)
+        : (customerName.isNotEmpty && customerPhone.isNotEmpty
+            ? customerPhone
+            : _customerDisplayLine(entry));
+    final metaLine = _subtitleFor(entry);
+
+    if (customerLine.isEmpty) {
+      return Text(
+        metaLine,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 12.5,
+          color: Colors.black54,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          customerLine,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          metaLine,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.black54,
+          ),
+        ),
+      ],
+    );
   }
 
   String _formatCurrency(dynamic value) {
@@ -330,15 +438,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  _subtitleFor(entry),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: Colors.black54,
-                                  ),
-                                ),
+                                _buildEntrySubtitle(entry),
                               ],
                             ),
                           ),
@@ -504,6 +604,111 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
     }
   }
 
+  Map<String, dynamic>? _readMap(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is Map) {
+        return Map<String, dynamic>.from(value as Map);
+      }
+    }
+    return null;
+  }
+
+  String _customerName() {
+    final direct = widget.readString(
+      _detail,
+      const ['customer_name', 'party_name', 'name'],
+    );
+    if (direct.isNotEmpty) return direct;
+
+    final customerMap = _readMap(
+      _detail,
+      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
+    );
+    if (customerMap == null) return '';
+
+    return widget.readString(
+      customerMap,
+      const ['customer_name', 'party_name', 'name', 'full_name'],
+    );
+  }
+
+  String _customerPhone() {
+    final direct = widget.readString(
+      _detail,
+      const ['customer_phone', 'customer_mobile', 'mobile', 'phone', 'phone_no'],
+    );
+    if (direct.isNotEmpty) return direct;
+
+    final customerMap = _readMap(
+      _detail,
+      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
+    );
+    if (customerMap == null) return '';
+
+    return widget.readString(
+      customerMap,
+      const [
+        'mobile',
+        'mobile_no',
+        'phone',
+        'phone_no',
+        'contact',
+        'contact_no',
+      ],
+    );
+  }
+
+  String _customerAddress() {
+    final direct = widget.readString(
+      _detail,
+      const ['customer_address', 'address', 'full_address'],
+    );
+    if (direct.isNotEmpty) return direct;
+
+    final customerMap = _readMap(
+      _detail,
+      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
+    );
+    if (customerMap == null) return '';
+
+    final addressValue = customerMap['address'] ?? customerMap['full_address'];
+    if (addressValue is String) {
+      final text = addressValue.trim();
+      return text.isNotEmpty && text.toLowerCase() != 'null' ? text : '';
+    }
+    if (addressValue is Map) {
+      final addressMap = Map<String, dynamic>.from(addressValue as Map);
+      final parts = <String>[
+        widget.readString(
+          addressMap,
+          const ['address1', 'address_1', 'line1', 'street'],
+        ),
+        widget.readString(
+          addressMap,
+          const ['address2', 'address_2', 'line2', 'area'],
+        ),
+        widget.readString(addressMap, const ['city']),
+        widget.readString(addressMap, const ['state']),
+        widget.readString(
+          addressMap,
+          const ['pincode', 'pin_code', 'zip', 'postal_code'],
+        ),
+      ].where((part) => part.trim().isNotEmpty).toList();
+      return parts.join(', ');
+    }
+
+    return '';
+  }
+
+  String _customerDetailText() {
+    return <String>[
+      _customerName(),
+      _customerPhone(),
+      _customerAddress(),
+    ].where((text) => text.trim().isNotEmpty).join('\n');
+  }
+
   List<_DetailRowData> _rows() {
     final rows = <_DetailRowData>[
       _DetailRowData(
@@ -530,10 +735,7 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
       ),
       _DetailRowData(
         label: 'Customer',
-        value: widget.readString(
-          _detail,
-          const ['customer_name', 'name', 'customer', 'party_name'],
-        ),
+        value: _customerDetailText(),
       ),
       _DetailRowData(
         label: 'Payment Mode',

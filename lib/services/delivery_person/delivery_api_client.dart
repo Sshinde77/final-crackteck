@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/api_constants.dart';
@@ -27,11 +28,26 @@ class DeliveryApiClient {
 
   Future<ApiResponse?> validateAuthState() async {
     final state = await authState(forceReload: true);
+    final hasToken = state.accessToken
+        ?.trim()
+        .isNotEmpty == true;
     if (state.userId != null && state.roleId != null) {
       return null;
     }
+    debugPrint(
+      'DeliveryApiClient.validateAuthState '
+      'missingUserId=${state.userId == null} '
+      'missingRoleId=${state.roleId == null} '
+      'hasToken=$hasToken',
+    );
+    if (hasToken) {
+      return ApiResponse(
+        success: false,
+        message: 'Session metadata is still loading. Please retry.',
+      );
+    }
     await SecureStorageService.clearTokens();
-    await NavigationService.navigateToAuthRoot();
+    await NavigationService.navigateToAuthRoot(source: 'delivery_validateAuthState');
     return ApiResponse(
       success: false,
       message: 'Authentication error. Please log in again.',
@@ -66,7 +82,7 @@ class DeliveryApiClient {
 
   Future<void> handleAuthFailure() async {
     await SecureStorageService.clearTokens();
-    await NavigationService.navigateToAuthRoot();
+    await NavigationService.navigateToAuthRoot(source: 'delivery_handleAuthFailure');
   }
 
   Map<String, String> headers({String? token, bool json = false}) {
@@ -245,8 +261,40 @@ class DeliveryApiClient {
       if (decoded['data'] is Map<String, dynamic>) {
         return Map<String, dynamic>.from(decoded['data'] as Map);
       }
+      if (decoded['data'] is List) {
+        for (final item in decoded['data'] as List) {
+          if (item is Map) {
+            return Map<String, dynamic>.from(item);
+          }
+        }
+      }
       if (decoded['profile'] is Map<String, dynamic>) {
         return Map<String, dynamic>.from(decoded['profile'] as Map);
+      }
+      final nestedCandidates = <dynamic>[
+        decoded['document'],
+        decoded['details'],
+        decoded['vehicle'],
+        decoded['vehicle_details'],
+        decoded['aadhar'],
+        decoded['aadhaar'],
+        decoded['aadhar_details'],
+        decoded['pan'],
+        decoded['pan_card'],
+        decoded['pan_card_details'],
+        decoded['registration'],
+      ];
+      for (final candidate in nestedCandidates) {
+        if (candidate is Map) {
+          return Map<String, dynamic>.from(candidate);
+        }
+        if (candidate is List) {
+          for (final item in candidate) {
+            if (item is Map) {
+              return Map<String, dynamic>.from(item);
+            }
+          }
+        }
       }
       return decoded;
     }

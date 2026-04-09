@@ -37,6 +37,22 @@ class SecureStorageService {
   static final Set<int> _vehicleRegisteredUserIds = <int>{};
   static const String _vehicleRegisteredKeyPrefix = 'vehicle_registered_user_';
 
+  @visibleForTesting
+  static void resetForTesting() {
+    _accessToken = null;
+    _refreshToken = null;
+    _roleId = null;
+    _userId = null;
+    _userProfile = null;
+    _fcmToken = null;
+    _lastSyncedFcmToken = null;
+    _deviceId = null;
+    _pendingAccessTokenWrite = null;
+    _pendingRoleIdWrite = null;
+    _pendingUserIdWrite = null;
+    _vehicleRegisteredUserIds.clear();
+  }
+
   static String? _normalizeToken(String? value) {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
@@ -401,12 +417,20 @@ class SecureStorageService {
     await clearTokens();
   }
 
-  static Future<void> refreshSessionCache() async {
+  static Future<void> refreshSessionCache({String reason = 'unspecified'}) async {
+    await _awaitPendingWrite(_pendingAccessTokenWrite);
+    await _awaitPendingWrite(_pendingRoleIdWrite);
+    await _awaitPendingWrite(_pendingUserIdWrite);
     _accessToken = await _readNormalizedValue(_accessTokenKey);
     _refreshToken = _normalizeToken(await _storage.read(key: _refreshTokenKey));
     final rawRoleId = await _storage.read(key: _roleIdKey);
     final rawUserId = await _storage.read(key: _userIdKey);
     _roleId = rawRoleId == null ? null : int.tryParse(rawRoleId);
     _userId = rawUserId == null ? null : int.tryParse(rawUserId);
+    debugPrint(
+      'SecureStorageService.refreshSessionCache '
+      'reason=$reason hasToken=${_accessToken != null} '
+      'roleId=$_roleId userId=$_userId',
+    );
   }
 }

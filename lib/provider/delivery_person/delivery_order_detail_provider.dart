@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../model/delivery_person/delivery_order_detail_model.dart';
+import '../../model/Delivery_person/delivery_order_detail_model.dart';
 import '../../services/delivery_person/delivery_orders_service.dart';
 
 class DeliveryOrderDetailProvider extends ChangeNotifier {
@@ -36,7 +36,9 @@ class DeliveryOrderDetailProvider extends ChangeNotifier {
         response,
         fallbackOrderId: orderId,
       );
-    } catch (_) {
+    } catch (error) {
+      _error = error.toString().replaceFirst('Exception: ', '');
+      debugPrint('DeliveryOrderDetailProvider.loadDetail failed: $error');
       _detail = DeliveryOrderDetailModel.placeholder(orderId);
     } finally {
       _isLoading = false;

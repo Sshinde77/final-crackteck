@@ -100,8 +100,26 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final payload = _resolveRequestPayload(rawDetail);
     final product = _resolveProduct(payload);
     final serviceRequest = _mapFrom(payload['service_request']);
-    final customer = _mapFrom(serviceRequest['customer']);
-    final customerAddress = _mapFrom(serviceRequest['customer_address']);
+    final customer = _firstMap(<dynamic>[
+      payload['customer'],
+      payload['customer_details'],
+      serviceRequest['customer'],
+      serviceRequest['customer_details'],
+      rawDetail['customer'],
+      rawDetail['customer_details'],
+    ]);
+    final customerAddress = _firstMap(<dynamic>[
+      payload['shipping_address'],
+      payload['customer_address'],
+      serviceRequest['customer_address'],
+      rawDetail['shipping_address'],
+      rawDetail['customer_address'],
+    ]);
+    final shippingAddress = _firstMap(<dynamic>[
+      payload['shipping_address'],
+      rawDetail['shipping_address'],
+      customerAddress,
+    ]);
 
     return <String, dynamic>{
       'payload': payload,
@@ -109,6 +127,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       'service_request': serviceRequest,
       'customer': customer,
       'customer_address': customerAddress,
+      'shipping_address': shippingAddress,
       'request_type': _firstNonEmpty(
         <dynamic>[
           payload['request_type'],
@@ -120,9 +139,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       ),
       'request_id': _firstNonEmpty(
         <dynamic>[
+          serviceRequest['request_id'],
           payload['request_id'],
           payload['order_number'],
-          serviceRequest['request_id'],
           payload['id'],
         ],
         fallback: '',
@@ -182,6 +201,14 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   Map<String, dynamic> _mapFrom(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value as Map);
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _firstMap(List<dynamic> values) {
+    for (final value in values) {
+      final parsed = _mapFrom(value);
+      if (parsed.isNotEmpty) return parsed;
+    }
     return const <String, dynamic>{};
   }
 
@@ -351,6 +378,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         <dynamic>[
           _customer['first_name'],
           _customer['last_name'],
+          _customer['name'],
+          _customer['full_name'],
+          _customer['customer_name'],
           widget.customerName,
         ],
       );
@@ -359,6 +389,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         <dynamic>[
           _customer['phone'],
           _customer['phone_number'],
+          _customer['mobile'],
+          _customer['mobile_number'],
+          _customer['contact_number'],
           widget.customerPhone,
         ],
       );
@@ -366,10 +399,12 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayCustomerEmail => _firstNonEmpty(
         <dynamic>[
           _customer['email'],
+          _customer['email_id'],
         ],
       );
 
-  Map<String, dynamic> get _shippingAddress => _mapFrom(_payload['shipping_address']);
+  Map<String, dynamic> get _shippingAddress =>
+      _firstMap(<dynamic>[_detailSafe['shipping_address'], _payload['shipping_address']]);
   Map<String, dynamic> get _warehouseDetails {
     final direct = _mapFrom(_product['warehouse_details']);
     if (direct.isNotEmpty) return direct;
@@ -377,6 +412,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final nestedProduct = _mapFrom(_product['product_details']);
     final nestedWarehouse = _mapFrom(nestedProduct['warehouse']);
     if (nestedWarehouse.isNotEmpty) return nestedWarehouse;
+
+    final payloadWarehouse = _mapFrom(_payload['warehouse']);
+    if (payloadWarehouse.isNotEmpty) return payloadWarehouse;
 
     return _mapFrom(_payload['warehouse_details']);
   }
@@ -454,6 +492,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
     }
+    if (_normalizedDeliveryType == DeliveryRequestTypes.part) {
+      return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
+    }
     if (_displayBranchName != 'N/A' && _displayBranchName.isNotEmpty) {
       return _displayBranchName;
     }
@@ -467,6 +508,12 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(
         _shippingAddress,
+        fallback: 'Customer address not available',
+      );
+    }
+    if (_normalizedDeliveryType == DeliveryRequestTypes.part) {
+      return _formatAddress(
+        _customerAddress,
         fallback: 'Customer address not available',
       );
     }
@@ -939,6 +986,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final productDetails = _mapFrom(_product['product_details']);
     final items = <MapEntry<String, String>>[
       MapEntry('Order No', _displayHeaderId),
+      MapEntry('First Name', _firstNonEmpty(<dynamic>[_customer['first_name']], fallback: '')),
+      MapEntry('Last Name', _firstNonEmpty(<dynamic>[_customer['last_name']], fallback: '')),
       MapEntry('Customer', _displayCustomerName),
       MapEntry('Phone', _displayCustomerPhone),
       MapEntry('Email', _displayCustomerEmail),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/api_constants.dart';
@@ -9,7 +10,22 @@ import 'api_logger.dart';
 class ApiHttpClient extends http.BaseClient {
   ApiHttpClient._({http.Client? inner}) : _inner = inner ?? http.Client();
 
-  static final ApiHttpClient instance = ApiHttpClient._();
+  static final ApiHttpClient _productionInstance = ApiHttpClient._();
+
+  @visibleForTesting
+  static ApiHttpClient? testInstance;
+
+  static ApiHttpClient get instance => testInstance ?? _productionInstance;
+
+  @visibleForTesting
+  static void overrideForTesting(http.Client inner) {
+    testInstance = ApiHttpClient._(inner: inner);
+  }
+
+  @visibleForTesting
+  static void resetOverride() {
+    testInstance = null;
+  }
 
   final http.Client _inner;
 

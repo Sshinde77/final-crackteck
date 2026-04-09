@@ -11,6 +11,7 @@ import 'field_executive_feedback.dart';
 import 'field_executive_personal_info.dart';
 import 'field_executive_privacy_policy.dart';
 import 'field_executive_stock_in_hand.dart';
+import '../Delivery_person/delivery_track_order.dart';
 import '../reimbursement/reimbursement_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../../widgets/placeholder.dart';
@@ -345,6 +346,22 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                   ),
                 );
               },),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.location_on_outlined,
+                label: "Track Your Work",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TotalDeliveryScreen(
+                        roleId: widget.roleId,
+                        roleName: widget.roleName,
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 12),
               _OptionTile(icon: Icons.warehouse, label: "Stock in Hand", onTap: ()  {
                 Navigator.push(

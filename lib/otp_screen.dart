@@ -306,7 +306,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
   void initState() {
     super.initState();
     startTimer();
-    listenForCode(); // 👈 SMS auto read
+    if (!const bool.fromEnvironment('FLUTTER_TEST')) {
+      try {
+        listenForCode(); // SMS auto read
+      } catch (error) {
+        debugPrint('SMS auto read unavailable: $error');
+      }
+    }
   }
 
   @override

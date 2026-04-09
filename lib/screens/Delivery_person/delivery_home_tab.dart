@@ -6,6 +6,7 @@ import '../../model/Delivery_person/delivery_order_model.dart';
 import '../../provider/attendance_provider.dart';
 import '../../provider/delivery_person/delivery_home_provider.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../services/delivery_person/delivery_attendance_service.dart';
 import '../Field_executive/field_executive_delivery_product_detail_screen.dart';
 
@@ -25,7 +26,8 @@ class DeliveryPersonHomeTab extends StatefulWidget {
 
 class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   final TextEditingController _searchCtrl = TextEditingController();
-  final DeliveryAttendanceService _attendanceService = DeliveryAttendanceService();
+  final DeliveryAttendanceService _attendanceService =
+      DeliveryAttendanceService();
   OrdersTab _activeTab = OrdersTab.productDelivery;
 
   @override
@@ -80,7 +82,26 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
   }
 
   Future<void> _openProductScreen(DeliveryOrderModel order) async {
+    final normalizedStatus = order.rawStatus.trim().toLowerCase();
+    final statusKey = normalizedStatus.replaceAll(RegExp(r'[^a-z]'), '');
     final deliveryType = _deliveryTypeForOrder(order);
+    final normalizedDeliveryType = DeliveryRequestTypes.normalize(deliveryType);
+
+    if (normalizedDeliveryType == DeliveryRequestTypes.part) {
+      if (statusKey == 'apapproved') {
+        await _openTrackingScreen(order, useFieldExecutiveScreen: true);
+        return;
+      }
+      if (statusKey == 'assigned') {
+        await _openPartDetailScreen(order);
+        return;
+      }
+    }
+    if (normalizedStatus == 'order_accepted') {
+      await _openTrackingScreen(order);
+      return;
+    }
+
     final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
     final accepted = await Navigator.push<bool>(
       context,
@@ -106,6 +127,295 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       context.read<DeliveryHomeProvider>().markOrderAccepted(order.id);
       _toast('Accepted ${order.id}');
     }
+  }
+
+  Future<void> _openPartDetailScreen(DeliveryOrderModel order) async {
+    final deliveryType = _deliveryTypeForOrder(order);
+    final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
+
+    try {
+      final rawDetail = await ApiService.fetchDeliveryRequestDetail(
+        deliveryType: deliveryType,
+        deliveryId: deliveryId,
+        roleId: widget.roleId,
+      );
+      final payload = _resolveDeliveryPayload(rawDetail, deliveryType);
+      final serviceRequest = _mapFrom(payload['service_request']);
+      final customer = _firstMap(<dynamic>[
+        payload['customer'],
+        payload['customer_details'],
+        serviceRequest['customer'],
+        serviceRequest['customer_details'],
+      ]);
+      final customerAddress = _firstMap(<dynamic>[
+        payload['customer_address'],
+        payload['shipping_address'],
+        serviceRequest['customer_address'],
+      ]);
+      final payloadProduct = _mapFrom(payload['product']);
+      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+
+      if (!mounted) return;
+
+      await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeliveryProductDetailScreen(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            deliveryType: deliveryType,
+            deliveryId: deliveryId,
+            requestType: DeliveryRequestTypes.labelFor(deliveryType),
+            requestId: _firstNonEmpty(<dynamic>[
+              serviceRequest['request_id'],
+              payload['request_id'],
+              order.requestId,
+              order.displayId,
+              order.id,
+            ], fallback: order.displayId),
+            productName: _firstNonEmpty(<dynamic>[
+              payloadProduct['product_name'],
+              payloadServiceProduct['name'],
+              payloadServiceProduct['product_name'],
+            ], fallback: ''),
+            location: _formatAddress(
+              customerAddress,
+              fallback: order.to,
+            ),
+            status: order.rawStatus,
+            customerName: _joinNonEmpty(<dynamic>[
+              customer['first_name'],
+              customer['last_name'],
+              customer['name'],
+              customer['full_name'],
+            ], fallback: ''),
+            customerPhone: _firstNonEmpty(<dynamic>[
+              customer['phone'],
+              customer['phone_number'],
+              customer['mobile'],
+              customer['contact_number'],
+            ], fallback: ''),
+            customerAddress: _formatAddress(
+              customerAddress,
+              fallback: order.to,
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      _toast(
+        'Failed to open request detail: ${error.toString().replaceFirst('Exception: ', '')}',
+      );
+    }
+  }
+
+  Future<void> _openTrackingScreen(
+    DeliveryOrderModel order, {
+    bool useFieldExecutiveScreen = false,
+  }) async {
+    final deliveryType = _deliveryTypeForOrder(order);
+    final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
+
+    try {
+      final rawDetail = await ApiService.fetchDeliveryRequestDetail(
+        deliveryType: deliveryType,
+        deliveryId: deliveryId,
+        roleId: widget.roleId,
+      );
+      final payload = _resolveDeliveryPayload(rawDetail, deliveryType);
+      final serviceRequest = _mapFrom(payload['service_request']);
+      final customer = _firstMap(<dynamic>[
+        payload['customer'],
+        payload['customer_details'],
+        serviceRequest['customer'],
+        serviceRequest['customer_details'],
+      ]);
+      final shippingAddress = _firstMap(<dynamic>[
+        payload['shipping_address'],
+        payload['customer_address'],
+        serviceRequest['customer_address'],
+      ]);
+      final firstItem = _firstListMap(payload['order_items']);
+      final productDetails = _mapFrom(firstItem['product_details']);
+      final payloadProduct = _mapFrom(payload['product']);
+      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+
+      if (!mounted) return;
+
+      if (useFieldExecutiveScreen) {
+        final requestId = _firstNonEmpty(
+          <dynamic>[
+            serviceRequest['request_id'],
+            payload['request_id'],
+            order.requestId,
+            payload['id'],
+            order.displayId,
+          ],
+          fallback: order.displayId,
+        );
+        Navigator.pushNamed(
+          context,
+          AppRoutes.FieldExecutiveMapTrackingScreen,
+          arguments: fieldexecutivemaptrackingArguments(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            serviceId: requestId.replaceFirst(RegExp(r'^#'), ''),
+            displayServiceId: _normalizeDisplayId(requestId),
+            customerName: _joinNonEmpty(
+              <dynamic>[
+                customer['first_name'],
+                customer['last_name'],
+                customer['name'],
+                customer['full_name'],
+              ],
+              fallback: 'Customer',
+            ),
+            customerPhone: _firstNonEmpty(
+              <dynamic>[
+                customer['phone'],
+                customer['phone_number'],
+                customer['mobile'],
+                customer['contact_number'],
+              ],
+              fallback: '',
+            ),
+            customerAddress: _formatAddress(shippingAddress, fallback: order.to),
+          ),
+        );
+        return;
+      }
+
+      Navigator.pushNamed(
+        context,
+        AppRoutes.DeliveryMapTrackingScreen,
+        arguments: deliverymaptrackingArguments(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          deliveryType: deliveryType,
+          deliveryId: deliveryId,
+          requestId: _firstNonEmpty(<dynamic>[
+            payload['order_number'],
+            serviceRequest['request_id'],
+            payload['request_id'],
+            order.displayId,
+            order.id,
+          ], fallback: order.displayId),
+          productName: _firstNonEmpty(<dynamic>[
+            firstItem['product_name'],
+            productDetails['product_name'],
+            payloadProduct['product_name'],
+            payloadServiceProduct['name'],
+          ]),
+          customerName: _joinNonEmpty(<dynamic>[
+            customer['first_name'],
+            customer['last_name'],
+            customer['name'],
+            customer['full_name'],
+          ], fallback: 'Customer'),
+          customerPhone: _firstNonEmpty(<dynamic>[
+            customer['phone'],
+            customer['phone_number'],
+            customer['mobile'],
+            customer['contact_number'],
+          ], fallback: ''),
+          customerAddress: _formatAddress(shippingAddress, fallback: order.to),
+        ),
+      );
+    } catch (error) {
+      _toast(
+        'Failed to open tracking: ${error.toString().replaceFirst('Exception: ', '')}',
+      );
+    }
+  }
+
+  Map<String, dynamic> _resolveDeliveryPayload(
+    Map<String, dynamic> rawDetail,
+    String deliveryType,
+  ) {
+    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.productDelivery) {
+      final order = _mapFrom(rawDetail['order']);
+      if (order.isNotEmpty) return order;
+    }
+    final data = _mapFrom(rawDetail['data']);
+    return data.isNotEmpty ? data : rawDetail;
+  }
+
+  Map<String, dynamic> _mapFrom(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _firstMap(List<dynamic> values) {
+    for (final value in values) {
+      final mapped = _mapFrom(value);
+      if (mapped.isNotEmpty) return mapped;
+    }
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _firstListMap(dynamic value) {
+    if (value is List) {
+      for (final item in value) {
+        final mapped = _mapFrom(item);
+        if (mapped.isNotEmpty) return mapped;
+      }
+    }
+    return const <String, dynamic>{};
+  }
+
+  String _asText(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value.trim();
+    if (value is num || value is bool) return value.toString();
+    return '';
+  }
+
+  String _firstNonEmpty(List<dynamic> values, {String fallback = 'N/A'}) {
+    for (final value in values) {
+      final parsed = _asText(value);
+      if (parsed.isNotEmpty && parsed.toLowerCase() != 'null') return parsed;
+    }
+    return fallback;
+  }
+
+  String _joinNonEmpty(
+    List<dynamic> values, {
+    String separator = ' ',
+    String fallback = 'N/A',
+  }) {
+    final parts = values
+        .map(_asText)
+        .where((value) => value.isNotEmpty && value.toLowerCase() != 'null')
+        .toList();
+    if (parts.isEmpty) return fallback;
+    return parts.join(separator);
+  }
+
+  String _normalizeDisplayId(String value) {
+    final parsed = _asText(value);
+    if (parsed.isEmpty || parsed == 'N/A') return parsed;
+    return parsed.startsWith('#') ? parsed : '#$parsed';
+  }
+
+  String _formatAddress(
+    Map<String, dynamic> source, {
+    String fallback = 'N/A',
+  }) {
+    if (source.isEmpty) return fallback;
+    final parts = <String>[
+      _asText(source['name']),
+      _asText(source['branch_name']),
+      _asText(source['address1']),
+      _asText(source['address2']),
+      _asText(source['city']),
+      _asText(source['state']),
+      _asText(source['country']),
+      _asText(source['pincode']),
+    ].where((value) => value.isNotEmpty).toList();
+    if (parts.isEmpty) return fallback;
+    return parts.join(', ');
   }
 
   Future<void> _handleAttendance({required bool login}) async {
@@ -145,8 +455,11 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
 
     final visibleOrders = provider.orders.where((o) {
       final matchesTab = o.category == _activeTab.category;
+      final isDelivered =
+          o.rawStatus.trim().toLowerCase() == 'delivered' ||
+          o.status == DeliveryOrderStatus.delivered;
 
-      if (!matchesTab) return false;
+      if (!matchesTab || isDelivered) return false;
       if (q.isEmpty) return true;
 
       return o.displayId.toLowerCase().contains(q) ||
@@ -170,7 +483,8 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                   green: green,
                   controller: _searchCtrl,
                   onChanged: (_) => setState(() {}),
-                  onSubmitted: (_) => _toast('Searching: "${_searchCtrl.text}"'),
+                  onSubmitted: (_) =>
+                      _toast('Searching: "${_searchCtrl.text}"'),
                   onNotificationTap: () {
                     Navigator.of(context, rootNavigator: true).pushNamed(
                       AppRoutes.DeliveryNotificationScreen,
@@ -443,7 +757,10 @@ class _AttendanceTile extends StatelessWidget {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: pillColor,
                   borderRadius: BorderRadius.circular(999),
@@ -480,12 +797,7 @@ class _AttendanceTile extends StatelessWidget {
   }
 }
 
-enum OrdersTab {
-  productDelivery,
-  pickupDelivery,
-  requestPart,
-  returnRequest,
-}
+enum OrdersTab { productDelivery, pickupDelivery, requestPart, returnRequest }
 
 extension OrdersTabX on OrdersTab {
   String get title {
@@ -513,7 +825,6 @@ extension OrdersTabX on OrdersTab {
         return DeliveryOrderCategory.returnRequest;
     }
   }
-
 }
 
 class StatsTabsSection extends StatelessWidget {
@@ -638,17 +949,17 @@ class OrdersSection extends StatelessWidget {
 }
 
 class OrderCard extends StatelessWidget {
-  const OrderCard({
-    super.key,
-    required this.order,
-    required this.onAccept,
-  });
+  const OrderCard({super.key, required this.order, required this.onAccept});
 
   final DeliveryOrderModel order;
   final VoidCallback onAccept;
 
   @override
   Widget build(BuildContext context) {
+    final isRequestPart = order.category == DeliveryOrderCategory.requestPart;
+    final primaryIdValue = isRequestPart
+        ? (order.requestId.trim().isEmpty ? order.displayId : order.requestId)
+        : order.displayId;
     if (order.status == DeliveryOrderStatus.cancelled) {
       return Container(
         decoration: BoxDecoration(
@@ -664,7 +975,7 @@ class OrderCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Order No: ${order.displayId}',
+                    'Order No: $primaryIdValue',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
@@ -693,10 +1004,7 @@ class OrderCard extends StatelessWidget {
                   width: 50,
                   child: Text(
                     'From:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                   ),
                 ),
                 Expanded(
@@ -719,10 +1027,7 @@ class OrderCard extends StatelessWidget {
                   width: 50,
                   child: Text(
                     'To:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                   ),
                 ),
                 Expanded(
@@ -753,9 +1058,7 @@ class OrderCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: order.accepted
-                  ? const Color(0xFFB8D8B2)
-                  : Colors.black12,
+              color: order.accepted ? const Color(0xFFB8D8B2) : Colors.black12,
             ),
           ),
           padding: const EdgeInsets.all(12),
@@ -766,7 +1069,7 @@ class OrderCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Order No: ${order.displayId}',
+                      'Order No: $primaryIdValue',
                       style: const TextStyle(fontWeight: FontWeight.w800),
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'api_http_client.dart';
 
 class ApiClient {
-  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
+  static ApiHttpClient get _httpClient => ApiHttpClient.instance;
 
   static Future<dynamic> get(String url, {String? token}) async {
     final response = await _httpClient.get(

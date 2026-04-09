@@ -1,30 +1,48 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:final_crackteck/role_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:final_crackteck/main.dart';
+import 'support/secure_storage_mock.dart';
+import 'support/test_bootstrap.dart';
+
+class _TransparentAssetBundle extends CachingAssetBundle {
+  static final Uint8List _transparentPng = base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2u8AAAAASUVORK5CYII=',
+  );
+
+  @override
+  Future<ByteData> load(String key) async {
+    return ByteData.view(_transparentPng.buffer);
+  }
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const CrackTechApp());
+  setUp(() async {
+    await testBootstrap();
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  tearDown(() {
+    SecureStorageMock.reset();
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Role selection screen renders', (tester) async {
+    await tester.pumpWidget(
+      DefaultAssetBundle(
+        bundle: _TransparentAssetBundle(),
+        child: const MaterialApp(
+          home: rolesccreen(),
+        ),
+      ),
+    );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Field Executive'), findsOneWidget);
+    expect(find.text('Delivery Man'), findsOneWidget);
+    expect(find.text('Sales Person'), findsOneWidget);
   });
 }

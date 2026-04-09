@@ -14,6 +14,11 @@ import '../core/navigation_service.dart';
 import '../core/network/api_http_client.dart';
 import '../core/secure_storage_service.dart';
 
+const bool _notificationsDisabledForBuild = bool.fromEnvironment(
+  'DISABLE_NOTIFICATIONS',
+  defaultValue: bool.fromEnvironment('FLUTTER_TEST'),
+);
+
 const AndroidNotificationChannel _defaultNotificationChannel =
     AndroidNotificationChannel(
       'crackteck_field_alerts',
@@ -33,7 +38,7 @@ class NotificationService {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
-  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
+  static ApiHttpClient get _httpClient => ApiHttpClient.instance;
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -44,6 +49,10 @@ class NotificationService {
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
 
   Future<void> initialize() async {
+    if (_notificationsDisabledForBuild) {
+      _initialized = true;
+      return;
+    }
     if (_initialized) return;
 
     await _ensureFirebaseReady();
@@ -263,6 +272,9 @@ class NotificationService {
   }
 
   Future<void> syncTokenWithBackendIfPossible({bool forceRefresh = false}) async {
+    if (_notificationsDisabledForBuild) {
+      return;
+    }
     try {
       final String? token = forceRefresh
           ? await _logAndPersistCurrentToken()

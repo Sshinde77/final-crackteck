@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../model/Delivery_person/delivery_order_detail_model.dart';
 import '../../provider/delivery_person/delivery_order_detail_provider.dart';
 import '../../routes/app_routes.dart';
 
@@ -25,21 +26,6 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
   static const Color _green = Color(0xFF1E7C10);
 
   int _unreadNoti = 1;
-
-  final List<_ProductItem> items = const <_ProductItem>[
-    _ProductItem(
-      title: 'Intel Core i3 12100F 12th Gen Desktop PC Processor',
-      price: '62,990',
-      qty: 2,
-      icon: Icons.memory,
-    ),
-    _ProductItem(
-      title: 'Intel Core i3 12100F 12th Gen Desktop PC Processor',
-      price: '62,990',
-      qty: 1,
-      icon: Icons.developer_board,
-    ),
-  ];
 
   @override
   void initState() {
@@ -90,6 +76,16 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
   Widget build(BuildContext context) {
     final provider = context.watch<DeliveryOrderDetailProvider>();
     final detail = provider.detail;
+    final items = detail.items
+        .map(
+          (item) => _ProductItem(
+            title: item.title,
+            price: item.price,
+            qty: item.qty,
+            icon: Icons.inventory_2_outlined,
+          ),
+        )
+        .toList();
 
     return WillPopScope(
       onWillPop: () async {
@@ -156,8 +152,29 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                   ? const Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                      child: Column(
-                        children: [
+                       child: Column(
+                         children: [
+                          if (provider.error != null && provider.error!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF5F5),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFFFD6D6)),
+                                ),
+                                child: Text(
+                                  provider.error!,
+                                  style: const TextStyle(
+                                    color: Color(0xFF9B1C1C),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
                           _OrderInfoCard(
                             orderId: detail.id,
                             date: detail.date,
@@ -166,12 +183,23 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                             to: detail.to,
                           ),
                           const SizedBox(height: 14),
-                          ...items.map(
-                            (p) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _ProductCard(item: p),
-                            ),
+                          _AdditionalDetailsCard(
+                            firstName: detail.customerFirstName,
+                            lastName: detail.customerLastName,
+                            customerName: detail.customerName,
+                            customerPhone: detail.customerPhone,
+                            customerEmail: detail.customerEmail,
                           ),
+                          const SizedBox(height: 14),
+                          if (items.isEmpty)
+                            const _EmptyProductsCard()
+                          else
+                            ...items.map(
+                              (p) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _ProductCard(item: p),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -220,6 +248,98 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AdditionalDetailsCard extends StatelessWidget {
+  const _AdditionalDetailsCard({
+    required this.firstName,
+    required this.lastName,
+    required this.customerName,
+    required this.customerPhone,
+    required this.customerEmail,
+  });
+
+  final String firstName;
+  final String lastName;
+  final String customerName;
+  final String customerPhone;
+  final String customerEmail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Additional Details',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _AdditionalDetailRow(label: 'First Name', value: firstName),
+          const SizedBox(height: 8),
+          _AdditionalDetailRow(label: 'Last Name', value: lastName),
+          const SizedBox(height: 8),
+          _AdditionalDetailRow(label: 'Customer Name', value: customerName),
+          const SizedBox(height: 8),
+          _AdditionalDetailRow(label: 'Phone Number', value: customerPhone),
+          const SizedBox(height: 8),
+          _AdditionalDetailRow(label: 'Email', value: customerEmail),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdditionalDetailRow extends StatelessWidget {
+  const _AdditionalDetailRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.25,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -392,6 +512,31 @@ class _ProductCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyProductsCard extends StatelessWidget {
+  const _EmptyProductsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: const Text(
+        'No product items found for this order.',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.black54,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

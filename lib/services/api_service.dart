@@ -45,7 +45,7 @@ class ApiService {
   ApiService._(); // Private constructor for singleton
 
   static final ApiService instance = ApiService._();
-  static final ApiHttpClient _httpClient = ApiHttpClient.instance;
+  static ApiHttpClient get _httpClient => ApiHttpClient.instance;
 
   // ---------------------------
   // Helper: safe JSON decode
@@ -1129,8 +1129,15 @@ class ApiService {
     final message = _buildMissingServiceRequestAuthMessage(state.missingFields);
     debugPrint('[ServiceRequestOtp][$flow] $message');
 
-    if (redirectOnFailure) {
-      await NavigationService.navigateToAuthRoot(roleId: state.roleId);
+    if (redirectOnFailure && !state.hasAccessToken) {
+      await NavigationService.navigateToAuthRoot(
+        roleId: state.roleId,
+        source: 'service_request_auth_$flow',
+      );
+    } else if (redirectOnFailure) {
+      debugPrint(
+        '[ServiceRequestOtp][$flow] Suppressed auth-root navigation because access token is still present.',
+      );
     }
 
     return ApiResponse(success: false, message: message);

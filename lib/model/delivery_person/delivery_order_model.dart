@@ -11,48 +11,67 @@ class DeliveryOrderModel {
   DeliveryOrderModel({
     required this.id,
     required this.displayId,
+    this.requestId = '',
     required this.date,
     required this.time,
     required this.from,
     required this.to,
     required this.accepted,
+    required this.rawStatus,
     required this.status,
     required this.category,
   });
 
   final String id;
   final String displayId;
+  final String requestId;
   final String date;
   final String time;
   final String from;
   final String to;
   final bool accepted;
+  final String rawStatus;
   final DeliveryOrderStatus status;
   final DeliveryOrderCategory category;
 
   factory DeliveryOrderModel.fromJson(Map<String, dynamic> json) {
-    final statusText = (
-      json['status'] ??
-      json['order_status'] ??
-      json['delivery_status'] ??
-      json['state'] ??
-      ''
-    ).toString().toLowerCase();
+    final statusText =
+        (json['status'] ??
+                json['order_status'] ??
+                json['delivery_status'] ??
+                json['state'] ??
+                '')
+            .toString()
+            .toLowerCase();
 
-    final from = _readAddress(json, <String>[
-      'from_address',
-      'pickup_address',
-      'warehouse_address',
-      'from',
-      'source',
-    ], fallback: _warehouseName(json) ?? _formatNestedAddress(json['warehouse_details']) ?? 'Warehouse');
-    final to = _readAddress(json, <String>[
-      'to_address',
-      'delivery_address',
-      'customer_address',
-      'address',
-      'to',
-    ], fallback: _formatNestedAddress(json['shipping_address']) ?? 'Customer address not available');
+    final from = _readAddress(
+      json,
+      <String>[
+        'from_address',
+        'pickup_address',
+        'warehouse_address',
+        'warehouse',
+        'from',
+        'source',
+      ],
+      fallback:
+          _warehouseName(json) ??
+          _formatNestedAddress(json['warehouse_details']) ??
+          'Warehouse',
+    );
+    final to = _readAddress(
+      json,
+      <String>[
+        'to_address',
+        'delivery_address',
+        'customer_address',
+        'address',
+        'to',
+      ],
+      fallback:
+          _formatNestedAddress(json['shipping_address']) ??
+          'Customer address not available',
+    );
     final rawDate =
         json['date'] ??
         json['order_date'] ??
@@ -60,25 +79,36 @@ class DeliveryOrderModel {
         json['updated_at'] ??
         '';
     final parsed = DateTime.tryParse(rawDate.toString());
-    final rawId = (json['display_id'] ??
-            json['order_id'] ??
-            json['id'] ??
-            json['request_id'] ??
-            'NA')
-        .toString();
+    final rawId =
+        (json['display_id'] ??
+                json['order_id'] ??
+                json['id'] ??
+                json['request_id'] ??
+                'NA')
+            .toString();
     final normalizedId = rawId.startsWith('#') ? rawId : '#$rawId';
-    final displayId = (json['order_number'] ??
-            json['display_id'] ??
-            json['order_id'] ??
-            json['id'] ??
-            json['request_id'] ??
-            'NA')
-        .toString();
+    final displayId =
+        (json['order_number'] ??
+                json['display_id'] ??
+                json['order_id'] ??
+                json['id'] ??
+                json['request_id'] ??
+                'NA')
+            .toString();
+    final nestedServiceRequest = json['service_request'];
+    final serviceRequestId = nestedServiceRequest is Map
+        ? nestedServiceRequest['request_id'] ??
+              nestedServiceRequest['requestId']
+        : null;
+    final requestId =
+        (serviceRequestId ?? json['request_id'] ?? json['requestId'] ?? '')
+            .toString();
     final category = _parseCategory(json);
 
     return DeliveryOrderModel(
       id: normalizedId,
       displayId: displayId,
+      requestId: requestId,
       date: parsed == null
           ? (rawDate.toString().isEmpty ? '--' : rawDate.toString())
           : '${parsed.day}-${parsed.month}-${parsed.year}',
@@ -93,6 +123,7 @@ class DeliveryOrderModel {
           statusText.contains('picked') ||
           statusText.contains('in_progress') ||
           statusText.contains('deliver'),
+      rawStatus: statusText,
       status: statusText.contains('cancel')
           ? DeliveryOrderStatus.cancelled
           : statusText.contains('deliver')
@@ -105,40 +136,48 @@ class DeliveryOrderModel {
   DeliveryOrderModel copyWith({
     String? id,
     String? displayId,
+    String? requestId,
     String? date,
     String? time,
     String? from,
     String? to,
     bool? accepted,
+    String? rawStatus,
     DeliveryOrderStatus? status,
     DeliveryOrderCategory? category,
   }) {
     return DeliveryOrderModel(
       id: id ?? this.id,
       displayId: displayId ?? this.displayId,
+      requestId: requestId ?? this.requestId,
       date: date ?? this.date,
       time: time ?? this.time,
       from: from ?? this.from,
       to: to ?? this.to,
       accepted: accepted ?? this.accepted,
+      rawStatus: rawStatus ?? this.rawStatus,
       status: status ?? this.status,
       category: category ?? this.category,
     );
   }
 
   static DeliveryOrderCategory _parseCategory(Map<String, dynamic> json) {
-    final rawCategory = <dynamic>[
-      json['request_type'],
-      json['delivery_type'],
-      json['type'],
-      json['order_type'],
-      json['request_category'],
-      json['category'],
-      json['service_type'],
-    ].firstWhere(
-      (value) => value != null && value.toString().trim().isNotEmpty,
-      orElse: () => '',
-    ).toString().toLowerCase();
+    final rawCategory =
+        <dynamic>[
+              json['request_type'],
+              json['delivery_type'],
+              json['type'],
+              json['order_type'],
+              json['request_category'],
+              json['category'],
+              json['service_type'],
+            ]
+            .firstWhere(
+              (value) => value != null && value.toString().trim().isNotEmpty,
+              orElse: () => '',
+            )
+            .toString()
+            .toLowerCase();
 
     final compact = rawCategory.replaceAll(RegExp(r'[^a-z]'), '');
 
@@ -161,8 +200,25 @@ class DeliveryOrderModel {
   }) {
     for (final key in keys) {
       final value = json[key];
-      if (value != null && value.toString().trim().isNotEmpty) {
-        return value.toString();
+      if (value == null) continue;
+
+      if (value is Map) {
+        final name = value['name']?.toString().trim();
+        if (name != null && name.isNotEmpty) {
+          return name;
+        }
+
+        final formatted = _formatNestedAddress(value);
+        if (formatted != null && formatted.trim().isNotEmpty) {
+          return formatted;
+        }
+
+        continue;
+      }
+
+      final text = value.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
       }
     }
     return fallback;
