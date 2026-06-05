@@ -782,6 +782,8 @@ class RouteGenerator {
                 roleId: args.roleId,
                 roleName: args.roleName,
                 serviceId: args.serviceId,
+                deliveryType: args.deliveryType,
+                requestId: args.requestId,
                 customerName: args.customerName,
                 customerAddress: args.customerAddress,
                 customerPhone: args.customerPhone,

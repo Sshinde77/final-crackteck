@@ -429,6 +429,8 @@ class fieldexecutivemaptrackingArguments {
   final int roleId;
   final String roleName;
   final String serviceId;
+  final String deliveryType;
+  final String requestId;
   final String customerName;
   final String customerAddress;
   final String customerPhone;
@@ -438,6 +440,8 @@ class fieldexecutivemaptrackingArguments {
     required this.roleId,
     required this.roleName,
     required this.serviceId,
+    this.deliveryType = '',
+    this.requestId = '',
     this.customerName = '',
     this.customerAddress = '',
     this.customerPhone = '',

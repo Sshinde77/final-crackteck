@@ -8,6 +8,8 @@ class FieldExecutiveMapTrackingScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
   final String serviceId;
+  final String deliveryType;
+  final String requestId;
   final String customerName;
   final String customerAddress;
   final String customerPhone;
@@ -18,6 +20,8 @@ class FieldExecutiveMapTrackingScreen extends StatefulWidget {
     required this.roleId,
     required this.roleName,
     required this.serviceId,
+    this.deliveryType = '',
+    this.requestId = '',
     this.customerName = '', 
     this.customerAddress = '',
     this.customerPhone = '',
@@ -54,6 +58,10 @@ class _FieldExecutiveMapTrackingScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
+
+  bool get _usesDeliveryOtpFlow => widget.deliveryType.trim().isNotEmpty;
+
+  String get _actionLabel => _usesDeliveryOtpFlow ? 'Send OTP' : 'Start Installation';
 
   String _buildDestinationText(String fullAddress) {
     final raw = fullAddress.trim();
@@ -104,7 +112,7 @@ class _FieldExecutiveMapTrackingScreenState
 
   Future<void> _startInstallation() async {
     if (_isSendingOtp) return;
-    debugPrint('Start Installation clicked');
+    debugPrint('Tracking action clicked');
 
     final serviceRequestId = widget.serviceId
         .trim()
@@ -120,18 +128,29 @@ class _FieldExecutiveMapTrackingScreenState
 
     late final response;
     try {
+      if (_usesDeliveryOtpFlow) {
+        debugPrint(
+          'Calling sendDeliveryRequestOtp for ID: $serviceRequestId, deliveryType: ${widget.deliveryType}, roleId: ${widget.roleId}',
+        );
+        response = await ApiService.sendDeliveryRequestOtp(
+          deliveryType: widget.deliveryType,
+          deliveryId: serviceRequestId,
+          roleId: widget.roleId,
+        );
+      } else {
+        debugPrint(
+          'Calling sendServiceRequestOtp for ID: $serviceRequestId with roleId: ${widget.roleId}',
+        );
+        response = await ApiService.sendServiceRequestOtp(
+          serviceRequestId,
+          roleId: widget.roleId,
+        );
+      }
       debugPrint(
-        'Calling sendServiceRequestOtp for ID: $serviceRequestId with roleId: ${widget.roleId}',
-      );
-      response = await ApiService.sendServiceRequestOtp(
-        serviceRequestId,
-        roleId: widget.roleId,
-      );
-      debugPrint(
-        'sendServiceRequestOtp response: success=${response.success}, message=${response.message}',
+        'send otp response: success=${response.success}, message=${response.message}',
       );
     } catch (e) {
-      debugPrint('sendServiceRequestOtp exception: $e');
+      debugPrint('send otp exception: $e');
       if (mounted) {
         _snack('Failed to send OTP');
       }
@@ -154,6 +173,23 @@ class _FieldExecutiveMapTrackingScreenState
     }
 
     _snack(response.message ?? 'OTP sent successfully');
+
+    if (_usesDeliveryOtpFlow) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.DeliveryOtpVerificationScreen,
+        arguments: deliveryotpverificationArguments(
+          roleId: widget.roleId,
+          roleName: widget.roleName,
+          deliveryType: widget.deliveryType,
+          deliveryId: serviceRequestId,
+          requestId: widget.requestId.trim().isNotEmpty
+              ? widget.requestId
+              : (_displayServiceId.isNotEmpty ? _displayServiceId : widget.serviceId),
+        ),
+      );
+      return;
+    }
 
     Navigator.pushNamed(
       context,
@@ -420,7 +456,7 @@ class _FieldExecutiveMapTrackingScreenState
                       onPressed: _isSendingOtp
                           ? null
                           : () {
-                              debugPrint('Start Installation button tapped');
+                              debugPrint('Tracking action button tapped');
                               _startInstallation();
                             },
                       style: ElevatedButton.styleFrom(
@@ -439,9 +475,9 @@ class _FieldExecutiveMapTrackingScreenState
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
-                              'Start Installation',
-                              style: TextStyle(
+                          : Text(
+                              _actionLabel,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,

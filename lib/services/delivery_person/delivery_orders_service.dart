@@ -57,7 +57,50 @@ class DeliveryOrdersService extends DeliveryApiClient {
         'Failed to load return requests: ${response.statusCode}',
       );
     }
-    return extractList(decodeBody(response.body));
+    final decoded = decodeBody(response.body);
+    final items = extractList(decoded);
+    if (decoded is! Map<String, dynamic>) {
+      return items;
+    }
+
+    final primaryWarehouse = decoded['primary_warehouse'];
+    if (primaryWarehouse is! Map) {
+      return items;
+    }
+
+    return items.map((item) {
+      final normalizedItem = <String, dynamic>{...item};
+      final serviceRequest = item['service_request'];
+      final returnRequest = item['return_request'];
+
+      Map<String, dynamic>? asMap(dynamic value) {
+        if (value is Map<String, dynamic>) return Map<String, dynamic>.from(value);
+        if (value is Map) return Map<String, dynamic>.from(value);
+        return null;
+      }
+
+      final serviceRequestMap = asMap(serviceRequest);
+      final nestedReturnRequestMap = asMap(returnRequest);
+      final nestedWarehouse =
+          asMap(item['primary_warehouse']) ??
+          asMap(nestedReturnRequestMap?['primary_warehouse']) ??
+          Map<String, dynamic>.from(primaryWarehouse);
+      final nestedAddress =
+          asMap(item['address_detail']) ??
+          asMap(item['customer_address']) ??
+          asMap(serviceRequestMap?['address_detail']) ??
+          asMap(serviceRequestMap?['customer_address']) ??
+          asMap(nestedReturnRequestMap?['address_detail']) ??
+          asMap(nestedReturnRequestMap?['customer_address']);
+
+      normalizedItem['primary_warehouse'] = nestedWarehouse;
+      if (nestedAddress != null) {
+        normalizedItem['address_detail'] = nestedAddress;
+        normalizedItem['customer_address'] ??= nestedAddress;
+      }
+
+      return normalizedItem;
+    }).toList();
   }
 
   Future<List<Map<String, dynamic>>> fetchPartRequests() async {
@@ -176,9 +219,13 @@ class DeliveryOrdersService extends DeliveryApiClient {
   }
 
   Future<List<Map<String, dynamic>>> fetchReturnOrders() async {
+    final validation = await validateAuthState();
+    if (validation != null) {
+      throw Exception(validation.message);
+    }
     final response = await performAuthenticatedGet(
       buildUri(
-        ApiConstants.deliveryManReturnOrders,
+        ApiConstants.listreturnorders,
         await requiredQuery(roleId: 2),
       ),
     );

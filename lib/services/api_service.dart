@@ -9,11 +9,12 @@ import 'package:image_picker/image_picker.dart';
 
 import '../constants/api_constants.dart';
 import '../core/network/api_http_client.dart';
+import '../core/navigation_service.dart';
+import '../core/secure_storage_service.dart';
 import '../model/api_response.dart';
+import '../model/Delivery_person/return_order_detail_model.dart';
 import '../model/field executive/diagnosis_item.dart';
 import '../model/field executive/field_executive_service_request_detail.dart';
-import '../core/secure_storage_service.dart';
-import '../core/navigation_service.dart';
 import 'session_manager.dart';
 
 class _ServiceRequestAuthState {
@@ -1790,6 +1791,21 @@ class ApiService {
     }
   }
 
+  static Future<ReturnOrderDetailModel> fetchReturnOrderDetailModel({
+    required String deliveryId,
+    int roleId = 1,
+  }) async {
+    final rawDetail = await fetchDeliveryRequestDetail(
+      deliveryType: DeliveryRequestTypes.returnOrder,
+      deliveryId: deliveryId,
+      roleId: roleId,
+    );
+    return ReturnOrderDetailModel.fromJson(
+      rawDetail,
+      fallbackOrderId: deliveryId,
+    );
+  }
+
   static Map<String, dynamic>? _extractDeliveryRequestDetail(
     dynamic response,
     String deliveryId,
@@ -1914,6 +1930,10 @@ class ApiService {
       DeliveryRequestTypes.returnRequest: const [
         'return_requests',
         'returnRequests',
+      ],
+      DeliveryRequestTypes.returnOrder: const [
+        'return_orders',
+        'returnOrders',
       ],
       DeliveryRequestTypes.part: const ['part_requests', 'partRequests'],
       DeliveryRequestTypes.productDelivery: const [
@@ -2652,13 +2672,13 @@ class ApiService {
 
     final effectiveRoleId = (storedRoleId ?? roleId ?? 1).toString();
 
-    String endpoint = DeliveryRequestTypes.acceptEndpointTemplateFor(
+    final endpointTemplate = DeliveryRequestTypes.acceptEndpointTemplateFor(
       deliveryType,
-    ).replaceFirst('{id}', numericId.toString());
+    );
+    String endpoint = endpointTemplate.replaceAll('{id}', numericId.toString());
 
-    if (endpoint.contains('{id}')) {
-      endpoint = endpoint.replaceAll('{id}', numericId.toString());
-    } else if (normalizedType != DeliveryRequestTypes.productDelivery &&
+    if (!endpointTemplate.contains('{id}') &&
+        normalizedType != DeliveryRequestTypes.productDelivery &&
         !endpoint.contains('/$numericId/accept')) {
       var base = endpoint.trim();
       if (base.endsWith('/')) {
@@ -2744,6 +2764,17 @@ class ApiService {
     }
   }
 
+  static Future<ApiResponse> acceptReturnOrder({
+    required String deliveryId,
+    int? roleId,
+  }) {
+    return acceptDeliveryRequest(
+      deliveryType: DeliveryRequestTypes.returnOrder,
+      deliveryId: deliveryId,
+      roleId: roleId,
+    );
+  }
+
   /// Send OTP for a delivery request for part / pickup / return.
   /// POST /part-request/{id}/send-otp?role_id={roleId}&user_id={userId}
   /// POST /pickup-request/{id}/send-otp?role_id={roleId}&user_id={userId}
@@ -2779,10 +2810,12 @@ class ApiService {
     }
 
     String endpoint;
+    String endpointTemplate;
     try {
-      endpoint = DeliveryRequestTypes.sendOtpEndpointTemplateFor(
+      endpointTemplate = DeliveryRequestTypes.sendOtpEndpointTemplateFor(
         deliveryType,
-      ).replaceFirst('{id}', numericId.toString());
+      );
+      endpoint = endpointTemplate.replaceAll('{id}', numericId.toString());
     } on ArgumentError catch (e) {
       return ApiResponse(
         success: false,
@@ -2790,9 +2823,8 @@ class ApiService {
       );
     }
 
-    if (endpoint.contains('{id}')) {
-      endpoint = endpoint.replaceAll('{id}', numericId.toString());
-    } else if (normalizedType != DeliveryRequestTypes.productDelivery &&
+    if (!endpointTemplate.contains('{id}') &&
+        normalizedType != DeliveryRequestTypes.productDelivery &&
         !endpoint.contains('/$numericId/send-otp')) {
       var base = endpoint.trim();
       if (base.endsWith('/')) {
@@ -3389,10 +3421,12 @@ class ApiService {
     }
 
     String endpoint;
+    String endpointTemplate;
     try {
-      endpoint = DeliveryRequestTypes.verifyOtpEndpointTemplateFor(
+      endpointTemplate = DeliveryRequestTypes.verifyOtpEndpointTemplateFor(
         deliveryType,
-      ).replaceFirst('{id}', numericId.toString());
+      );
+      endpoint = endpointTemplate.replaceAll('{id}', numericId.toString());
     } on ArgumentError catch (e) {
       return ApiResponse(
         success: false,
@@ -3400,9 +3434,8 @@ class ApiService {
       );
     }
 
-    if (endpoint.contains('{id}')) {
-      endpoint = endpoint.replaceAll('{id}', numericId.toString());
-    } else if (normalizedType != DeliveryRequestTypes.productDelivery &&
+    if (!endpointTemplate.contains('{id}') &&
+        normalizedType != DeliveryRequestTypes.productDelivery &&
         !endpoint.contains('/$numericId/verify-otp')) {
       var base = endpoint.trim();
       if (base.endsWith('/')) {
@@ -3419,6 +3452,7 @@ class ApiService {
       queryParameters: {
         'role_id': effectiveRoleId,
         'user_id': storedUserId.toString(),
+        'otp': normalizedOtp,
       },
     );
 

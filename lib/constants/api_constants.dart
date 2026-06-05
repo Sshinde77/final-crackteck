@@ -10,7 +10,7 @@ class ApiConstants {
   // flutter run --dart-define=API_BASE_URL=http://<LAN-IP>:8000/api/v1   (Physical device)
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://crackteck.co.in/api/v1',
+    defaultValue: 'https://lawngreen-toad-665270.hostingersite.com/api/v1',
   );
   static const String siteBaseUrl = String.fromEnvironment(
     'SITE_BASE_URL',
@@ -97,6 +97,10 @@ class ApiConstants {
       "$baseUrl/return-orders/{id}";
   static const String deliveryManAcceptReturnOrder =
   
+      "$baseUrl/accept-return-order/{id}";
+  static const String fieldExecutiveReturnOrderDetail =
+      "$baseUrl/return-orders/{id}";
+  static const String fieldExecutiveAcceptReturnOrder =
       "$baseUrl/accept-return-order/{id}";
   static const String deliveryManSendReturnOrderOtp =
       "$baseUrl/return-order/{id}/otp";
@@ -226,6 +230,9 @@ class ApiConstants {
   static const String trackyourwork =
       "$baseUrl/track-your-work";
 
+  static const String listreturnorders =
+      "$baseUrl/return-orders";
+
 
 
 
@@ -243,6 +250,7 @@ class DeliveryRequestTypes {
 
   static const String pickup = 'pickup';
   static const String returnRequest = 'return';
+  static const String returnOrder = 'return_order';
   static const String part = 'part';
   static const String productDelivery = 'product_delivery';
 
@@ -256,6 +264,8 @@ class DeliveryRequestTypes {
         return 'Pickup Request';
       case returnRequest:
         return 'Return Request';
+      case returnOrder:
+        return 'Return Product';
       case part:
         return 'Part Request';
       case productDelivery:
@@ -271,6 +281,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliverypickuprequestlist;
       case returnRequest:
         return ApiConstants.deliveryreturnrequestlist;
+      case returnOrder:
+        return ApiConstants.deliveryManReturnOrders;
       case part:
         return ApiConstants.deliverypartrequestlist;
       case productDelivery:
@@ -286,6 +298,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliverypickuprequestdetail;
       case returnRequest:
         return ApiConstants.deliveryreturnrequestdetail;
+      case returnOrder:
+        return ApiConstants.fieldExecutiveReturnOrderDetail;
       case part:
         return ApiConstants.deliverypartrequestdetail;
       case productDelivery:
@@ -301,6 +315,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliverypickuprequestaccept;
       case returnRequest:
         return ApiConstants.deliveryreturnrequestaccept;
+      case returnOrder:
+        return ApiConstants.fieldExecutiveAcceptReturnOrder;
       case part:
         return ApiConstants.deliverypartrequestaccept;
       case productDelivery:
@@ -316,6 +332,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliverypickuprequestsendotp;
       case returnRequest:
         return ApiConstants.deliveryreturnrequestsendotp;
+      case returnOrder:
+        return ApiConstants.deliveryManSendReturnOrderOtp;
       case part:
         return ApiConstants.deliverypartrequestsendotp;
       case productDelivery:
@@ -331,6 +349,8 @@ class DeliveryRequestTypes {
         return ApiConstants.deliverypickuprequestverifyotp;
       case returnRequest:
         return ApiConstants.deliveryreturnrequestverifyotp;
+      case returnOrder:
+        return ApiConstants.deliveryManVerifyReturnOrderOtp;
       case part:
         return ApiConstants.deliverypartrequestverifyotp;
       case productDelivery:

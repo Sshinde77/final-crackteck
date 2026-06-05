@@ -30,6 +30,10 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       DeliveryAttendanceService();
   OrdersTab _activeTab = OrdersTab.productDelivery;
 
+  bool _isHiddenDeliveredStatus(DeliveryOrderModel order) {
+    return order.rawStatus.trim().toLowerCase() == 'delivered';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +82,8 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
         return DeliveryRequestTypes.part;
       case DeliveryOrderCategory.returnRequest:
         return DeliveryRequestTypes.returnRequest;
+      case DeliveryOrderCategory.returnProduct:
+        return DeliveryRequestTypes.returnOrder;
     }
   }
 
@@ -86,6 +92,28 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     final statusKey = normalizedStatus.replaceAll(RegExp(r'[^a-z]'), '');
     final deliveryType = _deliveryTypeForOrder(order);
     final normalizedDeliveryType = DeliveryRequestTypes.normalize(deliveryType);
+
+    if (normalizedDeliveryType == DeliveryRequestTypes.pickup) {
+      if (statusKey == 'approved') {
+        await _openTrackingScreen(order);
+        return;
+      }
+      if (statusKey == 'assigned') {
+        await _openPickupDetailScreen(order);
+        return;
+      }
+    }
+
+    if (normalizedDeliveryType == DeliveryRequestTypes.returnRequest) {
+      if (statusKey == 'approved') {
+        await _openTrackingScreen(order);
+        return;
+      }
+      if (statusKey == 'assigned') {
+        await _openReturnDetailScreen(order);
+        return;
+      }
+    }
 
     if (normalizedDeliveryType == DeliveryRequestTypes.part) {
       if (statusKey == 'apapproved') {
@@ -97,7 +125,8 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
         return;
       }
     }
-    if (normalizedStatus == 'order_accepted') {
+    if (normalizedStatus == 'order_accepted' &&
+        normalizedDeliveryType != DeliveryRequestTypes.returnOrder) {
       await _openTrackingScreen(order);
       return;
     }
@@ -129,6 +158,89 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     }
   }
 
+  Future<void> _openPickupDetailScreen(DeliveryOrderModel order) async {
+    final deliveryType = _deliveryTypeForOrder(order);
+    final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
+
+    try {
+      final rawDetail = await ApiService.fetchDeliveryRequestDetail(
+        deliveryType: deliveryType,
+        deliveryId: deliveryId,
+        roleId: widget.roleId,
+      );
+      final payload = _resolveDeliveryPayload(rawDetail, deliveryType);
+      final serviceRequest = _mapFrom(payload['service_request']);
+      final customer = _firstMap(<dynamic>[
+        payload['customer'],
+        payload['customer_details'],
+        serviceRequest['customer'],
+        serviceRequest['customer_details'],
+      ]);
+      final customerAddress = _firstMap(<dynamic>[
+        payload['customer_address'],
+        payload['shipping_address'],
+        payload['address_detail'],
+        serviceRequest['customer_address'],
+        serviceRequest['address_detail'],
+        rawDetail['address_detail'],
+      ]);
+      final payloadProduct = _mapFrom(payload['product']);
+      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+
+      if (!mounted) return;
+
+      await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeliveryProductDetailScreen(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            deliveryType: deliveryType,
+            deliveryId: deliveryId,
+            requestType: DeliveryRequestTypes.labelFor(deliveryType),
+            requestId: _firstNonEmpty(<dynamic>[
+              serviceRequest['request_id'],
+              payload['request_id'],
+              order.requestId,
+              order.displayId,
+              order.id,
+            ], fallback: order.displayId),
+            productName: _firstNonEmpty(<dynamic>[
+              payloadServiceProduct['name'],
+              payloadServiceProduct['product_name'],
+              payloadProduct['product_name'],
+            ], fallback: ''),
+            location: _formatAddress(
+              customerAddress,
+              fallback: order.to,
+            ),
+            status: order.rawStatus,
+            customerName: _joinNonEmpty(<dynamic>[
+              customer['first_name'],
+              customer['last_name'],
+              customer['name'],
+              customer['full_name'],
+            ], fallback: ''),
+            customerPhone: _firstNonEmpty(<dynamic>[
+              customer['phone'],
+              customer['phone_number'],
+              customer['mobile'],
+              customer['contact_number'],
+            ], fallback: ''),
+            customerAddress: _formatAddress(
+              customerAddress,
+              fallback: order.to,
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      _toast(
+        'Failed to open pickup detail: ${error.toString().replaceFirst('Exception: ', '')}',
+      );
+    }
+  }
+
   Future<void> _openPartDetailScreen(DeliveryOrderModel order) async {
     final deliveryType = _deliveryTypeForOrder(order);
     final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
@@ -150,7 +262,10 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       final customerAddress = _firstMap(<dynamic>[
         payload['customer_address'],
         payload['shipping_address'],
+        payload['address_detail'],
         serviceRequest['customer_address'],
+        serviceRequest['address_detail'],
+        rawDetail['address_detail'],
       ]);
       final payloadProduct = _mapFrom(payload['product']);
       final payloadServiceProduct = _mapFrom(payload['service_request_product']);
@@ -209,6 +324,89 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     }
   }
 
+  Future<void> _openReturnDetailScreen(DeliveryOrderModel order) async {
+    final deliveryType = _deliveryTypeForOrder(order);
+    final deliveryId = order.id.replaceFirst(RegExp(r'^#'), '');
+
+    try {
+      final rawDetail = await ApiService.fetchDeliveryRequestDetail(
+        deliveryType: deliveryType,
+        deliveryId: deliveryId,
+        roleId: widget.roleId,
+      );
+      final payload = _resolveDeliveryPayload(rawDetail, deliveryType);
+      final serviceRequest = _mapFrom(payload['service_request']);
+      final customer = _firstMap(<dynamic>[
+        payload['customer'],
+        payload['customer_details'],
+        serviceRequest['customer'],
+        serviceRequest['customer_details'],
+      ]);
+      final customerAddress = _firstMap(<dynamic>[
+        payload['customer_address'],
+        payload['shipping_address'],
+        payload['address_detail'],
+        serviceRequest['customer_address'],
+        serviceRequest['address_detail'],
+        rawDetail['address_detail'],
+      ]);
+      final payloadProduct = _mapFrom(payload['product']);
+      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+
+      if (!mounted) return;
+
+      await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeliveryProductDetailScreen(
+            roleId: widget.roleId,
+            roleName: widget.roleName,
+            deliveryType: deliveryType,
+            deliveryId: deliveryId,
+            requestType: DeliveryRequestTypes.labelFor(deliveryType),
+            requestId: _firstNonEmpty(<dynamic>[
+              serviceRequest['request_id'],
+              payload['request_id'],
+              order.requestId,
+              order.displayId,
+              order.id,
+            ], fallback: order.displayId),
+            productName: _firstNonEmpty(<dynamic>[
+              payloadServiceProduct['name'],
+              payloadServiceProduct['product_name'],
+              payloadProduct['product_name'],
+            ], fallback: ''),
+            location: _formatAddress(
+              customerAddress,
+              fallback: order.to,
+            ),
+            status: order.rawStatus,
+            customerName: _joinNonEmpty(<dynamic>[
+              customer['first_name'],
+              customer['last_name'],
+              customer['name'],
+              customer['full_name'],
+            ], fallback: ''),
+            customerPhone: _firstNonEmpty(<dynamic>[
+              customer['phone'],
+              customer['phone_number'],
+              customer['mobile'],
+              customer['contact_number'],
+            ], fallback: ''),
+            customerAddress: _formatAddress(
+              customerAddress,
+              fallback: order.to,
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      _toast(
+        'Failed to open return detail: ${error.toString().replaceFirst('Exception: ', '')}',
+      );
+    }
+  }
+
   Future<void> _openTrackingScreen(
     DeliveryOrderModel order, {
     bool useFieldExecutiveScreen = false,
@@ -233,7 +431,10 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       final shippingAddress = _firstMap(<dynamic>[
         payload['shipping_address'],
         payload['customer_address'],
+        payload['address_detail'],
         serviceRequest['customer_address'],
+        serviceRequest['address_detail'],
+        rawDetail['address_detail'],
       ]);
       final firstItem = _firstListMap(payload['order_items']);
       final productDetails = _mapFrom(firstItem['product_details']);
@@ -333,6 +534,20 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     String deliveryType,
   ) {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
+    if (normalizedType == DeliveryRequestTypes.pickup) {
+      final pickupRequest = _mapFrom(rawDetail['pickup_request']);
+      if (pickupRequest.isNotEmpty) return pickupRequest;
+    }
+    if (normalizedType == DeliveryRequestTypes.returnRequest) {
+      final returnRequest = _mapFrom(rawDetail['return_request']);
+      if (returnRequest.isNotEmpty) return returnRequest;
+    }
+    if (normalizedType == DeliveryRequestTypes.returnOrder) {
+      final returnOrder = _mapFrom(rawDetail['return_order']);
+      if (returnOrder.isNotEmpty) return returnOrder;
+      final order = _mapFrom(rawDetail['order']);
+      if (order.isNotEmpty) return order;
+    }
     if (normalizedType == DeliveryRequestTypes.productDelivery) {
       final order = _mapFrom(rawDetail['order']);
       if (order.isNotEmpty) return order;
@@ -452,12 +667,13 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
     final returnRequestCount = provider.countByCategory(
       DeliveryOrderCategory.returnRequest,
     );
+    final returnProductCount = provider.countByCategory(
+      DeliveryOrderCategory.returnProduct,
+    );
 
     final visibleOrders = provider.orders.where((o) {
       final matchesTab = o.category == _activeTab.category;
-      final isDelivered =
-          o.rawStatus.trim().toLowerCase() == 'delivered' ||
-          o.status == DeliveryOrderStatus.delivered;
+      final isDelivered = _isHiddenDeliveredStatus(o);
 
       if (!matchesTab || isDelivered) return false;
       if (q.isEmpty) return true;
@@ -520,6 +736,13 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
                       const SizedBox(height: 12),
                       StatsTabsSection(
                         activeTab: _activeTab,
+                        counts: <OrdersTab, int>{
+                          OrdersTab.productDelivery: productDeliveryCount,
+                          OrdersTab.pickupDelivery: pickupDeliveryCount,
+                          OrdersTab.requestPart: requestPartCount,
+                          OrdersTab.returnRequest: returnRequestCount,
+                          OrdersTab.returnProduct: returnProductCount,
+                        },
                         onTabChanged: (tab) => setState(() => _activeTab = tab),
                       ),
                       const SizedBox(height: 16),
@@ -797,7 +1020,13 @@ class _AttendanceTile extends StatelessWidget {
   }
 }
 
-enum OrdersTab { productDelivery, pickupDelivery, requestPart, returnRequest }
+enum OrdersTab {
+  productDelivery,
+  pickupDelivery,
+  requestPart,
+  returnRequest,
+  returnProduct,
+}
 
 extension OrdersTabX on OrdersTab {
   String get title {
@@ -810,6 +1039,8 @@ extension OrdersTabX on OrdersTab {
         return 'Request Part';
       case OrdersTab.returnRequest:
         return 'Return Request';
+      case OrdersTab.returnProduct:
+        return 'Return Product';
     }
   }
 
@@ -823,6 +1054,8 @@ extension OrdersTabX on OrdersTab {
         return DeliveryOrderCategory.requestPart;
       case OrdersTab.returnRequest:
         return DeliveryOrderCategory.returnRequest;
+      case OrdersTab.returnProduct:
+        return DeliveryOrderCategory.returnProduct;
     }
   }
 }
@@ -831,10 +1064,12 @@ class StatsTabsSection extends StatelessWidget {
   const StatsTabsSection({
     super.key,
     required this.activeTab,
+    required this.counts,
     required this.onTabChanged,
   });
 
   final OrdersTab activeTab;
+  final Map<OrdersTab, int> counts;
   final ValueChanged<OrdersTab> onTabChanged;
 
   @override
@@ -844,67 +1079,42 @@ class StatsTabsSection extends StatelessWidget {
       OrdersTab.pickupDelivery,
       OrdersTab.requestPart,
       OrdersTab.returnRequest,
+      OrdersTab.returnProduct,
     ];
-
-    return Row(
-      children: [
-        for (int i = 0; i < cards.length; i++) ...[
-          Expanded(
-            child: TabStatCard(
-              label: cards[i].title,
-              selected: activeTab == cards[i],
-              onTap: () => onTabChanged(cards[i]),
-            ),
-          ),
-          if (i != cards.length - 1) const SizedBox(width: 8),
-        ],
-      ],
-    );
-  }
-}
-
-class TabStatCard extends StatelessWidget {
-  const TabStatCard({
-    super.key,
-    required this.label,
-    required this.onTap,
-    required this.selected,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
     const activeGreen = Color(0xFF1E7C10);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: selected ? activeGreen : const Color(0xFFF4F7F3),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected ? activeGreen : const Color(0xFFD7E8D2),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD7E8D2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<OrdersTab>(
+          value: activeTab,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: activeGreen,
           ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-        child: Center(
-          child: Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: selected ? Colors.white : const Color(0xFF17321A),
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-              height: 1.15,
-            ),
+          borderRadius: BorderRadius.circular(12),
+          style: const TextStyle(
+            color: Color(0xFF17321A),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
+          onChanged: (tab) {
+            if (tab != null) onTabChanged(tab);
+          },
+          items: [
+            for (final card in cards)
+              DropdownMenuItem<OrdersTab>(
+                value: card,
+                child: Text('${card.title} (${counts[card] ?? 0})'),
+              ),
+          ],
         ),
       ),
     );
@@ -954,6 +1164,24 @@ class OrderCard extends StatelessWidget {
   final DeliveryOrderModel order;
   final VoidCallback onAccept;
 
+  String get _fromLabel =>
+      order.category == DeliveryOrderCategory.returnRequest ||
+          order.category == DeliveryOrderCategory.returnProduct
+      ? 'Warehouse Address:'
+      : 'From:';
+
+  String get _toLabel =>
+      order.category == DeliveryOrderCategory.returnRequest ||
+          order.category == DeliveryOrderCategory.returnProduct
+      ? 'Customer Address:'
+      : 'To:';
+
+  double get _labelWidth =>
+      order.category == DeliveryOrderCategory.returnRequest ||
+          order.category == DeliveryOrderCategory.returnProduct
+      ? 116
+      : 50;
+
   @override
   Widget build(BuildContext context) {
     final isRequestPart = order.category == DeliveryOrderCategory.requestPart;
@@ -1000,10 +1228,10 @@ class OrderCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(
-                  width: 50,
+                SizedBox(
+                  width: _labelWidth,
                   child: Text(
-                    'From:',
+                    _fromLabel,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                   ),
                 ),
@@ -1023,10 +1251,10 @@ class OrderCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(
-                  width: 50,
+                SizedBox(
+                  width: _labelWidth,
                   child: Text(
-                    'To:',
+                    _toLabel,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                   ),
                 ),
@@ -1087,12 +1315,12 @@ class OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'From:\n${order.from}',
+                '$_fromLabel\n${order.from}',
                 style: const TextStyle(fontSize: 12, height: 1.25),
               ),
               const SizedBox(height: 6),
               Text(
-                'To:\n${order.to}',
+                '$_toLabel\n${order.to}',
                 style: const TextStyle(fontSize: 12, height: 1.25),
               ),
             ],

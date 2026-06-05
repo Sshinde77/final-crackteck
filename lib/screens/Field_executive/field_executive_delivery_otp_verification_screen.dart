@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../constants/api_constants.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
@@ -36,6 +37,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   Timer? _timer;
   int _secondsRemaining = 80;
   bool _isVerifying = false;
+  bool _isResending = false;
   bool _isLoadingDetail = false;
   bool _cashReceivedConfirmed = false;
   static const Color _primaryGreen = Color(0xFF1E7C10);
@@ -82,6 +84,56 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
     return null;
   }
 
+  String get _normalizedDeliveryType =>
+      DeliveryRequestTypes.normalize(widget.deliveryType);
+
+  Map<String, dynamic>? get _resolvedPayload {
+    final detail = _detail;
+    if (detail == null) return null;
+
+    switch (_normalizedDeliveryType) {
+      case DeliveryRequestTypes.productDelivery:
+        return _asMap(detail['order']) ?? _asMap(detail['data']) ?? detail;
+      case DeliveryRequestTypes.returnOrder:
+        return _asMap(detail['return_order']) ??
+            _asMap(detail['order']) ??
+            _asMap(detail['data']) ??
+            detail;
+      case DeliveryRequestTypes.pickup:
+        return _asMap(detail['pickup_request']) ?? _asMap(detail['data']) ?? detail;
+      case DeliveryRequestTypes.returnRequest:
+        return _asMap(detail['return_request']) ?? _asMap(detail['data']) ?? detail;
+      case DeliveryRequestTypes.part:
+        return _asMap(detail['data']) ?? detail;
+      default:
+        return detail;
+    }
+  }
+
+  Map<String, dynamic>? get _resolvedProduct {
+    final payload = _resolvedPayload;
+    if (payload == null) return null;
+
+    if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery ||
+        _normalizedDeliveryType == DeliveryRequestTypes.returnOrder) {
+      final orderItems = payload['order_items'];
+      if (orderItems is List && orderItems.isNotEmpty) {
+        return _asMap(orderItems.first);
+      }
+      return _asMap(payload['product']);
+    }
+
+    if (_normalizedDeliveryType == DeliveryRequestTypes.part) {
+      return _asMap(payload['product']) ?? _asMap(_detail?['product']);
+    }
+
+    return _asMap(payload['service_request_product']) ??
+        _asMap(payload['product']) ??
+        _asMap(_detail?['service_request_product']) ??
+        _asMap(_detail?['product']) ??
+        _asMap(_detail?['products']);
+  }
+
   String _readText(Map<String, dynamic>? source, List<String> keys) {
     if (source == null) return '';
     for (final key in keys) {
@@ -94,36 +146,54 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   }
 
   String get _productName {
-    final detail = _detail;
-    final order = _asMap(detail?['order']);
-    final orderOrDetail = order ?? detail;
-    final orderItems = orderOrDetail?['order_items'];
-    final firstOrderItem = orderItems is List && orderItems.isNotEmpty
-        ? _asMap(orderItems.first)
-        : null;
-    final product = _asMap(detail?['products']) ?? _asMap(detail?['product']);
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
     final value = _readText(
-      firstOrderItem ?? product ?? orderOrDetail,
-      const ['product_name', 'name', 'title', 'service_name'],
+      product ?? payload,
+      const ['product_name', 'name', 'title', 'service_name', 'sku'],
+    );
+    return value.isEmpty ? '--' : value;
+  }
+
+  String get _modelNo {
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
+    final value = _readText(
+      product ?? payload,
+      const ['model_no', 'model', 'model_number'],
+    );
+    return value.isEmpty ? '--' : value;
+  }
+
+  String get _brand {
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
+    final value = _readText(
+      product ?? payload,
+      const ['brand'],
+    );
+    return value.isEmpty ? '--' : value;
+  }
+
+  String get _macAddress {
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
+    final value = _readText(
+      product ?? payload,
+      const ['mac_address', 'macAddress'],
     );
     return value.isEmpty ? '--' : value;
   }
 
   String get _quantity {
-    final detail = _detail;
-    final order = _asMap(detail?['order']);
-    final orderOrDetail = order ?? detail;
-    final orderItems = orderOrDetail?['order_items'];
-    final firstOrderItem = orderItems is List && orderItems.isNotEmpty
-        ? _asMap(orderItems.first)
-        : null;
-    final product = _asMap(detail?['products']) ?? _asMap(detail?['product']);
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
     final value = _readText(
-      firstOrderItem ?? orderOrDetail,
+      product ?? payload,
       const ['requested_quantity', 'quantity', 'total_requested_quantity', 'qty'],
     );
     final fallback = _readText(
-      product ?? orderOrDetail,
+      payload ?? product,
       const ['requested_quantity', 'quantity', 'total_requested_quantity', 'qty'],
     );
     final result = value.isNotEmpty ? value : fallback;
@@ -131,20 +201,14 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   }
 
   String get _installation {
-    final detail = _detail;
-    final order = _asMap(detail?['order']);
-    final orderOrDetail = order ?? detail;
-    final orderItems = orderOrDetail?['order_items'];
-    final firstOrderItem = orderItems is List && orderItems.isNotEmpty
-        ? _asMap(orderItems.first)
-        : null;
-    final product = _asMap(detail?['products']) ?? _asMap(detail?['product']);
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
     final value = _readText(
-      firstOrderItem ?? orderOrDetail,
+      product ?? payload,
       const ['installation'],
     );
     final fallback = _readText(
-      product ?? orderOrDetail,
+      payload ?? product,
       const ['installation'],
     );
     final result = value.isNotEmpty ? value : fallback;
@@ -152,21 +216,15 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   }
 
   String get _price {
-    final detail = _detail;
-    final order = _asMap(detail?['order']);
-    final orderOrDetail = order ?? detail;
-    final orderItems = orderOrDetail?['order_items'];
-    final firstOrderItem = orderItems is List && orderItems.isNotEmpty
-        ? _asMap(orderItems.first)
-        : null;
-    final product = _asMap(detail?['products']) ?? _asMap(detail?['product']);
+    final payload = _resolvedPayload;
+    final product = _resolvedProduct;
     final value = _readText(
-      firstOrderItem ?? orderOrDetail,
-      const ['line_total', 'unit_price', 'final_price', 'price', 'amount'],
+      product ?? payload,
+      const ['line_total', 'unit_price', 'final_price', 'price', 'amount', 'service_charge'],
     );
     final fallback = _readText(
-      product ?? orderOrDetail,
-      const ['final_price', 'selling_price', 'price', 'amount'],
+      payload ?? product,
+      const ['final_price', 'selling_price', 'price', 'amount', 'service_charge'],
     );
     final result = value.isNotEmpty ? value : fallback;
     if (result.isEmpty) return '--';
@@ -175,9 +233,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   }
 
   String get _paymentStatus {
-    final detail = _detail;
-    final order = _asMap(detail?['order']);
-    final orderOrDetail = order ?? detail;
+    final orderOrDetail = _resolvedPayload;
     final value = _readText(
       orderOrDetail,
       const ['payment_status', 'paymentStatus', 'payment_state', 'payment'],
@@ -186,9 +242,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   }
 
   String get _orderId {
-    final detail = _detail;
-    final order = _asMap(detail?['order']);
-    final orderOrDetail = order ?? detail;
+    final orderOrDetail = _resolvedPayload;
     final value = _readText(orderOrDetail, const ['id', 'order_id']);
     return value.isEmpty ? widget.deliveryId.trim() : value;
   }
@@ -215,6 +269,61 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _resendOtp() async {
+    if (_isResending || _secondsRemaining != 0) return;
+
+    final deliveryType = widget.deliveryType.trim();
+    final deliveryId = widget.deliveryId.trim().replaceFirst(RegExp(r'^#'), '');
+    if (deliveryType.isEmpty || deliveryId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to resend OTP'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isResending = true;
+    });
+
+    final response = await ApiService.sendDeliveryRequestOtp(
+      deliveryType: deliveryType,
+      deliveryId: deliveryId,
+      roleId: widget.roleId,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isResending = false;
+    });
+
+    final responseMessage = (response.message ?? '').trim();
+    final message = responseMessage.isNotEmpty
+        ? responseMessage
+        : (response.success ? 'OTP sent successfully' : 'Failed to send OTP');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: response.success ? _primaryGreen : Colors.red,
+      ),
+    );
+
+    if (!response.success) return;
+
+    setState(() {
+      _secondsRemaining = 80;
+      for (final controller in _controllers) {
+        controller.clear();
+      }
+    });
+    _focusNodes.first.requestFocus();
+    _startTimer();
   }
 
   Widget _buildOtpField(int index) {
@@ -365,6 +474,20 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
 
     if (_detail == null) return const SizedBox.shrink();
 
+    final detailRows = <MapEntry<String, String>>[
+      MapEntry('Product Name', _productName),
+      MapEntry('Model No', _modelNo),
+      MapEntry('Brand', _brand),
+      MapEntry('MAC Address', _macAddress),
+      MapEntry('Quantity', _quantity),
+      MapEntry('Installation', _installation),
+      MapEntry('Price', _price),
+      MapEntry('Payment Status', _paymentStatus),
+    ].where((item) {
+      final value = item.value.trim();
+      return value.isNotEmpty && value != '--' && value.toLowerCase() != 'null';
+    }).toList();
+
     return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
@@ -384,16 +507,16 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
-          _detailRow('Product Name', _productName),
-          const SizedBox(height: 10),
-          _detailRow('Quantity', _quantity),
-          const SizedBox(height: 10),
-          _detailRow('Installation', _installation),
-          const SizedBox(height: 10),
-          _detailRow('Price', _price),
-          const SizedBox(height: 10),
-          _detailRow('Payment Status', _paymentStatus),
+          if (detailRows.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...detailRows.asMap().entries.map((entry) {
+              final isLast = entry.key == detailRows.length - 1;
+              return Padding(
+                padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+                child: _detailRow(entry.value.key, entry.value.value),
+              );
+            }),
+          ],
         ],
       ),
     );
@@ -523,22 +646,11 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: _secondsRemaining == 0
-                      ? () {
-                          setState(() {
-                            _secondsRemaining = 80;
-                          });
-                          _startTimer();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('OTP resent (mock)'),
-                              backgroundColor: Colors.black87,
-                            ),
-                          );
-                        }
+                  onTap: _secondsRemaining == 0 && !_isResending
+                      ? _resendOtp
                       : null,
                   child: Text(
-                    'Resend code',
+                    _isResending ? 'Sending...' : 'Resend code',
                     style: TextStyle(
                       color: _secondsRemaining == 0
                           ? const Color(0xFF17321A)

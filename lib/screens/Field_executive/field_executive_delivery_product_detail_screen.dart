@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
+import '../../model/Delivery_person/return_order_detail_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
@@ -52,6 +53,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   bool _isAccepting = false;
   String? _errorMessage;
   Map<String, dynamic>? _detail;
+  ReturnOrderDetailModel? _returnOrderDetail;
 
   @override 
   void initState() {
@@ -63,19 +65,34 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _returnOrderDetail = null;
     });
 
     try {
-      final rawDetail = await ApiService.fetchDeliveryRequestDetail(
-        deliveryType: widget.deliveryType,
-        deliveryId: widget.deliveryId,
-        roleId: widget.roleId,
-      );
+      final rawDetail =
+          _normalizedDeliveryType == DeliveryRequestTypes.returnOrder
+          ? (await ApiService.fetchReturnOrderDetailModel(
+              deliveryId: widget.deliveryId,
+              roleId: widget.roleId,
+            )).rawResponse
+          : await ApiService.fetchDeliveryRequestDetail(
+              deliveryType: widget.deliveryType,
+              deliveryId: widget.deliveryId,
+              roleId: widget.roleId,
+            );
       final normalizedDetail = _normalizeDetail(rawDetail);
+      final returnOrderDetail =
+          _normalizedDeliveryType == DeliveryRequestTypes.returnOrder
+          ? ReturnOrderDetailModel.fromJson(
+              rawDetail,
+              fallbackOrderId: widget.deliveryId,
+            )
+          : null;
 
       if (!mounted) return;
       setState(() {
         _detail = normalizedDetail;
+        _returnOrderDetail = returnOrderDetail;
         _isLoading = false;
       });
     } catch (error) {
@@ -111,14 +128,23 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final customerAddress = _firstMap(<dynamic>[
       payload['shipping_address'],
       payload['customer_address'],
+      payload['address_detail'],
       serviceRequest['customer_address'],
+      serviceRequest['address_detail'],
       rawDetail['shipping_address'],
       rawDetail['customer_address'],
+      rawDetail['address_detail'],
     ]);
     final shippingAddress = _firstMap(<dynamic>[
       payload['shipping_address'],
+      payload['address_detail'],
+      serviceRequest['address_detail'],
       rawDetail['shipping_address'],
       customerAddress,
+    ]);
+    final primaryWarehouse = _firstMap(<dynamic>[
+      payload['primary_warehouse'],
+      rawDetail['primary_warehouse'],
     ]);
 
     return <String, dynamic>{
@@ -128,12 +154,12 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       'customer': customer,
       'customer_address': customerAddress,
       'shipping_address': shippingAddress,
+      'primary_warehouse': primaryWarehouse,
       'request_type': _firstNonEmpty(
         <dynamic>[
           payload['request_type'],
           serviceRequest['request_type'],
-          if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery)
-            DeliveryRequestTypes.productDelivery,
+          if (_isOrderBasedDeliveryType) _normalizedDeliveryType,
         ],
         fallback: '',
       ),
@@ -163,6 +189,13 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         if (order.isNotEmpty) return order;
         final data = _mapFrom(rawDetail['data']);
         return data.isNotEmpty ? data : rawDetail;
+      case DeliveryRequestTypes.returnOrder:
+        final returnOrder = _mapFrom(rawDetail['return_order']);
+        if (returnOrder.isNotEmpty) return returnOrder;
+        final order = _mapFrom(rawDetail['order']);
+        if (order.isNotEmpty) return order;
+        final data = _mapFrom(rawDetail['data']);
+        return data.isNotEmpty ? data : rawDetail;
       case DeliveryRequestTypes.pickup:
         final pickupRequest = _mapFrom(rawDetail['pickup_request']);
         return pickupRequest.isNotEmpty ? pickupRequest : rawDetail;
@@ -175,7 +208,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   Map<String, dynamic> _resolveProduct(Map<String, dynamic> payload) {
-    if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
+    if (_isOrderBasedDeliveryType) {
       final orderItems = _listOfMaps(payload['order_items']);
       if (orderItems.isNotEmpty) {
         return orderItems.first;
@@ -194,7 +227,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       _product.isNotEmpty ||
       _serviceRequest.isNotEmpty ||
       _customer.isNotEmpty ||
-      _customerAddress.isNotEmpty;
+      _customerAddress.isNotEmpty ||
+      (_typedReturnOrderDetail?.hasData ?? false);
 
   Map<String, dynamic> get _detailSafe => _detail ?? const <String, dynamic>{};
 
@@ -255,6 +289,14 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     return '\u20B9 $value';
   }
 
+  bool _hasVisibleValue(String? value) {
+    if (value == null) return false;
+    final normalized = value.trim();
+    return normalized.isNotEmpty &&
+        normalized.toLowerCase() != 'n/a' &&
+        normalized.toLowerCase() != 'null';
+  }
+
   String _formatAddress(Map<String, dynamic> source, {String fallback = 'N/A'}) {
     final parts = <String>[
       _asText(source['name']),
@@ -280,9 +322,18 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _normalizedDeliveryType =>
       DeliveryRequestTypes.normalize(widget.deliveryType);
 
+  ReturnOrderDetailModel? get _typedReturnOrderDetail =>
+      _normalizedDeliveryType == DeliveryRequestTypes.returnOrder
+      ? _returnOrderDetail
+      : null;
+
   bool get _isPartDeliveryType =>
       _normalizedDeliveryType == DeliveryRequestTypes.part ||
       _normalizedDeliveryType == DeliveryRequestTypes.productDelivery;
+
+  bool get _isOrderBasedDeliveryType =>
+      _normalizedDeliveryType == DeliveryRequestTypes.productDelivery ||
+      _normalizedDeliveryType == DeliveryRequestTypes.returnOrder;
 
   Map<String, dynamic> get _payload => _mapFrom(_detailSafe['payload']);
   Map<String, dynamic> get _product => _mapFrom(_detailSafe['product']);
@@ -295,6 +346,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayRequestId => _normalizeRequestId(
         _firstNonEmpty(
           <dynamic>[
+            _typedReturnOrderDetail?.orderNumber,
+            _typedReturnOrderDetail?.requestId,
+            _typedReturnOrderDetail?.id,
             _detailSafe['request_id'],
             _detailSafe['id'],
             widget.requestId,
@@ -305,7 +359,10 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayHeaderId => _firstNonEmpty(
         <dynamic>[
-          if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery)
+          _typedReturnOrderDetail?.orderNumber,
+          _typedReturnOrderDetail?.requestId,
+          _typedReturnOrderDetail?.id,
+          if (_isOrderBasedDeliveryType)
             _payload['order_number'],
           _detailSafe['request_id'],
           widget.requestId,
@@ -316,6 +373,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayImageUrl {
     final raw = _firstNonEmpty(
       <dynamic>[
+        _typedReturnOrderDetail?.product.imageUrl,
         _mapFrom(_product['product_details'])['main_product_image'],
         _product['main_product_image'],
         _product['product_image'],
@@ -332,7 +390,10 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayProductName => _firstNonEmpty(
         <dynamic>[
-          _isPartDeliveryType ? _product['product_name'] : _product['name'],
+          _typedReturnOrderDetail?.product.productName,
+          (_isPartDeliveryType || _isOrderBasedDeliveryType)
+              ? _product['product_name']
+              : _product['name'],
           _mapFrom(_product['product_details'])['product_name'],
           _product['name'],
           widget.productName,
@@ -341,15 +402,29 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayModelNo => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.product.modelNo,
           _mapFrom(_product['product_details'])['model_no'],
           _product['model_no'],
           _product['model'],
         ],
       );
 
+  String get _displayMacAddress => _firstNonEmpty(
+        <dynamic>[
+          _typedReturnOrderDetail?.product.macAddress,
+          _product['mac_address'],
+          _product['macAddress'],
+          _mapFrom(_product['product_details'])['mac_address'],
+          _mapFrom(_product['product_details'])['macAddress'],
+        ],
+        fallback: '',
+      );
+
   String get _displayPriceOrCharge => _normalizePrice(
         _firstNonEmpty(
           <dynamic>[
+            _typedReturnOrderDetail?.totalAmount,
+            _typedReturnOrderDetail?.product.unitPrice,
             _normalizedDeliveryType == DeliveryRequestTypes.productDelivery
                 ? _payload['total_amount']
                 : _isPartDeliveryType
@@ -364,6 +439,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayQuantity => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.quantity,
           _product['quantity'],
           _payload['requested_quantity'],
           _payload['quantity'],
@@ -376,6 +452,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayCustomerName => _joinNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.customer.firstName,
+          _typedReturnOrderDetail?.customer.lastName,
+          _typedReturnOrderDetail?.customer.fullName,
           _customer['first_name'],
           _customer['last_name'],
           _customer['name'],
@@ -387,6 +466,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayCustomerPhone => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.customer.phone,
           _customer['phone'],
           _customer['phone_number'],
           _customer['mobile'],
@@ -398,6 +478,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayCustomerEmail => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.customer.email,
           _customer['email'],
           _customer['email_id'],
         ],
@@ -406,6 +487,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   Map<String, dynamic> get _shippingAddress =>
       _firstMap(<dynamic>[_detailSafe['shipping_address'], _payload['shipping_address']]);
   Map<String, dynamic> get _warehouseDetails {
+    final primaryWarehouse = _mapFrom(_detailSafe['primary_warehouse']);
+    if (primaryWarehouse.isNotEmpty) return primaryWarehouse;
+
     final direct = _mapFrom(_product['warehouse_details']);
     if (direct.isNotEmpty) return direct;
 
@@ -413,14 +497,25 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final nestedWarehouse = _mapFrom(nestedProduct['warehouse']);
     if (nestedWarehouse.isNotEmpty) return nestedWarehouse;
 
+    final payloadPrimaryWarehouse = _mapFrom(_payload['primary_warehouse']);
+    if (payloadPrimaryWarehouse.isNotEmpty) return payloadPrimaryWarehouse;
+
     final payloadWarehouse = _mapFrom(_payload['warehouse']);
     if (payloadWarehouse.isNotEmpty) return payloadWarehouse;
 
     return _mapFrom(_payload['warehouse_details']);
   }
 
+  Map<String, dynamic> get _addressDetail => _firstMap(<dynamic>[
+        _payload['address_detail'],
+        _serviceRequest['address_detail'],
+        _detailSafe['address_detail'],
+      ]);
+
   String get _displayWarehouseName => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.warehouseAddress.name,
+          _typedReturnOrderDetail?.warehouseAddress.branchName,
           _warehouseDetails['name'],
           _warehouseDetails['branch_name'],
         ],
@@ -429,6 +524,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _displayBranchName => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.shippingAddress.branchName,
+          _typedReturnOrderDetail?.customerAddress.branchName,
           _shippingAddress['branch_name'],
           _customerAddress['branch_name'],
           _payload['branch_name'],
@@ -440,6 +537,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayAddressLine {
     final address1 = _firstNonEmpty(
       <dynamic>[
+        _typedReturnOrderDetail?.customerAddress.address1,
+        _typedReturnOrderDetail?.shippingAddress.address1,
         _shippingAddress['address1'],
         _customerAddress['address1'],
         _customerAddress['address_1'],
@@ -448,6 +547,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     );
     final address2 = _firstNonEmpty(
       <dynamic>[
+        _typedReturnOrderDetail?.customerAddress.address2,
+        _typedReturnOrderDetail?.shippingAddress.address2,
         _shippingAddress['address2'],
         _customerAddress['address2'],
         _customerAddress['address_2'],
@@ -469,19 +570,36 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   String get _displayCity => _firstNonEmpty(
-        <dynamic>[_shippingAddress['city'], _customerAddress['city']],
+        <dynamic>[
+          _typedReturnOrderDetail?.customerAddress.city,
+          _typedReturnOrderDetail?.shippingAddress.city,
+          _shippingAddress['city'],
+          _customerAddress['city'],
+        ],
       );
 
   String get _displayState => _firstNonEmpty(
-        <dynamic>[_shippingAddress['state'], _customerAddress['state']],
+        <dynamic>[
+          _typedReturnOrderDetail?.customerAddress.state,
+          _typedReturnOrderDetail?.shippingAddress.state,
+          _shippingAddress['state'],
+          _customerAddress['state'],
+        ],
       );
 
   String get _displayCountry => _firstNonEmpty(
-        <dynamic>[_shippingAddress['country'], _customerAddress['country']],
+        <dynamic>[
+          _typedReturnOrderDetail?.customerAddress.country,
+          _typedReturnOrderDetail?.shippingAddress.country,
+          _shippingAddress['country'],
+          _customerAddress['country'],
+        ],
       );
 
   String get _displayPincode => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.customerAddress.pincode,
+          _typedReturnOrderDetail?.shippingAddress.pincode,
           _shippingAddress['pincode'],
           _customerAddress['pincode'],
           _customerAddress['pin_code'],
@@ -489,10 +607,28 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       );
 
   String get _displayFromLocation {
+    final returnOrderDetail = _typedReturnOrderDetail;
+    if (returnOrderDetail != null) {
+      final value = _firstNonEmpty(
+        <dynamic>[
+          returnOrderDetail.warehouseAddress.formatted,
+          returnOrderDetail.warehouseAddress.primaryLabel,
+          widget.location,
+        ],
+        fallback: 'Warehouse',
+      );
+      return value;
+    }
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
     }
     if (_normalizedDeliveryType == DeliveryRequestTypes.part) {
+      return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
+    }
+    if (_normalizedDeliveryType == DeliveryRequestTypes.pickup) {
+      return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
+    }
+    if (_normalizedDeliveryType == DeliveryRequestTypes.returnRequest) {
       return _formatAddress(_warehouseDetails, fallback: _displayWarehouseName);
     }
     if (_displayBranchName != 'N/A' && _displayBranchName.isNotEmpty) {
@@ -505,6 +641,17 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   String get _displayToLocation {
+    final returnOrderDetail = _typedReturnOrderDetail;
+    if (returnOrderDetail != null) {
+      return _firstNonEmpty(
+        <dynamic>[
+          returnOrderDetail.customerAddress.formatted,
+          returnOrderDetail.shippingAddress.formatted,
+          widget.customerAddress,
+        ],
+        fallback: 'Customer address not available',
+      );
+    }
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(
         _shippingAddress,
@@ -514,6 +661,18 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     if (_normalizedDeliveryType == DeliveryRequestTypes.part) {
       return _formatAddress(
         _customerAddress,
+        fallback: 'Customer address not available',
+      );
+    }
+    if (_normalizedDeliveryType == DeliveryRequestTypes.pickup) {
+      return _formatAddress(
+        _customerAddress,
+        fallback: 'Customer address not available',
+      );
+    }
+    if (_normalizedDeliveryType == DeliveryRequestTypes.returnRequest) {
+      return _formatAddress(
+        _addressDetail,
         fallback: 'Customer address not available',
       );
     }
@@ -535,6 +694,17 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   String get _displayCustomerAddressForNavigation {
+    final returnOrderDetail = _typedReturnOrderDetail;
+    if (returnOrderDetail != null) {
+      return _firstNonEmpty(
+        <dynamic>[
+          returnOrderDetail.customerAddress.formatted,
+          returnOrderDetail.shippingAddress.formatted,
+          widget.customerAddress,
+        ],
+        fallback: 'N/A',
+      );
+    }
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(_shippingAddress, fallback: 'N/A');
     }
@@ -554,7 +724,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
   String get _acceptId => _firstNonEmpty(
         <dynamic>[
+          _typedReturnOrderDetail?.id,
           _detailSafe['id'],
+          widget.deliveryId,
         ],
         fallback: '',
       );
@@ -562,6 +734,47 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  String get _currentStatus => _firstNonEmpty(
+        <dynamic>[
+          _typedReturnOrderDetail?.status,
+          _payload['status'],
+          _payload['order_status'],
+          widget.status,
+        ],
+        fallback: '',
+      );
+
+  String get _statusKey =>
+      _currentStatus.trim().toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+
+  bool get _shouldContinueReturnOrder =>
+      _normalizedDeliveryType == DeliveryRequestTypes.returnOrder &&
+      <String>{
+        'approved',
+        'accepted',
+        'orderaccepted',
+        'picked',
+        'inprogress',
+      }.contains(_statusKey);
+
+  void _openTrackingScreen(String deliveryId) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.DeliveryMapTrackingScreen,
+      arguments: deliverymaptrackingArguments(
+        roleId: widget.roleId,
+        roleName: widget.roleName,
+        deliveryType: widget.deliveryType,
+        deliveryId: deliveryId,
+        requestId: _displayRequestId,
+        productName: _displayProductName,
+        customerName: _displayCustomerName,
+        customerPhone: _displayCustomerPhone,
+        customerAddress: _displayCustomerAddressForNavigation,
+      ),
     );
   }
 
@@ -574,15 +787,26 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       return;
     }
 
+    if (_shouldContinueReturnOrder) {
+      _openTrackingScreen(acceptId);
+      return;
+    }
+
     setState(() {
       _isAccepting = true;
     });
 
-    final response = await ApiService.acceptDeliveryRequest(
-      deliveryType: widget.deliveryType,
-      deliveryId: acceptId,
-      roleId: widget.roleId,
-    );
+    final response =
+        _normalizedDeliveryType == DeliveryRequestTypes.returnOrder
+        ? await ApiService.acceptReturnOrder(
+            deliveryId: acceptId,
+            roleId: widget.roleId,
+          )
+        : await ApiService.acceptDeliveryRequest(
+            deliveryType: widget.deliveryType,
+            deliveryId: acceptId,
+            roleId: widget.roleId,
+          );
 
     if (!mounted) return;
 
@@ -600,21 +824,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
 
     if (!response.success) return;
 
-    Navigator.pushNamed(
-      context,
-      AppRoutes.DeliveryMapTrackingScreen,
-      arguments: deliverymaptrackingArguments(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-        deliveryType: widget.deliveryType,
-        deliveryId: acceptId,
-        requestId: _displayRequestId,
-        productName: _displayProductName,
-        customerName: _displayCustomerName,
-        customerPhone: _displayCustomerPhone,
-        customerAddress: _displayCustomerAddressForNavigation,
-      ),
-    );
+    _openTrackingScreen(acceptId);
   }
 
   @override
@@ -637,7 +847,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         ),
         titleSpacing: 4,
         title: Text(
-          'Product to be delivered',
+          widget.requestType.trim().isEmpty
+              ? 'Delivery Details'
+              : widget.requestType,
           style: TextStyle(
             color: Colors.white,
             fontSize: _isCompactLayout ? 17 : 18,
@@ -696,9 +908,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                               ),
                             ),
                           )
-                        : const Text(
-                            'Accept',
-                            style: TextStyle(
+                        : Text(
+                            _shouldContinueReturnOrder ? 'Continue' : 'Accept',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
@@ -754,6 +966,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   Widget _buildSummaryCard() {
+    final fromLocation = _displayFromLocation;
+    final toLocation = _displayToLocation;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(_isCompactLayout ? 14 : 16),
@@ -786,15 +1001,18 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
               color: Color(0xFF9E9E9E),
             ),
           ),
-          _locationRow(
-            label: 'From:',
-            value: _displayFromLocation,
-          ),
-          SizedBox(height: _isCompactLayout ? 14 : 18),
-          _locationRow(
-            label: 'To:',
-            value: _displayToLocation,
-          ),
+          if (_hasVisibleValue(fromLocation))
+            _locationRow(
+              label: 'From:',
+              value: fromLocation,
+            ),
+          if (_hasVisibleValue(fromLocation) && _hasVisibleValue(toLocation))
+            SizedBox(height: _isCompactLayout ? 14 : 18),
+          if (_hasVisibleValue(toLocation))
+            _locationRow(
+              label: 'To:',
+              value: toLocation,
+            ),
         ],
       ),
     );
@@ -956,33 +1174,161 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   Widget _buildProductMeta(bool compact) {
+    final details = <String>[
+      if (_displayModelNo.isNotEmpty && _displayModelNo != 'N/A')
+        'Model: $_displayModelNo',
+      if (_displayMacAddress.isNotEmpty && _displayMacAddress != 'N/A')
+        'MAC: $_displayMacAddress',
+    ];
+    final priceOrCharge = _displayPriceOrCharge;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          _displayProductName,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: compact ? 15.5 : 17,
-            height: 1.2,
-            fontWeight: FontWeight.w700,
+        if (_hasVisibleValue(_displayProductName))
+          Text(
+            _displayProductName,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: compact ? 15.5 : 17,
+              height: 1.2,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        SizedBox(height: compact ? 8 : 10),
-        Text(
-          _displayPriceOrCharge,
-          style: TextStyle(
-            fontSize: compact ? 16 : 17,
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
+        if (details.isNotEmpty) ...[
+          SizedBox(height: compact ? 6 : 8),
+          ...details.map(
+            (detail) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                detail,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: compact ? 12.5 : 13,
+                  color: const Color(0xFF6B7280),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
+        if (_hasVisibleValue(priceOrCharge)) ...[
+          SizedBox(height: compact ? 8 : 10),
+          Text(
+            priceOrCharge,
+            style: TextStyle(
+              fontSize: compact ? 16 : 17,
+              color: Colors.black,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildExtraDetailsCard() {
+    final returnOrderDetail = _typedReturnOrderDetail;
+    if (returnOrderDetail != null) {
+      final items = <MapEntry<String, String>>[
+        MapEntry('Order No', _displayHeaderId),
+        MapEntry('Status', _currentStatus),
+        MapEntry('First Name', returnOrderDetail.customer.firstName),
+        MapEntry('Last Name', returnOrderDetail.customer.lastName),
+        MapEntry('Customer', _displayCustomerName),
+        MapEntry('Phone', _displayCustomerPhone),
+        MapEntry('Email', _displayCustomerEmail),
+        MapEntry(
+          'Shipping Branch',
+          _firstNonEmpty(<dynamic>[
+            returnOrderDetail.shippingAddress.branchName,
+            returnOrderDetail.customerAddress.branchName,
+          ], fallback: ''),
+        ),
+        MapEntry('Payment Status', returnOrderDetail.paymentStatus),
+        MapEntry(
+          'Total Amount',
+          _normalizePrice(returnOrderDetail.totalAmount),
+        ),
+        MapEntry(
+          'Unit Price',
+          _normalizePrice(returnOrderDetail.product.unitPrice),
+        ),
+        MapEntry('Quantity', _displayQuantity),
+        MapEntry('Product Name', _displayProductName),
+        MapEntry('Model No', _displayModelNo),
+        MapEntry('MAC Address', _displayMacAddress),
+        MapEntry('HSN Code', returnOrderDetail.product.hsnCode),
+        MapEntry('Weight', returnOrderDetail.product.weight),
+        MapEntry('Dimensions', returnOrderDetail.product.dimensions),
+        MapEntry('Shipping Time', returnOrderDetail.product.shippingTime),
+        MapEntry('Brand Warranty', returnOrderDetail.product.brandWarranty),
+        MapEntry('COD', returnOrderDetail.product.cod),
+        MapEntry('Installation', returnOrderDetail.product.installation),
+        MapEntry('Warehouse', _displayWarehouseName),
+        MapEntry(
+          'Warehouse Code',
+          returnOrderDetail.warehouseAddress.warehouseCode,
+        ),
+        MapEntry(
+          'Warehouse Contact',
+          returnOrderDetail.warehouseAddress.phoneNumber,
+        ),
+        MapEntry(
+          'Warehouse Address',
+          returnOrderDetail.warehouseAddress.formatted,
+        ),
+        MapEntry(
+          'Shipping Address',
+          _firstNonEmpty(<dynamic>[
+            returnOrderDetail.shippingAddress.formatted,
+            returnOrderDetail.customerAddress.formatted,
+          ], fallback: ''),
+        ),
+        MapEntry(
+          'Customer Address',
+          _firstNonEmpty(<dynamic>[
+            returnOrderDetail.customerAddress.formatted,
+            returnOrderDetail.shippingAddress.formatted,
+          ], fallback: ''),
+        ),
+        MapEntry('Expected Delivery', returnOrderDetail.expectedDeliveryDate),
+        MapEntry('Customer Notes', returnOrderDetail.customerNotes),
+        MapEntry('Admin Notes', returnOrderDetail.adminNotes),
+      ].where((item) => item.value.isNotEmpty && item.value != 'N/A').toList();
+
+      if (items.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(_isCompactLayout ? 14 : 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(_isCompactLayout ? 16 : 18),
+          border: Border.all(color: _cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Additional Details',
+              style: TextStyle(
+                fontSize: _isCompactLayout ? 14 : 15,
+                color: Colors.black,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: _isCompactLayout ? 10 : 12),
+            ...items.map(_detailRow),
+          ],
+        ),
+      );
+    }
+
     final productDetails = _mapFrom(_product['product_details']);
     final items = <MapEntry<String, String>>[
       MapEntry('Order No', _displayHeaderId),
@@ -996,7 +1342,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       MapEntry('Total Amount', _normalizePrice(_firstNonEmpty(<dynamic>[_payload['total_amount']]))),
       MapEntry('Unit Price', _normalizePrice(_firstNonEmpty(<dynamic>[_product['unit_price'], _product['line_total']]))),
       MapEntry('Quantity', _displayQuantity),
+      MapEntry('Product Name', _displayProductName),
       MapEntry('Model No', _displayModelNo),
+      MapEntry('MAC Address', _displayMacAddress),
       MapEntry('HSN Code', _firstNonEmpty(<dynamic>[_product['hsn_code'], productDetails['hsn_code']])),
       MapEntry('Weight', _firstNonEmpty(<dynamic>[_product['weight'], productDetails['weight']])),
       MapEntry('Dimensions', _firstNonEmpty(<dynamic>[_product['dimensions'], productDetails['dimensions']])),
@@ -1008,7 +1356,12 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       MapEntry('Warehouse Code', _firstNonEmpty(<dynamic>[_warehouseDetails['warehouse_code']])),
       MapEntry('Warehouse Contact', _firstNonEmpty(<dynamic>[_warehouseDetails['phone_number']])),
       MapEntry('Warehouse Address', _formatAddress(_warehouseDetails)),
-      MapEntry('Shipping Address', _formatAddress(_shippingAddress)),
+      MapEntry(
+        'Shipping Address',
+        _formatAddress(
+          _firstMap(<dynamic>[_shippingAddress, _addressDetail, _customerAddress]),
+        ),
+      ),
       MapEntry('Expected Delivery', _firstNonEmpty(<dynamic>[_payload['expected_delivery_date']])),
       MapEntry('Customer Notes', _firstNonEmpty(<dynamic>[_payload['customer_notes']], fallback: '')),
       MapEntry('Admin Notes', _firstNonEmpty(<dynamic>[_payload['admin_notes']], fallback: '')),

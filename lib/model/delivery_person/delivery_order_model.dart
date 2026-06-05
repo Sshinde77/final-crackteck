@@ -5,6 +5,7 @@ enum DeliveryOrderCategory {
   pickupDelivery,
   requestPart,
   returnRequest,
+  returnProduct,
 }
 
 class DeliveryOrderModel {
@@ -33,6 +34,7 @@ class DeliveryOrderModel {
   final String rawStatus;
   final DeliveryOrderStatus status;
   final DeliveryOrderCategory category;
+  bool get isDelivered => status == DeliveryOrderStatus.delivered;
 
   factory DeliveryOrderModel.fromJson(Map<String, dynamic> json) {
     final statusText =
@@ -43,35 +45,44 @@ class DeliveryOrderModel {
                 '')
             .toString()
             .toLowerCase();
+    final compactStatus = statusText.replaceAll(RegExp(r'[^a-z]'), '');
+    final category = _parseCategory(json);
 
-    final from = _readAddress(
-      json,
-      <String>[
-        'from_address',
-        'pickup_address',
-        'warehouse_address',
-        'warehouse',
-        'from',
-        'source',
-      ],
-      fallback:
-          _warehouseName(json) ??
-          _formatNestedAddress(json['warehouse_details']) ??
-          'Warehouse',
-    );
-    final to = _readAddress(
-      json,
-      <String>[
-        'to_address',
-        'delivery_address',
-        'customer_address',
-        'address',
-        'to',
-      ],
-      fallback:
-          _formatNestedAddress(json['shipping_address']) ??
-          'Customer address not available',
-    );
+    final isReturnFlow =
+        category == DeliveryOrderCategory.returnRequest ||
+        category == DeliveryOrderCategory.returnProduct;
+    final from = isReturnFlow
+        ? _returnFromAddress(json)
+        : _readAddress(
+            json,
+            <String>[
+              'from_address',
+              'pickup_address',
+              'warehouse_address',
+              'warehouse',
+              'from',
+              'source',
+            ],
+            fallback:
+                _warehouseName(json) ??
+                _formatNestedAddress(json['warehouse_details']) ??
+                'Warehouse',
+          );
+    final to = isReturnFlow
+        ? _returnToAddress(json)
+        : _readAddress(
+            json,
+            <String>[
+              'to_address',
+              'delivery_address',
+              'customer_address',
+              'address',
+              'to',
+            ],
+            fallback:
+                _formatNestedAddress(json['shipping_address']) ??
+                'Customer address not available',
+          );
     final rawDate =
         json['date'] ??
         json['order_date'] ??
@@ -103,7 +114,8 @@ class DeliveryOrderModel {
     final requestId =
         (serviceRequestId ?? json['request_id'] ?? json['requestId'] ?? '')
             .toString();
-    final category = _parseCategory(json);
+    final isDelivered = _isDelivered(json, compactStatus);
+    final isCancelled = _isCancelled(json, compactStatus);
 
     return DeliveryOrderModel(
       id: normalizedId,
@@ -118,15 +130,16 @@ class DeliveryOrderModel {
       from: from,
       to: to,
       accepted:
-          statusText.contains('accept') ||
-          statusText.contains('assigned') ||
-          statusText.contains('picked') ||
-          statusText.contains('in_progress') ||
-          statusText.contains('deliver'),
+          isDelivered ||
+          compactStatus.contains('accept') ||
+          compactStatus.contains('assigned') ||
+          compactStatus.contains('picked') ||
+          compactStatus.contains('inprogress') ||
+          compactStatus.contains('approved'),
       rawStatus: statusText,
-      status: statusText.contains('cancel')
+      status: isCancelled
           ? DeliveryOrderStatus.cancelled
-          : statusText.contains('deliver')
+          : isDelivered
           ? DeliveryOrderStatus.delivered
           : DeliveryOrderStatus.pending,
       category: category,
@@ -187,6 +200,9 @@ class DeliveryOrderModel {
     if (compact.contains('requestpart') || compact.contains('partrequest')) {
       return DeliveryOrderCategory.requestPart;
     }
+    if (compact.contains('returnorder') || compact.contains('returnproduct')) {
+      return DeliveryOrderCategory.returnProduct;
+    }
     if (compact.contains('return')) {
       return DeliveryOrderCategory.returnRequest;
     }
@@ -228,16 +244,71 @@ class DeliveryOrderModel {
     if (value is! Map) return null;
     final map = Map<String, dynamic>.from(value);
     final parts = <String>[
+      map['name']?.toString() ?? '',
       map['branch_name']?.toString() ?? '',
+      map['address_detail']?.toString() ?? '',
       map['address1']?.toString() ?? '',
+      map['address_1']?.toString() ?? '',
       map['address2']?.toString() ?? '',
+      map['address_2']?.toString() ?? '',
+      map['street']?.toString() ?? '',
+      map['locality']?.toString() ?? '',
       map['city']?.toString() ?? '',
       map['state']?.toString() ?? '',
+      map['country']?.toString() ?? '',
       map['pincode']?.toString() ?? '',
+      map['pin_code']?.toString() ?? '',
     ].where((part) => part.trim().isNotEmpty).toList();
 
     if (parts.isEmpty) return null;
     return parts.join(', ');
+  }
+
+  static bool _isCancelled(Map<String, dynamic> json, String compactStatus) {
+    if (_hasValue(json['cancelled_at'])) {
+      return true;
+    }
+    return compactStatus.contains('cancel') ||
+        compactStatus.contains('reject');
+  }
+
+  static bool _isDelivered(Map<String, dynamic> json, String compactStatus) {
+    if (_hasValue(json['delivered_at'])) {
+      return true;
+    }
+
+    final deliveredStatuses = <String>{
+      'delivered',
+      'completed',
+      'orderdelivered',
+      'returnorderdelivered',
+      'returnrequestdelivered',
+    };
+    if (deliveredStatuses.contains(compactStatus)) {
+      return true;
+    }
+
+    final orderItems = json['order_items'];
+    if (orderItems is List && orderItems.isNotEmpty) {
+      final itemStatuses = orderItems
+          .whereType<Map>()
+          .map((item) => (item['item_status'] ?? '').toString().trim().toLowerCase())
+          .where((status) => status.isNotEmpty)
+          .toList();
+      if (itemStatuses.isNotEmpty &&
+          itemStatuses.every(
+            (status) => status == 'delivered' || status == 'completed',
+          )) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static bool _hasValue(dynamic value) {
+    if (value == null) return false;
+    return value.toString().trim().isNotEmpty;
   }
 
   static String? _warehouseName(Map<String, dynamic> json) {
@@ -263,6 +334,108 @@ class DeliveryOrderModel {
     }
 
     return null;
+  }
+
+  static String _returnFromAddress(Map<String, dynamic> json) {
+    final candidates = <dynamic>[
+      json['primary_warehouse'],
+      json['warehouse_details'],
+      json['warehouse'],
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['primary_warehouse']
+          : null,
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['warehouse_details']
+          : null,
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['warehouse']
+          : null,
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is Map) {
+        final map = Map<String, dynamic>.from(candidate);
+        final formatted = _formatNestedAddress(map);
+        if (formatted != null && formatted.isNotEmpty) {
+          return formatted;
+        }
+        final name = map['name']?.toString().trim();
+        if (name != null && name.isNotEmpty) {
+          return name;
+        }
+      } else if (candidate != null) {
+        final text = candidate.toString().trim();
+        if (text.isNotEmpty) {
+          return text;
+        }
+      }
+    }
+
+    final formatted = _formatNestedAddress(json['primary_warehouse']);
+    if (formatted != null && formatted.isNotEmpty) {
+      return formatted;
+    }
+
+    final nestedFormatted = _formatNestedAddress(
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['primary_warehouse']
+          : null,
+    );
+    if (nestedFormatted != null && nestedFormatted.isNotEmpty) {
+      return nestedFormatted;
+    }
+
+    return _readAddress(
+      json,
+      const ['warehouse_address', 'warehouse', 'from', 'source'],
+      fallback:
+          _warehouseName(json) ??
+          _formatNestedAddress(json['warehouse_details']) ??
+          'Warehouse',
+    );
+  }
+
+  static String _returnToAddress(Map<String, dynamic> json) {
+    final serviceRequest = json['service_request'];
+    final candidates = <dynamic>[
+      json['address_detail'],
+      json['customer_address'],
+      json['shipping_address'],
+      serviceRequest is Map ? serviceRequest['address_detail'] : null,
+      serviceRequest is Map ? serviceRequest['customer_address'] : null,
+      serviceRequest is Map ? serviceRequest['shipping_address'] : null,
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['address_detail']
+          : null,
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['customer_address']
+          : null,
+      (json['return_request'] is Map)
+          ? (json['return_request'] as Map)['shipping_address']
+          : null,
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is Map) {
+        final formatted = _formatNestedAddress(candidate);
+        if (formatted != null && formatted.isNotEmpty) {
+          return formatted;
+        }
+      } else if (candidate != null) {
+        final text = candidate.toString().trim();
+        if (text.isNotEmpty) {
+          return text;
+        }
+      }
+    }
+
+    return _readAddress(
+      json,
+      const ['to_address', 'delivery_address', 'customer_address', 'address', 'to'],
+      fallback:
+          _formatNestedAddress(json['shipping_address']) ??
+          'Customer address not available',
+    );
   }
 
   static String formatTime(DateTime dateTime) {

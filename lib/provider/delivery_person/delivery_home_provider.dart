@@ -25,7 +25,11 @@ class DeliveryHomeProvider extends ChangeNotifier {
       .where((order) => order.status == DeliveryOrderStatus.cancelled)
       .length;
   int countByCategory(DeliveryOrderCategory category) => _orders
-      .where((order) => order.category == category)
+      .where(
+        (order) =>
+            order.category == category &&
+            order.rawStatus.trim().toLowerCase() != 'delivered',
+      )
       .length;
 
   Future<void> loadHomeData() async {
@@ -39,6 +43,7 @@ class DeliveryHomeProvider extends ChangeNotifier {
         _ordersService.fetchPickupRequests(),
         _ordersService.fetchReturnRequests(),
         _ordersService.fetchPartRequests(),
+        _ordersService.fetchReturnOrders(),
       ]);
 
       final mergedOrders = <DeliveryOrderModel>[
@@ -70,7 +75,23 @@ class DeliveryHomeProvider extends ChangeNotifier {
                 category: DeliveryOrderCategory.requestPart,
               ),
             ),
+        ...results[4]
+            .map(DeliveryOrderModel.fromJson)
+            .map(
+              (order) => order.copyWith(
+                category: DeliveryOrderCategory.returnProduct,
+              ),
+            ),
       ];
+
+      mergedOrders.sort((a, b) {
+        final aDate = DateTime.tryParse(a.date.split('-').reversed.join('-'));
+        final bDate = DateTime.tryParse(b.date.split('-').reversed.join('-'));
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return bDate.compareTo(aDate);
+      });
 
       _orders = mergedOrders;
     } catch (error) {
