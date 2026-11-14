@@ -22,7 +22,7 @@ class DeliveryPersonAttendanceScreen extends StatefulWidget {
 
 class _DeliveryPersonAttendanceScreenState
     extends State<DeliveryPersonAttendanceScreen> {
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
   DateTime? _selectedDate;
 
   @override
@@ -281,7 +281,7 @@ class _AttendanceCard extends StatelessWidget {
 
   final _AttendanceRecord record;
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +445,7 @@ class _CalendarFab extends StatelessWidget {
 
   final VoidCallback onTap;
 
-  static const Color green = Color(0xFF1B6E1B);
+  static const Color green = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

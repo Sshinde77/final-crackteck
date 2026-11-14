@@ -1,3 +1,4 @@
+import 'package:final_crackteck/model/api_response.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -35,7 +36,7 @@ class FieldExecutiveMapTrackingScreen extends StatefulWidget {
 
 class _FieldExecutiveMapTrackingScreenState
     extends State<FieldExecutiveMapTrackingScreen> {
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
   bool _isSendingOtp = false;
 
   late final String _customerName;
@@ -126,7 +127,7 @@ class _FieldExecutiveMapTrackingScreenState
       _isSendingOtp = true;
     }
 
-    late final response;
+    late final ApiResponse<dynamic> response;
     try {
       if (_usesDeliveryOtpFlow) {
         debugPrint(

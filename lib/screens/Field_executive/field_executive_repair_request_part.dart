@@ -10,7 +10,7 @@ class RepairRequestScreen extends StatefulWidget {
 }
 
 class _RepairRequestScreenState extends State<RepairRequestScreen> {
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   // ✅ Dummy Data for Repair Requests
   final List<RepairRequestItem> items = [
@@ -226,7 +226,7 @@ class _RepairCard extends StatelessWidget {
     required this.onTap,
   });
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -279,7 +279,7 @@ class _RepairCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: isDone ? brandGreen : const Color(0xFFD11A2A),
+                          color: isDone ? brandGreen : const Color(0xFFEE2D2A),
                         ),
                       ),
                       const Spacer(),
@@ -348,7 +348,7 @@ class _RepairDetailsPopup extends StatelessWidget {
     required this.onChat,
   });
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +382,7 @@ class _RepairDetailsPopup extends StatelessWidget {
             "Status",
             item.status,
             bold: true,
-            color: isPending ? const Color(0xFFD11A2A) : brandGreen,
+            color: isPending ? const Color(0xFFEE2D2A) : brandGreen,
           ),
 
           const SizedBox(height: 14),
@@ -498,7 +498,7 @@ class _RepairTimeline extends StatelessWidget {
   final int timelineIndex; // 0..2
   const _RepairTimeline({required this.timelineIndex});
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

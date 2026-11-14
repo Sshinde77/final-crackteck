@@ -18,14 +18,14 @@ class SalesPersonLeadsScreen extends StatefulWidget {
 }
 
 class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   int _roleId = 3;
-  String _roleName = 'Salesperson';
+  final String _roleName = 'Salesperson';
 
   final TextEditingController _searchCtrl = TextEditingController();
 
@@ -186,7 +186,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
@@ -252,7 +252,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -387,7 +387,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                               child: const Text(
                                 "Clear",
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: Color(0xFFEE2D2A),
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -414,7 +414,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                                 child: const Text(
                                   "Close",
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xFFEE2D2A),
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -469,7 +469,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         String apiValue(String value) {
           final trimmed = value.trim();
@@ -548,7 +548,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.14),
+                    color: Colors.black.withValues(alpha: 0.14),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -572,7 +572,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                     "Urgency",
                     apiValue(lead.urgency),
                     valueColor: lead.urgency.toLowerCase() == "high"
-                        ? Colors.red
+                        ? const Color(0xFFEE2D2A)
                         : Colors.black,
                   ),
                   kv("Status", apiValue(lead.status.label)),
@@ -606,7 +606,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                         label: "Delete",
                         icon: Icons.delete_outline,
                         bg: const Color(0xFFFFE0E0),
-                        fg: Colors.red,
+                        fg: const Color(0xFFEE2D2A),
                         onTap: () async {
                           Navigator.pop(ctx);
                           await _deleteLead(lead);
@@ -881,7 +881,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.14),
+                                color: Colors.black.withValues(alpha: 0.14),
                                 blurRadius: 14,
                                 offset: const Offset(0, 8),
                               ),
@@ -945,7 +945,7 @@ class _LeadCard extends StatelessWidget {
     required this.onStatusTap,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

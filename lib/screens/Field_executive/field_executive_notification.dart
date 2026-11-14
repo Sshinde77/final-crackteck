@@ -107,7 +107,7 @@ class NotificationCard extends StatelessWidget {
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: title == 'New Call'
-                              ? Colors.green[700]
+                              ? const Color(0xFF020F37)
                               : Colors.black,
                         ),
                       ),
@@ -117,7 +117,7 @@ class NotificationCard extends StatelessWidget {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Colors.red,
+                          color: Color(0xFFEE2D2A),
                           shape: BoxShape.circle,
                         ),
                       ),

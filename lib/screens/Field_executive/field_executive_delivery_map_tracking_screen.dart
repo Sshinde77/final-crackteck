@@ -33,7 +33,7 @@ class DeliveryMapTrackingScreen extends StatefulWidget {
 }
 
 class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
-  static const Color _primaryGreen = Color(0xFF1E7C10);
+  static const Color _primaryGreen = Color(0xFF020F37);
   bool _isSendingOtp = false;
 
   void _showSnack(String message) {

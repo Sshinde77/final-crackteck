@@ -20,8 +20,8 @@ class fieldexecutiveFeedbackScreen extends StatefulWidget {
 
 class _fieldexecutiveFeedbackScreenState
     extends State<fieldexecutiveFeedbackScreen> {
-  static const Color _primaryGreen = Color(0xFF1F8B00);
-  static const Color _darkGreen = Color(0xFF145A00);
+  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _darkGreen = Color(0xFF020F37);
 
   List<_FeedbackListItem> _feedbacks = const <_FeedbackListItem>[];
   bool _isLoading = true;
@@ -124,7 +124,7 @@ class _fieldexecutiveFeedbackScreenState
             children: [
               const Icon(
                 Icons.error_outline_rounded,
-                color: Colors.redAccent,
+                color: Color(0xFFEE2D2A),
                 size: 28,
               ),
               const SizedBox(height: 12),
@@ -132,7 +132,7 @@ class _fieldexecutiveFeedbackScreenState
                 _errorMessage!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.redAccent,
+                  color: Color(0xFFEE2D2A),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -265,7 +265,7 @@ class _FeedbackCard extends StatelessWidget {
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Color(0xFF145A00),
+                color: Color(0xFF020F37),
               ),
             ),
           ],
@@ -289,7 +289,7 @@ class _FeedbackDetailSheet extends StatefulWidget {
 }
 
 class _FeedbackDetailSheetState extends State<_FeedbackDetailSheet> {
-  static const Color _darkGreen = Color(0xFF145A00);
+  static const Color _darkGreen = Color(0xFF020F37);
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -450,7 +450,7 @@ class _FeedbackDetailSheetState extends State<_FeedbackDetailSheet> {
               _errorMessage!,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.redAccent,
+                color: Color(0xFFEE2D2A),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -534,7 +534,7 @@ class _FeedbackDetailSheetState extends State<_FeedbackDetailSheet> {
             Text(
               _errorMessage!,
               style: const TextStyle(
-                color: Colors.redAccent,
+                color: Color(0xFFEE2D2A),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

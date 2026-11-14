@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class FeedbackScreen extends StatelessWidget {
   const FeedbackScreen({super.key});
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
   static const Color starColor = Color(0xFFFFC107);
 
   @override

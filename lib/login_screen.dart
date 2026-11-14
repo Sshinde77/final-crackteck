@@ -21,12 +21,12 @@ class LoginScreen extends StatefulWidget {
   final Object? redirectArguments;
 
   const LoginScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
     this.redirectRoute,
     this.redirectArguments,
-  }) : super(key: key);
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -456,7 +456,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF152033).withOpacity(0.06),
+                            color: const Color(0xFF152033).withValues(alpha: 0.06),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -559,7 +559,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: const Text(
                                   'Sign Up',
                                   style: TextStyle(
-                                    color: Color(0xFF0A8A35),
+                                    color: Color(0xFF020F37),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -734,7 +734,7 @@ class EmailLoginTab extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4),
             child: Text(
               errorText!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: const TextStyle(color: Color(0xFFEE2D2A), fontSize: 12),
             ),
           ),
         ],
@@ -751,7 +751,7 @@ class EmailLoginTab extends StatelessWidget {
             child: const Text(
               'Forgot Password?',
               style: TextStyle(
-                color: Color(0xFF0A8A35),
+                color: Color(0xFF020F37),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -794,7 +794,7 @@ class PhoneField extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: errorText != null
-                  ? Colors.red.shade300
+                  ? const Color(0xFFEE2D2A)
                   : const Color(0xFFD9DEE7),
             ),
           ),
@@ -859,7 +859,7 @@ class PhoneField extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4),
             child: Text(
               errorText!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: const TextStyle(color: Color(0xFFEE2D2A), fontSize: 12),
             ),
           ),
         ],
@@ -945,10 +945,10 @@ class PrimaryActionButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF058A31),
+          backgroundColor: const Color(0xFF020F37),
           foregroundColor: Colors.white,
           elevation: 0,
-          disabledBackgroundColor: const Color(0xFF058A31).withOpacity(0.7),
+          disabledBackgroundColor: const Color(0xFF020F37).withValues(alpha: 0.7),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -1021,7 +1021,7 @@ class SocialActionButton extends StatelessWidget {
                     height: 26,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.12),
+                      color: accentColor.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -1104,7 +1104,7 @@ class _TabButton extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF152033).withOpacity(0.08),
+                    color: const Color(0xFF152033).withValues(alpha: 0.08),
                     blurRadius: 14,
                     offset: const Offset(0, 6),
                   ),

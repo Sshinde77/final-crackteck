@@ -25,11 +25,11 @@ class SalesPersonMeetingScreen extends StatefulWidget {
 }
 
 class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   final TextEditingController _searchCtrl = TextEditingController();
 
@@ -300,7 +300,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
@@ -357,7 +357,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -504,7 +504,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                               child: const Text(
                                 "Clear",
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: Color(0xFFEE2D2A),
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -531,7 +531,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                                 child: const Text(
                                   "Close",
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xFFEE2D2A),
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -690,7 +690,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text(
                 'Delete',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Color(0xFFEE2D2A)),
               ),
             ),
           ],
@@ -940,7 +940,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.14),
+                                color: Colors.black.withValues(alpha: 0.14),
                                 blurRadius: 14,
                                 offset: const Offset(0, 8),
                               ),
@@ -1003,7 +1003,7 @@ class _MeetingCard extends StatelessWidget {
     required this.onStatusTap,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -1079,7 +1079,7 @@ class _MeetingCard extends StatelessWidget {
   _PillStyle _pillStyle(String s) {
     switch (s) {
       case "Cancelled":
-        return const _PillStyle(bg: Color(0xFFFFE0E0), fg: Colors.red);
+        return const _PillStyle(bg: Color(0xFFFFE0E0), fg: Color(0xFFEE2D2A));
       case "Pending":
         return const _PillStyle(bg: Color(0xFFEDEDED), fg: Colors.black87);
       case "Scheduled":
@@ -1219,7 +1219,7 @@ class _MeetingItem {
   });
 }
 
-const Color kDarkGreen = Color(0xFF145A00);
+const Color kDarkGreen = Color(0xFF020F37);
 
 class _MeetingCenterDialog extends StatelessWidget {
   final _MeetingItem item;
@@ -1439,7 +1439,7 @@ class _MeetingCenterDialog extends StatelessWidget {
                         icon: Icons.delete_outline,
                         label: "Delete",
                         bg: const Color(0xFFFFE6E6),
-                        fg: Colors.red,
+                        fg: const Color(0xFFEE2D2A),
                         onTap: onDelete ?? () {},
                       ),
                     ),
@@ -1496,44 +1496,11 @@ class _KVRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: statusRed ? Colors.red : Colors.black87,
+                color: statusRed ? const Color(0xFFEE2D2A) : Colors.black87,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _GreenButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _GreenButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 46,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: kDarkGreen,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
-        ),
       ),
     );
   }

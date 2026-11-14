@@ -61,6 +61,7 @@ dev_dependencies:
   fake_async: ^1.3.1
   golden_toolkit: ^0.15.0
   network_image_mock: ^2.1.1
+  flutter_launcher_icons: ^0.14.4
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -83,7 +84,17 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/logo.jpeg
+    - assets/logo-light.png
     - assets/images/map_placeholder.jpg
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/app_icon_fitted.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/app_icon_fitted.png
+  min_sdk_android: 21
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

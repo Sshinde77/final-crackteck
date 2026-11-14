@@ -10,7 +10,7 @@ class PickupMaterialsScreen extends StatefulWidget {
 }
 
 class _PickupMaterialsScreenState extends State<PickupMaterialsScreen> {
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   // ✅ Dummy Data
   final List<PickupItem> items = [
@@ -223,7 +223,7 @@ class _PickupCard extends StatelessWidget {
     required this.onTap,
   });
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +278,7 @@ class _PickupCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: isDone ? brandGreen : const Color(0xFFD11A2A),
+                          color: isDone ? brandGreen : const Color(0xFFEE2D2A),
                         ),
                       ),
                       const Spacer(),
@@ -347,7 +347,7 @@ class _PickupDetailsPopup extends StatelessWidget {
     required this.onChat,
   });
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +382,7 @@ class _PickupDetailsPopup extends StatelessWidget {
             "Status",
             item.requestStatus,
             bold: true,
-            color: isPending ? const Color(0xFFD11A2A) : brandGreen,
+            color: isPending ? const Color(0xFFEE2D2A) : brandGreen,
           ),
 
           const SizedBox(height: 14),
@@ -500,7 +500,7 @@ class _Timeline extends StatelessWidget {
   final int timelineIndex; // 0..2
   const _Timeline({required this.timelineIndex});
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

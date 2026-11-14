@@ -505,7 +505,7 @@ class StockItemCard extends StatelessWidget {
         children: [
           const Text(
             'Selected',
-            style: TextStyle(fontSize: 12, color: Colors.red),
+            style: TextStyle(fontSize: 12, color: Color(0xFFEE2D2A)),
           ),
           const SizedBox(height: 4),
           Row(
@@ -520,7 +520,7 @@ class StockItemCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: Color(0xFFEE2D2A),
                   ),
                 ),
               ),
@@ -535,7 +535,7 @@ class StockItemCard extends StatelessWidget {
                 'Remove',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.red,
+                  color: Color(0xFFEE2D2A),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -551,7 +551,7 @@ class StockItemCard extends StatelessWidget {
             'Qty',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.red,
+              color: Color(0xFFEE2D2A),
             ),
           ),
           const SizedBox(height: 4),
@@ -560,7 +560,7 @@ class StockItemCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.red,
+              color: Color(0xFFEE2D2A),
             ),
           ),
         ],

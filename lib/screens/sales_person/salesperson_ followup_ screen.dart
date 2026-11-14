@@ -19,13 +19,13 @@ class SalesPersonFollowUpScreen extends StatefulWidget {
 
 class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
   // Colors
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   int _roleId = 3;
-  String _roleName = 'Salesperson';
+  final String _roleName = 'Salesperson';
 
   final TextEditingController _searchCtrl = TextEditingController();
 
@@ -107,7 +107,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         String apiValue(String value) {
           final v = value.trim();
@@ -206,11 +206,11 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                               Navigator.pop(ctx);
                               _deleteFollowUp(item);
                             },
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete, color: Color(0xFFEE2D2A)),
                             label: const Text(
                               "Delete",
                               style: TextStyle(
-                                color: Colors.red,
+                                color: Color(0xFFEE2D2A),
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -391,7 +391,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
@@ -444,7 +444,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -544,7 +544,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                               child: const Text(
                                 "Clear",
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: Color(0xFFEE2D2A),
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -571,7 +571,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                                 child: const Text(
                                   "Close",
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xFFEE2D2A),
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -820,7 +820,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.14),
+                                color: Colors.black.withValues(alpha: 0.14),
                                 blurRadius: 14,
                                 offset: const Offset(0, 8),
                               ),
@@ -877,7 +877,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
 // ======================= CARD =======================
 
 class FollowUpCard extends StatelessWidget {
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   final FollowUpItem item;
   final VoidCallback onView;
@@ -1090,7 +1090,7 @@ _Pill statusPill(FollowUpStatus s) {
   switch (s) {
     case FollowUpStatus.confirmed:
       return const _Pill(
-        bg: Color(0xFF145A00),
+        bg: Color(0xFF020F37),
         fg: Colors.white,
         text: "Confirmed",
       );
@@ -1103,7 +1103,7 @@ _Pill statusPill(FollowUpStatus s) {
     case FollowUpStatus.cancelled:
       return const _Pill(
         bg: Color(0xFFFFE0E0),
-        fg: Colors.red,
+        fg: Color(0xFFEE2D2A),
         text: "Canceled",
       );
   }

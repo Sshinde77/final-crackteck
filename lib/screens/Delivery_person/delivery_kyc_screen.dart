@@ -21,7 +21,7 @@ class DeliveryKycScreen extends StatefulWidget {
 }
 
 class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
 
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();

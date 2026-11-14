@@ -60,7 +60,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF1E7C10);
+    const green = Color(0xFF020F37);
     
     // Filtering logic for search and tabs
     final visibleJobs = _jobs.where((j) {
@@ -139,7 +139,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -225,7 +225,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                         child: _StatCard(
                           title: 'Delivery',
                           icon: Icons.local_shipping,
-                          iconColor: Colors.green,
+                          iconColor: const Color(0xFF020F37),
                           isSmall: isSmall,
                         ),
                       ),
@@ -300,9 +300,9 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: const Color(0xFFEE2D2A),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.red.shade100),
+                      border: Border.all(color: const Color(0xFFEE2D2A)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +311,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                           'Failed to load service requests',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: Colors.red.shade700,
+                            color: const Color(0xFFEE2D2A),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -556,7 +556,7 @@ class _JobCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: isSmall ? 10 : 12,
                             fontWeight: FontWeight.bold,
-                            color: job.priority == 'High' ? Colors.red : Colors.green,
+                            color: job.priority == 'High' ? const Color(0xFFEE2D2A) : const Color(0xFF020F37),
                           ),
                         ),
                       ],
@@ -594,7 +594,7 @@ class _JobCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isSmall ? 10 : 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: const Color(0xFF020F37),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -615,7 +615,7 @@ class _JobCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isSmall ? 10 : 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: const Color(0xFF020F37),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),

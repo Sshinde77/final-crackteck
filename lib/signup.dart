@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:country_state_city_picker/model/select_status_model.dart'
     as csc_picker;
 import 'package:file_picker/file_picker.dart';
@@ -60,14 +58,14 @@ class _SignupScreenState extends State<SignupScreen> {
   final licenceNumberCtrl = TextEditingController();
   final educationCtrl = TextEditingController();
 
-  File? aadharFrontFile;
-  File? aadharBackFile;
-  File? panFrontFile;
-  File? panBackFile;
-  File? licenceFrontFile;
-  File? licenceBackFile;
-  File? addressProofFile;
-  File? resultFile;
+  XFile? aadharFrontFile;
+  XFile? aadharBackFile;
+  XFile? panFrontFile;
+  XFile? panBackFile;
+  XFile? licenceFrontFile;
+  XFile? licenceBackFile;
+  XFile? addressProofFile;
+  XFile? resultFile;
 
   List<csc_picker.StatusModel> _countries = <csc_picker.StatusModel>[];
   List<csc_picker.State> _states = <csc_picker.State>[];
@@ -141,9 +139,8 @@ class _SignupScreenState extends State<SignupScreen> {
       final parsed = decoded
           .whereType<Map>()
           .map(
-            (e) => csc_picker.StatusModel.fromJson(
-              Map<String, dynamic>.from(e),
-            ),
+            (e) =>
+                csc_picker.StatusModel.fromJson(Map<String, dynamic>.from(e)),
           )
           .toList();
 
@@ -211,7 +208,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['png', 'jpg', 'jpeg', 'pdf'],
-      withData: false,
+      withData: true,
     );
 
     if (result == null || result.files.isEmpty) return;
@@ -234,12 +231,15 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    if (picked.path == null) {
-      _snack('This platform does not provide a local file path for uploads.');
+    final XFile file;
+    if (picked.bytes != null) {
+      file = XFile.fromData(picked.bytes!, name: picked.name);
+    } else if (picked.path != null) {
+      file = XFile(picked.path!);
+    } else {
+      _snack('Unable to read the selected file. Please try again.');
       return;
     }
-
-    final file = File(picked.path!);
     setState(() {
       switch (type) {
         case _DocumentType.aadharFront:
@@ -359,8 +359,8 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    final fullName =
-        '${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}'.trim();
+    final fullName = '${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}'
+        .trim();
     final fullAddress = <String>[
       addressLine1Ctrl.text.trim(),
       addressLine2Ctrl.text.trim(),
@@ -388,21 +388,19 @@ class _SignupScreenState extends State<SignupScreen> {
               country: countryCtrl.text.trim(),
               pincode: pincodeCtrl.text.trim(),
               aadharNumber: aadharCtrl.text.trim(),
-              aadharFrontFile: XFile(aadharFrontFile!.path),
-              aadharBackFile: XFile(aadharBackFile!.path),
+              aadharFrontFile: aadharFrontFile!,
+              aadharBackFile: aadharBackFile!,
               panNumber: panCtrl.text.trim(),
-              panFrontFile: XFile(panFrontFile!.path),
-              panBackFile: XFile(panBackFile!.path),
+              panFrontFile: panFrontFile!,
+              panBackFile: panBackFile!,
               vehicleType: vehicleTypeCtrl.text.trim(),
               vehicleNumber: vehicleNumberCtrl.text.trim(),
               drivingLicenseNo: licenceNumberCtrl.text.trim(),
-              drivingLicenseFrontFile: XFile(licenceFrontFile!.path),
-              drivingLicenseBackFile: XFile(licenceBackFile!.path),
+              drivingLicenseFrontFile: licenceFrontFile!,
+              drivingLicenseBackFile: licenceBackFile!,
               qualification: educationCtrl.text.trim(),
-              qualificationCertifications: XFile(resultFile!.path),
-              addressProof: addressProofFile != null
-                  ? XFile(addressProofFile!.path)
-                  : null,
+              qualificationCertifications: resultFile!,
+              addressProof: addressProofFile,
             )
           : null,
       commonRequest: isDelivery
@@ -485,11 +483,9 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  String _fileLabel(File? file) {
+  String _fileLabel(XFile? file) {
     if (file == null) return 'Click to upload';
-    final parts = file.path.split(RegExp(r'[\\/]'));
-    final name = parts.isEmpty ? file.path : parts.last;
-    return name.isEmpty ? 'File selected' : name;
+    return file.name.isEmpty ? 'File selected' : file.name;
   }
 
   void _snack(String msg) {
@@ -838,13 +834,14 @@ class _SignupScreenState extends State<SignupScreen> {
     required void Function(String?) onChanged,
     String? Function(String?)? validator,
   }) {
-    final normalizedValue =
-        (value != null && items.contains(value)) ? value : null;
+    final normalizedValue = (value != null && items.contains(value))
+        ? value
+        : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: normalizedValue,
+        initialValue: normalizedValue,
         isExpanded: true,
         validator: validator,
         decoration: InputDecoration(
@@ -860,10 +857,7 @@ class _SignupScreenState extends State<SignupScreen> {
             .map(
               (item) => DropdownMenuItem<String>(
                 value: item,
-                child: Text(
-                  item,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(item, overflow: TextOverflow.ellipsis),
               ),
             )
             .toList(),
@@ -910,7 +904,9 @@ class _SignupScreenState extends State<SignupScreen> {
             panCtrl,
             textCapitalization: TextCapitalization.characters,
             maxLength: 10,
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]'))],
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]')),
+            ],
             validator: (v) {
               final value = (v ?? '').trim().toUpperCase();
               if (value.isEmpty) return 'Required';
@@ -950,9 +946,11 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 10),
             _dropdown(
               hint: 'Vehicle Type',
-              value: const ['two_wheeler', 'four_wheeler'].contains(
-                vehicleTypeCtrl.text.trim(),
-              )
+              value:
+                  const [
+                    'two_wheeler',
+                    'four_wheeler',
+                  ].contains(vehicleTypeCtrl.text.trim())
                   ? vehicleTypeCtrl.text.trim()
                   : null,
               items: const ['two_wheeler', 'four_wheeler'],
@@ -961,8 +959,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   vehicleTypeCtrl.text = value ?? '';
                 });
               },
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Select vehicle type' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Select vehicle type'
+                  : null,
             ),
             _input(
               'Vehicle Number',
@@ -989,7 +988,7 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Checkbox(
                 value: agree,
-                  onChanged: (v) => setState(() => agree = v ?? false),
+                onChanged: (v) => setState(() => agree = v ?? false),
                 activeColor: AppColors.primary,
               ),
               const Expanded(
@@ -1043,7 +1042,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                       : const Text(
+                      : const Text(
                           'Next',
                           style: TextStyle(
                             fontSize: 16,
@@ -1068,7 +1067,8 @@ class _SignupScreenState extends State<SignupScreen> {
       'post-graduation',
     ];
 
-    final selectedEducation = educationOptions.contains(educationCtrl.text.trim())
+    final selectedEducation =
+        educationOptions.contains(educationCtrl.text.trim())
         ? educationCtrl.text.trim()
         : null;
 
@@ -1172,7 +1172,9 @@ class _SignupScreenState extends State<SignupScreen> {
         maxLength: maxLength,
         inputFormatters: inputFormatters,
         textCapitalization: textCapitalization,
-        validator: validator ?? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+        validator:
+            validator ??
+            (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
         decoration: InputDecoration(
           hintText: hint,
           prefixText: prefix,
@@ -1213,7 +1215,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget _uploadBox({
     required String title,
     required String subtitle,
-    required File? file,
+    required XFile? file,
     required VoidCallback onTap,
   }) {
     return Container(

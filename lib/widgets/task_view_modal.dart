@@ -63,7 +63,7 @@ class _TaskViewModalState extends State<TaskViewModal> {
           const SizedBox(height: 12),
 
           DropdownButtonFormField<String>(
-            value: selectedStatus,
+            initialValue: selectedStatus,
             items: const [
               DropdownMenuItem(value: "pending", child: Text("Pending")),
               DropdownMenuItem(value: "completed", child: Text("Completed")),

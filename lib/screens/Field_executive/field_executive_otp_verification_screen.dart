@@ -27,7 +27,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
   Timer? _timer;
   int _secondsRemaining = 80; // 1:20 = 80 seconds
   bool _isVerifyingOtp = false;
-  static const Color primaryGreen = Color(0xFF1E7C10);
+  static const Color primaryGreen = Color(0xFF020F37);
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a 4-digit OTP'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFEE2D2A),
         ),
       );
       return;
@@ -80,7 +80,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
             authValidation.message ??
                 'Authentication session is incomplete. Please login again.',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFEE2D2A),
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 700));
@@ -98,7 +98,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Invalid service request id'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFEE2D2A),
         ),
       );
       return;
@@ -124,7 +124,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(response.message ?? 'Invalid OTP. Please try again.'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFEE2D2A),
         ),
       );
       return;

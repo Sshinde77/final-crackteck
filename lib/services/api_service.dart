@@ -497,8 +497,8 @@ class ApiService {
     required String address,
     required String aadhar,
     required String pan,
-    required File aadharFile,
-    required File panFile,
+    required XFile aadharFile,
+    required XFile panFile,
     String? firstName,
     String? lastName,
     String? addressLine1,
@@ -507,14 +507,14 @@ class ApiService {
     String? state,
     String? city,
     String? pincode,
-    File? aadharBackFile,
-    File? panBackFile,
+    XFile? aadharBackFile,
+    XFile? panBackFile,
     String? drivingLicenceNumber,
-    File? licenceFrontFile,
-    File? licenceBackFile,
+    XFile? licenceFrontFile,
+    XFile? licenceBackFile,
     required String education,
-    File? resultFile,
-    File? addressProofFile,
+    XFile? resultFile,
+    XFile? addressProofFile,
   }) async {
     try {
       final uri = Uri.parse(ApiConstants.signup);
@@ -569,71 +569,53 @@ class ApiService {
       final request = http.MultipartRequest("POST", uri)
         ..fields.addAll(fields)
         ..files.add(
-          await http.MultipartFile.fromPath(
-            "aadhar_front_path",
-            aadharFile.path,
-          ),
+          await _multipartFileFromXFile("aadhar_front_path", aadharFile),
         )
         ..files.add(
-          await http.MultipartFile.fromPath(
-            "pan_card_front_path",
-            panFile.path,
-          ),
+          await _multipartFileFromXFile("pan_card_front_path", panFile),
         );
 
       debugPrint('Signup request fields: ${request.fields}');
 
       if (aadharBackFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
-            "aadhar_back_path",
-            aadharBackFile.path,
-          ),
+          await _multipartFileFromXFile("aadhar_back_path", aadharBackFile),
         );
       }
 
       if (panBackFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
-            "pan_card_back_path",
-            panBackFile.path,
-          ),
+          await _multipartFileFromXFile("pan_card_back_path", panBackFile),
         );
       }
 
       if (licenceFrontFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
+          await _multipartFileFromXFile(
             "licence_front_image",
-            licenceFrontFile.path,
+            licenceFrontFile,
           ),
         );
       }
 
       if (licenceBackFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
-            "licence_back_image",
-            licenceBackFile.path,
-          ),
+          await _multipartFileFromXFile("licence_back_image", licenceBackFile),
         );
       }
 
       if (resultFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
+          await _multipartFileFromXFile(
             "qualification_certifications",
-            resultFile.path,
+            resultFile,
           ),
         );
       }
 
       if (addressProofFile != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
-            "address_proof",
-            addressProofFile.path,
-          ),
+          await _multipartFileFromXFile("address_proof", addressProofFile),
         );
       }
 
@@ -670,6 +652,17 @@ class ApiService {
         errors: const {},
       );
     }
+  }
+
+  Future<http.MultipartFile> _multipartFileFromXFile(
+    String field,
+    XFile file,
+  ) async {
+    return http.MultipartFile.fromBytes(
+      field,
+      await file.readAsBytes(),
+      filename: file.name,
+    );
   }
 
   /// Logout
@@ -1035,8 +1028,31 @@ class ApiService {
     http.Response response, {
     bool treatHtmlAsUnauthorized = true,
   }) {
-    if (response.statusCode == 401 || response.statusCode == 403) {
+    if (response.statusCode == 401) {
       return true;
+    }
+
+    // A 403 can be a valid authenticated response that only means the user
+    // lacks permission for a particular role/resource. Only treat it as an
+    // auth failure when the server explicitly reports a token problem.
+    if (response.statusCode == 403) {
+      final message = response.body.toLowerCase();
+      const tokenFailureMessages = <String>[
+        'invalid token',
+        'token expired',
+        'expired token',
+        'unauthorized',
+        'unauthenticated',
+        'authentication required',
+      ];
+      if (tokenFailureMessages.any(message.contains)) {
+        return true;
+      }
+      debugPrint(
+        '403 permission/role response from ${response.request?.url}; '
+        'keeping the current session.',
+      );
+      return false;
     }
 
     // Some backends redirect unauthorized requests to an HTML login page
@@ -1079,7 +1095,9 @@ class ApiService {
     _isHandlingAuthFailure = true;
     try {
       final storedRoleId = await SecureStorageService.getRoleId();
-      await SessionManager.logSessionState('apiService.authFailure.beforeClear');
+      await SessionManager.logSessionState(
+        'apiService.authFailure.beforeClear',
+      );
       await SessionManager.clearSession();
       await NavigationService.navigateToAuthRoot(roleId: storedRoleId);
     } finally {
@@ -1196,11 +1214,10 @@ class ApiService {
           .get(url, headers: headers)
           .timeout(ApiConstants.requestTimeout);
 
-      if (
-          !_isUnauthorizedResponse(
-            response,
-            treatHtmlAsUnauthorized: treatHtmlAsUnauthorized,
-          )) {
+      if (!_isUnauthorizedResponse(
+        response,
+        treatHtmlAsUnauthorized: treatHtmlAsUnauthorized,
+      )) {
         return response;
       }
 
@@ -1623,7 +1640,6 @@ class ApiService {
     int roleId = 1,
   }) async {
     final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 
@@ -1683,7 +1699,7 @@ class ApiService {
 
       return rawList
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } on TimeoutException catch (e) {
       debugPrint('Timeout: $e');
@@ -1707,8 +1723,6 @@ class ApiService {
     required String deliveryId,
     int roleId = 1,
   }) async {
-    final normalizedType = DeliveryRequestTypes.normalize(deliveryType);
-
     final storedUserId = await SecureStorageService.getUserId();
     final storedRoleId = await SecureStorageService.getRoleId();
 
@@ -1837,7 +1851,7 @@ class ApiService {
         return Map<String, dynamic>.from(value);
       }
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
       return null;
     }
@@ -1846,7 +1860,7 @@ class ApiService {
       if (value is! List) return const <Map<String, dynamic>>[];
       return value
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     }
 
@@ -1896,7 +1910,7 @@ class ApiService {
     if (response is List) {
       final items = response
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
       if (items.isEmpty) return null;
       for (final item in items) {
@@ -1931,10 +1945,7 @@ class ApiService {
         'return_requests',
         'returnRequests',
       ],
-      DeliveryRequestTypes.returnOrder: const [
-        'return_orders',
-        'returnOrders',
-      ],
+      DeliveryRequestTypes.returnOrder: const ['return_orders', 'returnOrders'],
       DeliveryRequestTypes.part: const ['part_requests', 'partRequests'],
       DeliveryRequestTypes.productDelivery: const [
         'orders',
@@ -2037,7 +2048,7 @@ class ApiService {
 
       return rawList
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } on TimeoutException catch (e) {
       debugPrint('ðŸ”´ Timeout: $e');
@@ -2133,7 +2144,7 @@ class ApiService {
 
       return rawList
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } on TimeoutException catch (e) {
       debugPrint('Timeout: $e');
@@ -2281,7 +2292,7 @@ class ApiService {
 
       return rawList
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } on TimeoutException catch (e) {
       debugPrint('Timeout: $e');
@@ -3087,7 +3098,7 @@ class ApiService {
 
     return rawList
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((item) => Map<String, dynamic>.from(item))
         .toList();
   }
 
@@ -3181,7 +3192,7 @@ class ApiService {
         return Map<String, dynamic>.from(value);
       }
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
       return null;
     }
@@ -3190,7 +3201,7 @@ class ApiService {
       if (value is! List) return const <Map<String, dynamic>>[];
       return value
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
     }
 
@@ -3235,7 +3246,7 @@ class ApiService {
     if (decoded is List) {
       final items = decoded
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
       for (final item in items) {
         if (matchesId(item['id']) ||
@@ -4020,7 +4031,7 @@ class ApiService {
 
       final mapped = listCandidate
           .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
 
       for (final item in mapped) {
@@ -4293,7 +4304,7 @@ class ApiService {
           continue;
         }
 
-        final itemMap = Map<String, dynamic>.from(item as Map);
+        final itemMap = Map<String, dynamic>.from(item);
         final hasServiceScope = containsAnyScopeKey(
           itemMap,
           serviceRequestIdKeys,
@@ -4367,7 +4378,7 @@ class ApiService {
         }
 
         if (raw is Map) {
-          final map = Map<String, dynamic>.from(raw as Map);
+          final map = Map<String, dynamic>.from(raw);
           final hasNameKey = hasDiagnosisNameKey(map);
 
           final nestedDiagnosisList =
@@ -4400,7 +4411,7 @@ class ApiService {
 
         if (raw is Map) {
           final item = DiagnosisItem.fromJson(
-            Map<String, dynamic>.from(raw as Map),
+            Map<String, dynamic>.from(raw),
           );
           if (item.name.trim().isEmpty) return null;
           return item;
@@ -6158,6 +6169,8 @@ class ApiService {
         'administrator.';
   }
 
+  // Kept for compatibility with the optional quotation endpoint fallback.
+  // ignore: unused_element
   static List<Uri> _quotationFallbackUrls(Uri url) {
     return <Uri>[
       url.replace(
@@ -6169,6 +6182,7 @@ class ApiService {
     ];
   }
 
+  // ignore: unused_element
   static Future<Map<String, dynamic>> _tryFetchQuotationsFromUrl(
     Uri url,
   ) async {
@@ -6257,7 +6271,6 @@ class ApiService {
       debugPrint('🟡 API Response Status: ${response.statusCode}');
       debugPrint('🟡 API Response Body: ${response.body}');
 
-      final responseLooksLikeHtml = _looksLikeHtml(response.body);
       // if (responseLooksLikeHtml || response.statusCode == 404) {
       //   if (responseLooksLikeHtml) {
       //     debugPrint(
@@ -6390,7 +6403,7 @@ class ApiService {
       }
 
       return rawList.whereType<Map>().map((item) {
-        final map = Map<String, dynamic>.from(item as Map);
+        final map = Map<String, dynamic>.from(item);
         final nestedPlan = map['plan'];
 
         if (nestedPlan is Map) {
@@ -6670,7 +6683,7 @@ class ApiService {
 
     return rawList
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((item) => Map<String, dynamic>.from(item))
         .toList();
   }
 
@@ -6802,7 +6815,7 @@ class ApiService {
         return Map<String, dynamic>.from(value);
       }
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
       return null;
     }
@@ -6811,7 +6824,7 @@ class ApiService {
       if (value is! List) return const <Map<String, dynamic>>[];
       return value
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
     }
 
@@ -6870,7 +6883,7 @@ class ApiService {
     if (decoded is List) {
       final items = decoded
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
       if (items.isEmpty) return null;
       for (final item in items) {
@@ -7157,7 +7170,7 @@ class ApiService {
 
     return rawList
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((item) => Map<String, dynamic>.from(item))
         .toList();
   }
 
@@ -7254,7 +7267,7 @@ class ApiService {
         return Map<String, dynamic>.from(value);
       }
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
       return null;
     }
@@ -7263,7 +7276,7 @@ class ApiService {
       if (value is! List) return const <Map<String, dynamic>>[];
       return value
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
     }
 
@@ -7331,7 +7344,7 @@ class ApiService {
     if (decoded is List) {
       final items = decoded
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
       for (final item in items) {
         if (matchesId(item['id']) ||

@@ -33,8 +33,8 @@ class CombinedProfileScreen extends StatefulWidget {
 }
 
 class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
   bool _isLoggingOut = false;
   late String _displayName;
 
@@ -270,9 +270,9 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         title: "Clockout",
                         time: logoutTime,
                         bg: const Color(0xFFFFE9E9),
-                        iconBg: const Color(0xFFD32F2F),
+                        iconBg: const Color(0xFFEE2D2A),
                         icon: attendanceProvider.isUpdating ? Icons.sync : Icons.logout,
-                        titleColor: const Color(0xFFD32F2F),
+                        titleColor: const Color(0xFFEE2D2A),
                         onTap: attendanceProvider.canClockOut ? _handleClockOut : null,
                       ),
                     ),
@@ -419,8 +419,8 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
               _OptionTile(
                 icon: Icons.logout,
                 label: _isLoggingOut ? "Logging out..." : "Log out",
-                iconColor: Colors.redAccent,
-                textColor: Colors.redAccent,
+                iconColor: const Color(0xFFEE2D2A),
+                textColor: const Color(0xFFEE2D2A),
                 trailing: _isLoggingOut
                     ? const SizedBox(
                         width: 18,
@@ -428,11 +428,11 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.redAccent,
+                            Color(0xFFEE2D2A),
                           ),
                         ),
                       )
-                    : const Icon(Icons.arrow_forward, color: Colors.redAccent),
+                    : const Icon(Icons.arrow_forward, color: Color(0xFFEE2D2A)),
                 onTap: _isLoggingOut ? () {} : _handleLogout,
               ),
             ],
@@ -531,7 +531,7 @@ class _OptionTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.trailing,
-    this.iconColor = const Color(0xFF145A00),
+    this.iconColor = const Color(0xFF020F37),
     this.textColor = Colors.black,
   });
 
@@ -562,7 +562,7 @@ class _OptionTile extends StatelessWidget {
                 ),
               ),
             ),
-            trailing ?? const Icon(Icons.arrow_forward, color: Color(0xFF145A00)),
+            trailing ?? const Icon(Icons.arrow_forward, color: Color(0xFF020F37)),
           ],
         ),
       ),

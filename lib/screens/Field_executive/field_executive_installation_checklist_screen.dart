@@ -52,7 +52,7 @@ class FieldExecutiveInstallationChecklistScreen extends StatefulWidget {
 
 class _FieldExecutiveInstallationChecklistScreenState
     extends State<FieldExecutiveInstallationChecklistScreen> {
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
   static const List<String> _notWorkingOptions = <String>[
     'Not Working',
     'Add to Pickup',
@@ -1851,7 +1851,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: response.success ? primaryGreen : Colors.red,
+          backgroundColor: response.success ? primaryGreen : const Color(0xFFEE2D2A),
         ),
       );
 
@@ -1866,7 +1866,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to submit diagnosis: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFEE2D2A),
         ),
       );
     } finally {
@@ -2162,7 +2162,7 @@ class _FieldExecutiveInstallationChecklistScreenState
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    const Color activeColor = Colors.red;
+    const Color activeColor = Color(0xFFEE2D2A);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -2170,7 +2170,7 @@ class _FieldExecutiveInstallationChecklistScreenState
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.red.shade50 : Colors.white,
+          color: isSelected ? const Color(0xFFEE2D2A) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? activeColor : Colors.grey.shade300,
@@ -2230,9 +2230,9 @@ class _FieldExecutiveInstallationChecklistScreenState
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: const Color(0xFF020F37),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.green.shade100),
+        border: Border.all(color: const Color(0xFF020F37)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2268,7 +2268,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade100),
+                  border: Border.all(color: const Color(0xFF020F37)),
                 ),
                 child: Row(
                   children: [
@@ -2327,7 +2327,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               onPressed: () => _onAddMoreProductsPressed(diagnosisName),
               style: OutlinedButton.styleFrom(
                 foregroundColor: primaryGreen,
-                side: BorderSide(color: Colors.green.shade300),
+                side: BorderSide(color: const Color(0xFF020F37)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -2348,13 +2348,13 @@ class _FieldExecutiveInstallationChecklistScreenState
   }
 
   Widget _buildStatusBadge(String statusLabel, {required bool isWorking}) {
-    final Color color = isWorking ? primaryGreen : Colors.red;
+    final Color color = isWorking ? primaryGreen : const Color(0xFFEE2D2A);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         statusLabel,
@@ -2401,9 +2401,9 @@ class _FieldExecutiveInstallationChecklistScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         label,
@@ -2515,7 +2515,7 @@ class _FieldExecutiveInstallationChecklistScreenState
       circleColor = primaryGreen;
       circleIcon = const Icon(Icons.check, size: 16, color: Colors.white);
     } else if (isNonWorking) {
-      circleColor = Colors.red;
+      circleColor = const Color(0xFFEE2D2A);
       circleIcon = const Icon(Icons.close, size: 16, color: Colors.white);
     }
 
@@ -2536,7 +2536,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -2618,7 +2618,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                                   },
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: primaryGreen,
-                                    side: BorderSide(color: Colors.green.shade300),
+                                    side: BorderSide(color: const Color(0xFF020F37)),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -2640,14 +2640,14 @@ class _FieldExecutiveInstallationChecklistScreenState
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
+                                    color: const Color(0xFF020F37),
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: Colors.green.shade200),
+                                    border: Border.all(color: const Color(0xFF020F37)),
                                   ),
                                   child: Text(
                                     'Part will be marked as used on submit',
                                     style: TextStyle(
-                                      color: Colors.green.shade800,
+                                      color: const Color(0xFF020F37),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2665,7 +2665,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                         ),
                       if (showRequestedPartSummary)
                         _buildRequestedPartSummary(
-                          part: requestedPartSelection!,
+                          part: requestedPartSelection,
                           showRequestedBadge: showRequestedPartBadge,
                         ),
                     ],
@@ -2683,7 +2683,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                   isExpanded
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
-                  color: primaryGreen.withOpacity(0.7),
+                  color: primaryGreen.withValues(alpha: 0.7),
                 ),
               ],
             ),
@@ -2704,12 +2704,12 @@ class _FieldExecutiveInstallationChecklistScreenState
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: isNonWorking
-                                  ? Colors.red.shade50
+                                  ? const Color(0xFFEE2D2A)
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isNonWorking
-                                    ? Colors.red
+                                    ? const Color(0xFFEE2D2A)
                                     : Colors.grey.shade200,
                               ),
                             ),
@@ -2718,7 +2718,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                               isNonWorking ? statusLabel : 'Not Working',
                               style: TextStyle(
                                 color: isNonWorking
-                                    ? Colors.red
+                                    ? const Color(0xFFEE2D2A)
                                     : Colors.grey.shade500,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -2759,7 +2759,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: isWorking
-                                  ? Colors.green.shade50
+                                  ? const Color(0xFF020F37)
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(

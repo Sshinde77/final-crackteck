@@ -13,7 +13,7 @@ class LicenseEditScreen extends StatefulWidget {
 }
 
 class _LicenseEditScreenState extends State<LicenseEditScreen> {
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
@@ -294,9 +294,9 @@ class _UploadBox extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(Icons.upload_outlined, color: Colors.green),
+                Icon(Icons.upload_outlined, color: Color(0xFF020F37)),
                 SizedBox(width: 12),
-                Icon(Icons.camera_alt_outlined, color: Colors.green),
+                Icon(Icons.camera_alt_outlined, color: Color(0xFF020F37)),
               ],
             ),
             const SizedBox(height: 8),
@@ -305,7 +305,7 @@ class _UploadBox extends StatelessWidget {
                   ? fileName!.split('/').last
                   : 'Click to upload or take a photo',
               style: const TextStyle(
-                color: Colors.green,
+                color: Color(0xFF020F37),
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,

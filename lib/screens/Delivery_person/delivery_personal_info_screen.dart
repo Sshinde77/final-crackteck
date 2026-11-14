@@ -19,7 +19,7 @@ class DeliveryPersonalInfoScreen extends StatefulWidget {
 }
 
 class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen> {
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
 
   @override
   void initState() {

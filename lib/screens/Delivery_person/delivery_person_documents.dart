@@ -11,7 +11,7 @@ import 'delivery_vehilcle_details.dart';
 class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   State<DocumentsScreen> createState() => _DocumentsScreenState();
@@ -323,12 +323,12 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       Text(
                         'Edit',
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Color(0xFFEE2D2A),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       SizedBox(width: 4),
-                      Icon(Icons.edit, size: 14, color: Colors.red),
+                      Icon(Icons.edit, size: 14, color: Color(0xFFEE2D2A)),
                     ],
                   ),
                 ),
@@ -437,10 +437,10 @@ class _DocImageRow extends StatelessWidget {
             children: const [
               Text(
                 'Edit',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+                style: TextStyle(color: Color(0xFFEE2D2A), fontWeight: FontWeight.w700),
               ),
               SizedBox(width: 4),
-              Icon(Icons.edit, size: 14, color: Colors.red),
+              Icon(Icons.edit, size: 14, color: Color(0xFFEE2D2A)),
             ],
           ),
         ),

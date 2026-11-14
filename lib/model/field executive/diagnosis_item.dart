@@ -113,7 +113,7 @@ class DiagnosisItem {
     String productIdFromApi = '';
     String requestedPartName = '';
     if (productDataRaw is Map) {
-      final productData = Map<String, dynamic>.from(productDataRaw as Map);
+      final productData = Map<String, dynamic>.from(productDataRaw);
       for (final key in const ['id', 'product_id', 'productId']) {
         final dynamic value = productData[key];
         if (value == null || value is Map || value is List) {

@@ -28,7 +28,7 @@ class FieldExecutiveDeliverySendOtpScreen extends StatefulWidget {
 
 class _FieldExecutiveDeliverySendOtpScreenState
     extends State<FieldExecutiveDeliverySendOtpScreen> {
-  static const Color primaryGreen = Color(0xFF1E7C10);
+  static const Color primaryGreen = Color(0xFF020F37);
 
   bool _isSending = false;
   String? _error;
@@ -160,14 +160,14 @@ class _FieldExecutiveDeliverySendOtpScreenState
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: const Color(0xFFEE2D2A),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade100),
+                    border: Border.all(color: const Color(0xFFEE2D2A)),
                   ),
                   child: Text(
                     _error!,
                     style: TextStyle(
-                      color: Colors.red.shade700,
+                      color: const Color(0xFFEE2D2A),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),

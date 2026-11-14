@@ -152,7 +152,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF145A00)),
+                child: CircularProgressIndicator(color: Color(0xFF020F37)),
               )
             : _errorMessage != null && _detail == null
                 ? _DetailErrorState(
@@ -160,7 +160,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                     onRetry: _fetchDetail,
                   )
                 : RefreshIndicator(
-                    color: const Color(0xFF145A00),
+                    color: const Color(0xFF020F37),
                     onRefresh: _fetchDetail,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -282,7 +282,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                                 child: ElevatedButton.icon(
                                   onPressed: _downloadReceipt,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF145A00),
+                                    backgroundColor: const Color(0xFF020F37),
                                     foregroundColor: Colors.white,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
@@ -409,7 +409,7 @@ class _ReceiptPreview extends StatelessWidget {
               color: const Color(0xFFF9FAFB),
               alignment: Alignment.center,
               child: const CircularProgressIndicator(
-                color: Color(0xFF145A00),
+                color: Color(0xFF020F37),
               ),
             );
           },
@@ -464,7 +464,7 @@ class _DetailErrorState extends StatelessWidget {
               child: const Icon(
                 Icons.error_outline_rounded,
                 size: 34,
-                color: Color(0xFFC62828),
+                color: Color(0xFFEE2D2A),
               ),
             ),
             const SizedBox(height: 16),
@@ -489,7 +489,7 @@ class _DetailErrorState extends StatelessWidget {
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF145A00),
+                backgroundColor: const Color(0xFF020F37),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -552,7 +552,7 @@ class _DetailStatusStyle {
       case ReimbursementStatus.rejected:
         return const _DetailStatusStyle(
           backgroundColor: Color(0xFFFDECEC),
-          textColor: Color(0xFFC62828),
+          textColor: Color(0xFFEE2D2A),
         );
     }
   }

@@ -25,7 +25,7 @@ class FieldExecutiveWriteReportScreen extends StatefulWidget {
 
 class _FieldExecutiveWriteReportScreenState
     extends State<FieldExecutiveWriteReportScreen> {
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
   final TextEditingController _reportController = TextEditingController();
 
   @override

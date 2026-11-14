@@ -18,7 +18,7 @@ class DeliveryBottomNavigation extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -70,7 +70,7 @@ class _NavItem extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  static const Color _green = Color(0xFF1E7C10);
+  static const Color _green = Color(0xFF020F37);
   static const Color _inactive = Color(0xFF8E8E93);
 
   @override

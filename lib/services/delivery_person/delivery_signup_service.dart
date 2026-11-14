@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../../constants/api_constants.dart';
 import '../../core/network/api_http_client.dart';
@@ -97,53 +98,44 @@ class DeliverySignupService extends DeliveryApiClient {
     });
     debugPrint('Delivery signup request fields: ${signupRequest.fields}');
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
+      await _multipartFileFromXFile(
         'aadhar_front_path',
-        request.aadharFrontFile.path,
+        request.aadharFrontFile,
       ),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
-        'aadhar_back_path',
-        request.aadharBackFile.path,
-      ),
+      await _multipartFileFromXFile('aadhar_back_path', request.aadharBackFile),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
+      await _multipartFileFromXFile(
         'pan_card_front_path',
-        request.panFrontFile.path,
+        request.panFrontFile,
       ),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
-        'pan_card_back_path',
-        request.panBackFile.path,
-      ),
+      await _multipartFileFromXFile('pan_card_back_path', request.panBackFile),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
+      await _multipartFileFromXFile(
         'driving_license_front_path',
-        request.drivingLicenseFrontFile.path,
+        request.drivingLicenseFrontFile,
       ),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
+      await _multipartFileFromXFile(
         'driving_license_back_path',
-        request.drivingLicenseBackFile.path,
+        request.drivingLicenseBackFile,
       ),
     );
     signupRequest.files.add(
-      await http.MultipartFile.fromPath(
+      await _multipartFileFromXFile(
         'qualification_certifications',
-        request.qualificationCertifications.path,
+        request.qualificationCertifications,
       ),
     );
     if (request.addressProof != null) {
       signupRequest.files.add(
-        await http.MultipartFile.fromPath(
-          'address_proof',
-          request.addressProof!.path,
-        ),
+        await _multipartFileFromXFile('address_proof', request.addressProof!),
       );
     }
     debugPrint(
@@ -156,6 +148,17 @@ class DeliverySignupService extends DeliveryApiClient {
       response,
       successMessage: 'Signup successful.',
       failureMessage: 'Failed to complete signup.',
+    );
+  }
+
+  Future<http.MultipartFile> _multipartFileFromXFile(
+    String field,
+    XFile file,
+  ) async {
+    return http.MultipartFile.fromBytes(
+      field,
+      await file.readAsBytes(),
+      filename: file.name,
     );
   }
 }

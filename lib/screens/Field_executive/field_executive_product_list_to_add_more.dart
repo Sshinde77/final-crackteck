@@ -20,7 +20,7 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  static const Color primaryGreen = Color(0xFF1F8B00);
+  static const Color primaryGreen = Color(0xFF020F37);
   final RequestedProductsStore _store = RequestedProductsStore.instance;
 
   @override
@@ -210,7 +210,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
           IconButton(
             onPressed: () => _store.removeProduct(item.id),
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            icon: const Icon(Icons.delete_outline, color: Color(0xFFEE2D2A)),
             tooltip: 'Remove',
           ),
         ],
@@ -264,15 +264,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
+      builder: (context) => const PopScope(
+        canPop: false,
         child: Scaffold(
           backgroundColor: Colors.white,
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
+                SizedBox(
                   height: 100,
                   width: 100,
                   child: CircularProgressIndicator(
@@ -281,8 +281,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     backgroundColor: Color(0xFFE0E8E0),
                   ),
                 ),
-                const SizedBox(height: 32),
-                const Text(
+                SizedBox(height: 32),
+                Text(
                   'Processing your request',
                   style: TextStyle(
                     fontSize: 20,

@@ -19,7 +19,7 @@ class FieldExecutiveCaseTransferScreen extends StatefulWidget {
 
 class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTransferScreen> {
   final TextEditingController _reasonController = TextEditingController();
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
   bool _isSubmitting = false;
 
   void _snack(String message) {

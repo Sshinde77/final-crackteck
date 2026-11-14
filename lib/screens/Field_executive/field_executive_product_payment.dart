@@ -20,7 +20,7 @@ class FieldExecutiveProductPaymentScreen extends StatefulWidget {
 
 class _FieldExecutiveProductPaymentScreenState
     extends State<FieldExecutiveProductPaymentScreen> {
-  static const Color primaryGreen = Color(0xFF1F8B00);
+  static const Color primaryGreen = Color(0xFF020F37);
   
   // Payment selection state
   int? selectedPaymentIndex = 0; 
@@ -63,7 +63,7 @@ class _FieldExecutiveProductPaymentScreenState
                 child: CircularProgressIndicator(
                   strokeWidth: 8,
                   valueColor: const AlwaysStoppedAnimation<Color>(primaryGreen),
-                  backgroundColor: primaryGreen.withOpacity(0.2),
+                  backgroundColor: primaryGreen.withValues(alpha: 0.2),
                 ),
               ),
               const SizedBox(height: 40),
@@ -129,7 +129,7 @@ class _FieldExecutiveProductPaymentScreenState
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Image.asset(
-                      'assets/products/motherboard.png',
+                      'assets/logo.png',
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -201,14 +201,14 @@ class _FieldExecutiveProductPaymentScreenState
                   _paymentOptionTile(
                     index: 0,
                     title: AppStrings.googlePay,
-                    iconPath: 'assets/logo/logo.png', 
+                    iconPath: 'assets/logo.png',
                     amount: '₹ 2,500',
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _paymentOptionTile(
                     index: 1,
                     title: AppStrings.phonePe,
-                    iconPath: 'assets/logo/logo.png', 
+                    iconPath: 'assets/logo.png',
                     amount: '₹ 2,500',
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
@@ -301,7 +301,7 @@ class _FieldExecutiveProductPaymentScreenState
                 color: isSelected ? primaryGreen : Colors.black26,
                 width: 1.5,
               ),
-              color: isSelected ? primaryGreen.withOpacity(0.1) : Colors.transparent,
+              color: isSelected ? primaryGreen.withValues(alpha: 0.1) : Colors.transparent,
             ),
             child: isSelected
                 ? const Icon(Icons.check, size: 18, color: primaryGreen)
@@ -340,7 +340,7 @@ class _FieldExecutiveProductPaymentScreenState
                   color: isSelected ? primaryGreen : Colors.black26,
                   width: 1.5,
                 ),
-                color: isSelected ? primaryGreen.withOpacity(0.1) : Colors.transparent,
+                color: isSelected ? primaryGreen.withValues(alpha: 0.1) : Colors.transparent,
               ),
               child: isSelected
                   ? const Icon(Icons.check, size: 18, color: primaryGreen)

@@ -18,7 +18,7 @@ class TotalDeliveryScreen extends StatefulWidget {
 }
 
 class _TotalDeliveryScreenState extends State<TotalDeliveryScreen> {
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   final DeliveryTrackWorkService _trackWorkService = DeliveryTrackWorkService();
   bool _isLoading = true;

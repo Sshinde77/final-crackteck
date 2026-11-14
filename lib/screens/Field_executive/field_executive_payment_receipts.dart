@@ -23,7 +23,7 @@ class FieldExecutivePaymentReceiptsScreen extends StatefulWidget {
 
 class _FieldExecutivePaymentReceiptsScreenState
     extends State<FieldExecutivePaymentReceiptsScreen> {
-  static const Color primaryGreen = Color(0xFF1F8B00);
+  static const Color primaryGreen = Color(0xFF020F37);
   static const Color navyBlue = Color(0xFF1A1A8E);
 
   String? selectedAccountant;

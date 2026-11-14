@@ -23,11 +23,11 @@ class SalesPersonQuotationScreen extends StatefulWidget {
 
 class _SalesPersonQuotationScreenState
     extends State<SalesPersonQuotationScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   final TextEditingController _searchCtrl = TextEditingController();
 
@@ -258,7 +258,7 @@ class _SalesPersonQuotationScreenState
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
@@ -315,7 +315,7 @@ class _SalesPersonQuotationScreenState
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -481,7 +481,7 @@ class _SalesPersonQuotationScreenState
                               child: const Text(
                                 "Clear",
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: Color(0xFFEE2D2A),
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -508,7 +508,7 @@ class _SalesPersonQuotationScreenState
                                 child: const Text(
                                   "Close",
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xFFEE2D2A),
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -606,7 +606,7 @@ class _SalesPersonQuotationScreenState
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) {
         return Center(
           child: Material(
@@ -619,7 +619,7 @@ class _SalesPersonQuotationScreenState
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
+                    color: Colors.black.withValues(alpha: 0.18),
                     blurRadius: 22,
                     offset: const Offset(0, 12),
                   ),
@@ -1023,7 +1023,7 @@ class _SalesPersonQuotationScreenState
                               Icon(
                                 Icons.error_outline,
                                 size: 64,
-                                color: Colors.red.shade300,
+                                color: const Color(0xFFEE2D2A),
                               ),
                               const SizedBox(height: 16),
                               const Text(
@@ -1112,7 +1112,7 @@ class _SalesPersonQuotationScreenState
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.14),
+                                color: Colors.black.withValues(alpha: 0.14),
                                 blurRadius: 14,
                                 offset: const Offset(0, 8),
                               ),
@@ -1173,7 +1173,7 @@ class _QuotationCard extends StatelessWidget {
     required this.onStatusTap,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -1253,7 +1253,7 @@ class _QuotationCard extends StatelessWidget {
       case "Pending":
         return const _Pill(bg: Color(0xFFEDEDED), fg: Colors.black87);
       case "Canceled":
-        return const _Pill(bg: Color(0xFFFFE0E0), fg: Colors.red);
+        return const _Pill(bg: Color(0xFFFFE0E0), fg: Color(0xFFEE2D2A));
       default:
         return const _Pill(bg: Color(0xFFEDEDED), fg: Colors.black87);
     }

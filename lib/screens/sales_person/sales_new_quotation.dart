@@ -24,13 +24,13 @@ class NewQuotationScreen extends StatefulWidget {
 }
 
 class _NewQuotationScreenState extends State<NewQuotationScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   final _formKey = GlobalKey<FormState>();
 
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
   bool _submitting = false;
   bool _showValidationErrors = false;
   bool _leadsLoading = false;
@@ -407,11 +407,11 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red, width: 1.6),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A), width: 1.6),
       ),
       suffixIcon: suffixIcon,
     );
@@ -452,7 +452,7 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       children: [
         _label('Lead ID'),
         DropdownButtonFormField<int>(
-          value: _selectedLeadId,
+          initialValue: _selectedLeadId,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor('Select lead ID'),
@@ -490,13 +490,13 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
             padding: const EdgeInsets.only(top: 6),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const Icon(Icons.error_outline, size: 16, color: Color(0xFFEE2D2A)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Failed to load leads',
                     style: TextStyle(
-                      color: Colors.red.shade700,
+                      color: const Color(0xFFEE2D2A),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -517,7 +517,7 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       children: [
         _label('AMC Plan'),
         DropdownButtonFormField<int>(
-          value: _selectedAmcPlanId,
+          initialValue: _selectedAmcPlanId,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor('Select AMC plan'),
@@ -554,13 +554,13 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
             padding: const EdgeInsets.only(top: 6),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const Icon(Icons.error_outline, size: 16, color: Color(0xFFEE2D2A)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Failed to load AMC plans',
                     style: TextStyle(
-                      color: Colors.red.shade700,
+                      color: const Color(0xFFEE2D2A),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -581,7 +581,7 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       children: [
         _label('Priority Level'),
         DropdownButtonFormField<String>(
-          value: _priorityLevel,
+          initialValue: _priorityLevel,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor('Select priority'),

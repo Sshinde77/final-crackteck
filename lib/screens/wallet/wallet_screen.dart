@@ -20,8 +20,8 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
-  static const Color _primaryGreen = Color(0xFF1F8B00);
-  static const Color _darkGreen = Color(0xFF145A00);
+  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _darkGreen = Color(0xFF020F37);
 
   bool _isLoading = true;
   String? _error;
@@ -112,7 +112,7 @@ class _WalletScreenState extends State<WalletScreen> {
     for (final key in keys) {
       final value = map[key];
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
     }
     return null;
@@ -351,7 +351,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   Text(
                     'Cash Collected',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.92),
+                      color: Colors.white.withValues(alpha: 0.92),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -369,7 +369,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   Text(
                     '${_entries.length} payment${_entries.length == 1 ? '' : 's'} received',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.88),
+                      color: Colors.white.withValues(alpha: 0.88),
                       fontSize: 13,
                     ),
                   ),
@@ -492,7 +492,7 @@ class _WalletErrorState extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-          const Icon(Icons.error_outline, size: 36, color: Colors.redAccent),
+          const Icon(Icons.error_outline, size: 36, color: Color(0xFFEE2D2A)),
           const SizedBox(height: 10),
           Text(
             message,
@@ -503,7 +503,7 @@ class _WalletErrorState extends StatelessWidget {
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1F8B00),
+              backgroundColor: const Color(0xFF020F37),
               foregroundColor: Colors.white,
             ),
             child: const Text('Retry'),
@@ -608,7 +608,7 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
     for (final key in keys) {
       final value = map[key];
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
     }
     return null;
@@ -678,7 +678,7 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
       return text.isNotEmpty && text.toLowerCase() != 'null' ? text : '';
     }
     if (addressValue is Map) {
-      final addressMap = Map<String, dynamic>.from(addressValue as Map);
+      final addressMap = Map<String, dynamic>.from(addressValue);
       final parts = <String>[
         widget.readString(
           addressMap,
@@ -835,7 +835,7 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
                               child: Text(
                                 _error!,
                                 style: const TextStyle(
-                                  color: Colors.redAccent,
+                                  color: Color(0xFFEE2D2A),
                                   fontSize: 13,
                                 ),
                               ),

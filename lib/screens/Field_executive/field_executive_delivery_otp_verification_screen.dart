@@ -40,7 +40,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   bool _isResending = false;
   bool _isLoadingDetail = false;
   bool _cashReceivedConfirmed = false;
-  static const Color _primaryGreen = Color(0xFF1E7C10);
+  static const Color _primaryGreen = Color(0xFF020F37);
   Map<String, dynamic>? _detail;
 
   @override
@@ -280,7 +280,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Unable to resend OTP'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFEE2D2A),
         ),
       );
       return;
@@ -310,7 +310,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: response.success ? _primaryGreen : Colors.red,
+        backgroundColor: response.success ? _primaryGreen : const Color(0xFFEE2D2A),
       ),
     );
 
@@ -448,7 +448,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
                   ? 'Cash received confirmed successfully'
                   : 'Failed to confirm cash received'),
         ),
-        backgroundColor: response.success ? _primaryGreen : Colors.red,
+        backgroundColor: response.success ? _primaryGreen : const Color(0xFFEE2D2A),
       ),
     );
 
@@ -723,7 +723,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a 4-digit OTP'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFEE2D2A),
         ),
       );
       return;
@@ -754,7 +754,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: response.success ? _primaryGreen : Colors.red,
+        backgroundColor: response.success ? _primaryGreen : const Color(0xFFEE2D2A),
       ),
     );
 
@@ -952,7 +952,7 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                     end: Alignment.centerRight,
                     colors: [
                       Color(0xFF66BB6A),
-                      Color(0xFF1E7C10),
+                      Color(0xFF020F37),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(30),
@@ -1006,14 +1006,14 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.2,
-                              color: Color(0xFF1E7C10),
+                              color: Color(0xFF020F37),
                             ),
                           )
                         : Icon(
                             _isCompleted
                                 ? Icons.check
                                 : Icons.arrow_forward_rounded,
-                            color: const Color(0xFF1E7C10),
+                            color: const Color(0xFF020F37),
                             size: 26,
                           ),
                   ),

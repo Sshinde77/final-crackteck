@@ -14,12 +14,12 @@ class PhoneInputField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
 
   const PhoneInputField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.label,
     this.errorText,
     this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class PhoneInputField extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
             border: Border.all(
               color: errorText != null
-                  ? Colors.red
+                  ? const Color(0xFFEE2D2A)
                   : AppColors.inputBorder,
               width: AppSpacing.inputBorderWidth,
             ),
@@ -90,7 +90,7 @@ class PhoneInputField extends StatelessWidget {
                     counterText: '',
                     hintText: '9876543210',
                     hintStyle: TextStyle(
-                      color: AppColors.lightGrey.withOpacity(0.5),
+                      color: AppColors.lightGrey.withValues(alpha: 0.5),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.inputHorizontalPadding,
@@ -113,7 +113,7 @@ class PhoneInputField extends StatelessWidget {
             child: Text(
               errorText!,
               style: const TextStyle(
-                color: Colors.red,
+                color: Color(0xFFEE2D2A),
                 fontSize: 12,
               ),
             ),

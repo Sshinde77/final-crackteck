@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
 import '../core/network/api_http_client.dart';
-import '../core/secure_storage_service.dart';
 import 'session_manager.dart';
 
 class AuthService {

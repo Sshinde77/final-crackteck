@@ -10,7 +10,7 @@ class DeliveryTermsConditionScreen extends StatelessWidget {
     required this.roleName,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

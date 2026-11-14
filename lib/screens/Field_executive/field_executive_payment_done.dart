@@ -17,7 +17,7 @@ class FieldExecutivePaymentDoneScreen extends StatefulWidget {
 }
 
 class _FieldExecutivePaymentDoneScreenState extends State<FieldExecutivePaymentDoneScreen> {
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
   static const Color lightGreen = Color(0xFFD8E6D2);
   Timer? _timer;
 

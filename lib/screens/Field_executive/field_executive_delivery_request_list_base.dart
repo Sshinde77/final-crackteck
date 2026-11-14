@@ -29,7 +29,7 @@ class FieldExecutiveDeliveryRequestListBase extends StatefulWidget {
 
 class _FieldExecutiveDeliveryRequestListBaseState
     extends State<FieldExecutiveDeliveryRequestListBase> {
-  static const Color primaryGreen = Color(0xFF1E7C10);
+  static const Color primaryGreen = Color(0xFF020F37);
 
   bool _isLoading = true;
   String? _error;
@@ -262,9 +262,9 @@ class _ErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
+        color: const Color(0xFFEE2D2A),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.red.shade100),
+        border: Border.all(color: const Color(0xFFEE2D2A)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,7 +273,7 @@ class _ErrorCard extends StatelessWidget {
             message,
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: Colors.red.shade700,
+              color: const Color(0xFFEE2D2A),
             ),
           ),
           const SizedBox(height: 8),

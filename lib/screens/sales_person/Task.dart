@@ -11,19 +11,18 @@ class TaskScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
 
-  const TaskScreen({Key? key, required this.roleId, required this.roleName})
-    : super(key: key);
+  const TaskScreen({super.key, required this.roleId, required this.roleName});
 
   @override
   State<TaskScreen> createState() => _TaskScreenState();
 }
 
 class _TaskScreenState extends State<TaskScreen> {
-  static const Color darkGreen = Color(0xFF145A00);
-  static const Color midGreen = Color(0xFF1F7A05);
+  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = Color(0xFF020F37);
 
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   late DateTime _selectedDate;
   late List<DateTime> _weekMonToSat;
@@ -237,10 +236,10 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final rawDate = isMeeting
         ? meet.date
-        : (isFollowup ? followup!.followupDate : '');
+        : (isFollowup ? followup.followupDate : '');
     final rawTime = isMeeting
         ? meet.time
-        : (isFollowup ? followup!.followupTime : '');
+        : (isFollowup ? followup.followupTime : '');
     final date = _parseTaskDate(rawDate) ?? _selectedDate;
     final sortMinutes = _parseTimeToMinutes(rawTime) ?? (24 * 60);
 
@@ -248,20 +247,20 @@ class _TaskScreenState extends State<TaskScreen> {
       task.leadId,
       task.leadDetails?.id.toString() ?? '',
       if (isMeeting) meet.leadId.toString(),
-      if (isFollowup) followup!.leadId.toString(),
+      if (isFollowup) followup.leadId.toString(),
     ]);
     final phone = _firstNonEmpty(<String>[
       task.phone,
       task.leadDetails?.phone ?? '',
       if (isMeeting) meet.leadDetails?.phone ?? '',
-      if (isFollowup) followup!.leadDetails?.phone ?? '',
+      if (isFollowup) followup.leadDetails?.phone ?? '',
     ]);
     final location = _firstNonEmpty(<String>[
       task.location,
       if (isMeeting) meet.location,
       task.leadDetails?.companyName ?? '',
       if (isMeeting) meet.leadDetails?.companyName ?? '',
-      if (isFollowup) followup!.leadDetails?.companyName ?? '',
+      if (isFollowup) followup.leadDetails?.companyName ?? '',
     ]);
 
     final title = isMeeting
@@ -282,7 +281,7 @@ class _TaskScreenState extends State<TaskScreen> {
     } else if (isFollowup) {
       final followupTitle = _firstNonEmpty(<String>[
         task.title,
-        followup!.remarks,
+        followup.remarks,
         'Follow Up',
       ]);
       leftLabels = <String>['Lead ID', 'Title', 'Number', 'Location'];
@@ -489,7 +488,7 @@ class _TaskScreenState extends State<TaskScreen> {
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -530,7 +529,7 @@ class _TaskScreenState extends State<TaskScreen> {
                           'Failed to load tasks. Pull to refresh or retry.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.red,
+                            color: Color(0xFFEE2D2A),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -618,7 +617,7 @@ class _MonthDropdown extends StatelessWidget {
     required this.onChangedMonthIndex,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -698,7 +697,7 @@ class _WeekStrip extends StatelessWidget {
     required this.onTapDay,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   String _dayLetter(DateTime d) {
     const map = {1: 'M', 2: 'T', 3: 'W', 4: 'T', 5: 'F', 6: 'S', 7: 'S'};
@@ -875,7 +874,7 @@ class _TaskCard extends StatelessWidget {
     required this.onView,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

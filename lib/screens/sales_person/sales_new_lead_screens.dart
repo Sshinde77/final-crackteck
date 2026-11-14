@@ -17,23 +17,23 @@ class NewLeadScreen extends StatefulWidget {
   final bool isEdit;
 
   const NewLeadScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
     this.leadId,
     this.isEdit = false,
-  }) : super(key: key);
+  });
 
   @override
   State<NewLeadScreen> createState() => _NewLeadScreenState();
 }
 
 class _NewLeadScreenState extends State<NewLeadScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  // static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  // static const Color darkGreen = Color(0xFF020F37);
 
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -703,7 +703,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: _selectedUrgency,
+        initialValue: _selectedUrgency,
         decoration: InputDecoration(
           labelText: 'Urgency',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -741,7 +741,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         children: [
           DropdownButtonFormField<String>(
             isExpanded: true,
-            value: _selectedCountry,
+            initialValue: _selectedCountry,
             decoration: InputDecoration(
               labelText: 'Country',
               border: OutlineInputBorder(
@@ -771,7 +771,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             isExpanded: true,
-            value: _selectedState,
+            initialValue: _selectedState,
             decoration: InputDecoration(
               labelText: 'State',
               border: OutlineInputBorder(
@@ -801,7 +801,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             isExpanded: true,
-            value: _selectedCity,
+            initialValue: _selectedCity,
             decoration: InputDecoration(
               labelText: 'City',
               border: OutlineInputBorder(
