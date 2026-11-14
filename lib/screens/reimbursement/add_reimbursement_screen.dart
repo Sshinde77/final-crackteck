@@ -15,7 +15,7 @@ class AddReimbursementScreen extends StatefulWidget {
 }
 
 class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
-  static const Color _primaryColor = Color(0xFF145A00);
+  static const Color _primaryColor = Color(0xFF020F37);
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
@@ -424,11 +424,11 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.4),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A), width: 1.4),
       ),
     );
   }
@@ -486,7 +486,7 @@ class _PickerOptionTile extends StatelessWidget {
                 color: const Color(0xFFE9F6E5),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: const Color(0xFF145A00)),
+              child: Icon(icon, color: const Color(0xFF020F37)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -512,7 +512,7 @@ class _PickerOptionTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF145A00)),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF020F37)),
           ],
         ),
       ),

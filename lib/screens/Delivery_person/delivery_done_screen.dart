@@ -11,7 +11,7 @@ class DeliveryDoneScreen extends StatelessWidget {
     required this.roleName,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
   static const Color lightGreen = Color(0xFFD8E6D2);
 
   @override

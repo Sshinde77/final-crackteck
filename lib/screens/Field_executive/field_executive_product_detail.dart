@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
 import '../../constants/app_strings.dart';
-import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -192,7 +191,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     ]);
 
     return _ProductDetailData(
-      image: image.isEmpty ? 'assets/products/motherboard.png' : image,
+      image: image.isEmpty ? 'assets/logo.png' : image,
       productName: productName.isEmpty ? '-' : productName,
       modelNo: modelNo.isEmpty ? '-' : modelNo,
       shortDescription: shortDescription.isEmpty ? '-' : shortDescription,
@@ -387,7 +386,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   'Qty: ${data.totalRequestedQuantity}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF176A21),
+                    color: Color(0xFF020F37),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -515,7 +514,7 @@ class _ProductDetailData {
   });
 
   const _ProductDetailData.empty()
-    : image = 'assets/products/motherboard.png',
+    : image = 'assets/logo.png',
       productName = '-',
       modelNo = '-',
       shortDescription = '-',

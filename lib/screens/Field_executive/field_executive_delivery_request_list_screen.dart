@@ -25,7 +25,7 @@ class DeliveryRequestListScreen extends StatefulWidget {
 }
 
 class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
-  static const Color _primaryGreen = Color(0xFF1E7C10);
+  static const Color _primaryGreen = Color(0xFF020F37);
 
   List<DeliveryRequestModel> _requests = const <DeliveryRequestModel>[];
   bool _isLoading = true;
@@ -215,7 +215,7 @@ class _DeliveryRequestErrorState extends StatelessWidget {
           children: [
             const Icon(
               Icons.error_outline_rounded,
-              color: Colors.redAccent,
+              color: Color(0xFFEE2D2A),
               size: 28,
             ),
             const SizedBox(height: 12),
@@ -246,8 +246,6 @@ class _DeliveryRequestCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _DeliveryRequestCard({required this.request, required this.onTap});
-
-  static const Color _primaryGreen = Color(0xFF1E7C10);
 
   @override
   Widget build(BuildContext context) {

@@ -9,8 +9,6 @@ import '../../provider/delivery_person/delivery_profile_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 import '../../services/session_manager.dart';
-import '../../widgets/placeholder.dart';
-import 'delivery_feedback.dart';
 import 'delivery_kyc_screen.dart';
 import 'delivery_notification.dart';
 import 'delivery_person_attendance.dart';
@@ -36,7 +34,7 @@ class DeliveryProfileScreen extends StatefulWidget {
 }
 
 class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
   bool _isLoggingOut = false;
 
   @override
@@ -428,7 +426,7 @@ class _ProfileTile extends StatelessWidget {
   final VoidCallback onTap;
   final Widget? trailing;
 
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

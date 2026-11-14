@@ -20,7 +20,7 @@ class FieldExecutiveWorkCallScreen extends StatefulWidget {
 
 class _FieldExecutiveWorkCallScreenState
     extends State<FieldExecutiveWorkCallScreen> {
-  static const Color primaryGreen = Color(0xFF1E7C10);
+  static const Color primaryGreen = Color(0xFF020F37);
 
   final List<_WorkCallTabConfig> tabs = const [
     _WorkCallTabConfig(
@@ -140,7 +140,7 @@ class _FieldExecutiveWorkCallScreenState
                             boxShadow: isActive
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(alpha: 0.05),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -195,7 +195,7 @@ class _FieldExecutiveWorkCallScreenState
                               'Failed to load service requests',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: Colors.red,
+                                color: Color(0xFFEE2D2A),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -267,7 +267,7 @@ class _JobCard extends StatelessWidget {
     Color priorityColor;
     switch (job.priority.toLowerCase()) {
       case 'high':
-        priorityColor = Colors.red;
+        priorityColor = const Color(0xFFEE2D2A);
         break;
       case 'medium':
         priorityColor = Colors.orange;
@@ -309,7 +309,7 @@ class _JobCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: priorityColor.withOpacity(0.1),
+                  color: priorityColor.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(4),
                   ),
@@ -390,7 +390,7 @@ class _JobCard extends StatelessWidget {
                                 job.serviceId,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Colors.green,
+                                  color: Color(0xFF020F37),
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
@@ -413,7 +413,7 @@ class _JobCard extends StatelessWidget {
                                 job.location,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Colors.green,
+                                  color: Color(0xFF020F37),
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,

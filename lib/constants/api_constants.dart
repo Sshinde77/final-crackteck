@@ -10,11 +10,11 @@ class ApiConstants {
   // flutter run --dart-define=API_BASE_URL=http://<LAN-IP>:8000/api/v1   (Physical device)
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://lawngreen-toad-665270.hostingersite.com/api/v1',
+    defaultValue: 'https://srbcomputers.co.in/api/v1',
   );
   static const String siteBaseUrl = String.fromEnvironment(
     'SITE_BASE_URL',
-    defaultValue: 'https://crackteck.co.in',
+    defaultValue: 'https://srbcomputers.co.in',
   );
 
   // Authentication Endpoints

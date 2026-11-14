@@ -65,15 +65,15 @@ class MeetingsProvider extends ChangeNotifier {
 
       final meta = response['meta'];
       if (meta is Map<String, dynamic>) {
-        int _toInt(dynamic value, {int fallback = 0}) {
+        int toInt(dynamic value, {int fallback = 0}) {
           if (value is int) return value;
           if (value is double) return value.toInt();
           if (value is String) return int.tryParse(value) ?? fallback;
           return fallback;
         }
 
-        currentPage = _toInt(meta['current_page'], fallback: page);
-        totalPages = _toInt(meta['last_page'], fallback: currentPage);
+        currentPage = toInt(meta['current_page'], fallback: page);
+        totalPages = toInt(meta['last_page'], fallback: currentPage);
         hasMore = currentPage < totalPages;
       } else {
         currentPage = 1;

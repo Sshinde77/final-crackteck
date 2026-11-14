@@ -71,7 +71,7 @@ class ApiLogger {
             'field': file.field,
             'filename': file.filename,
             'length': file.length,
-            'contentType': file.contentType?.toString(),
+            'contentType': file.contentType.toString(),
           },
         )
         .toList();

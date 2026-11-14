@@ -24,7 +24,7 @@ class _ComingSoonScreenState extends State<ComingSoonScreen> {
 
       // ✅ AppBar with back button and NO title
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E7C10),
+        backgroundColor: const Color(0xFF020F37),
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(

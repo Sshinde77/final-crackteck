@@ -21,7 +21,7 @@ class AddProductScreen extends StatefulWidget {
     this.initialSelectedPart,
   });
 
-  static const Color primaryGreen = Color(0xFF1F8B00);
+  static const Color primaryGreen = Color(0xFF020F37);
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();

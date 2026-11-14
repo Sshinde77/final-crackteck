@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../model/Delivery_person/delivery_order_detail_model.dart';
 import '../../provider/delivery_person/delivery_order_detail_provider.dart';
 import '../../routes/app_routes.dart';
 
@@ -22,9 +21,8 @@ class ProductToBeDeliveredScreen extends StatefulWidget {
       _ProductToBeDeliveredScreenState();
 }
 
-class _ProductToBeDeliveredScreenState
-    extends State<ProductToBeDeliveredScreen> {
-  static const Color _green = Color(0xFF1E7C10);
+class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen> {
+  static const Color _green = Color(0xFF020F37);
 
   int _unreadNoti = 1;
 
@@ -88,10 +86,10 @@ class _ProductToBeDeliveredScreenState
         )
         .toList();
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, false);
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Navigator.pop(context, false);
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -135,7 +133,7 @@ class _ProductToBeDeliveredScreenState
                           width: 8,
                           height: 8,
                           decoration: const BoxDecoration(
-                            color: Colors.red,
+                            color: Color(0xFFEE2D2A),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -493,7 +491,7 @@ class _ProductCard extends StatelessWidget {
               const Text(
                 'Qty',
                 style: TextStyle(
-                  color: Colors.red,
+                  color: Color(0xFFEE2D2A),
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -502,7 +500,7 @@ class _ProductCard extends StatelessWidget {
               Text(
                 item.qty.toString(),
                 style: const TextStyle(
-                  color: Colors.red,
+                  color: Color(0xFFEE2D2A),
                   fontWeight: FontWeight.w900,
                   fontSize: 16,
                 ),

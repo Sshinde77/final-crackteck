@@ -11,7 +11,7 @@ class VehicleDetailsScreen extends StatefulWidget {
 }
 
 class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController vehicleTypeCtrl = TextEditingController();

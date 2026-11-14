@@ -44,7 +44,7 @@ class _FieldExecutiveInstallationDetailScreenState
   bool _isLoadingDetail = true;
   String? _detailError;
   Map<String, dynamic>? _detailData;
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
 
   @override
   void initState() {
@@ -228,17 +228,6 @@ class _FieldExecutiveInstallationDetailScreenState
     final cleaned = raw.trim();
     if (cleaned.isEmpty || cleaned == '-') return '-';
     return cleaned.startsWith('#') ? cleaned : '#$cleaned';
-  }
-
-  String _normalizePriority(String raw) {
-    final value = raw.trim().toLowerCase();
-    if (value.contains('high') || value == '1' || value == 'urgent') {
-      return 'High';
-    }
-    if (value.contains('low') || value == '3') {
-      return 'Low';
-    }
-    return 'Medium';
   }
 
   String _normalizeServiceType(String raw) {
@@ -471,19 +460,10 @@ class _FieldExecutiveInstallationDetailScreenState
     return formatted;
   }
 
-  String get _priority => _normalizePriority(
-    _field(const [
-      'priority',
-      'priority_level',
-      'urgency',
-    ], fallback: widget.priority),
-  );
-  String get _imageUrl => _field(const [
-    'image_url',
-    'image',
-    'service_image',
-    'product_image',
-  ], fallback: '');
+  String get _imageUrl => _field(
+        const ['image_url', 'image', 'service_image', 'product_image'],
+        fallback: '',
+      );
   String get _customerName {
     final firstName = _readFromMap(_customerMap, const [
       'first_name',
@@ -852,17 +832,8 @@ class _FieldExecutiveInstallationDetailScreenState
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                codeOrId,
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                location,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+              Text(codeOrId, style: const TextStyle(color: Color(0xFF020F37), fontWeight: FontWeight.bold)),
+              Text(location, style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ],
           ),
         ],
@@ -952,16 +923,16 @@ class _FieldExecutiveInstallationDetailScreenState
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
+                            color: const Color(0xFFFFF4F4),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade100),
+                            border: Border.all(color: const Color(0xFFEE2D2A)),
                           ),
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.error_outline,
                                 size: 18,
-                                color: Colors.red.shade700,
+                                color: Color(0xFFEE2D2A),
                               ),
                               const SizedBox(width: 8),
                               const Expanded(

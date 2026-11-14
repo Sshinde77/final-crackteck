@@ -12,15 +12,15 @@ import 'package:final_crackteck/services/api_service.dart';
 import 'package:final_crackteck/widgets/bottom_navigation.dart';
 
 class SalespersonDashboard extends StatefulWidget {
-  const SalespersonDashboard({Key? key}) : super(key: key);
+  const SalespersonDashboard({super.key});
 
   @override
   State<SalespersonDashboard> createState() => _SalespersonDashboardState();
 }
 
 class _SalespersonDashboardState extends State<SalespersonDashboard> {
-  static const darkGreen = Color(0xFF145A00);
-  static const midGreen = Color(0xFF1F7A05);
+  static const darkGreen = Color(0xFF020F37);
+  static const midGreen = Color(0xFF020F37);
 
   String _reportValue = "Today's Sales Report";
 
@@ -438,7 +438,7 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: Color(0xFFEE2D2A)),
             const SizedBox(height: 16),
             const Text(
               'Failed to load dashboard',
@@ -498,7 +498,7 @@ class _TodayTaskHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const darkGreen = Color(0xFF145A00);
+    const darkGreen = Color(0xFF020F37);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -544,7 +544,7 @@ class _TodayTaskList extends StatelessWidget {
         height: 155,
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF145A00)),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF020F37)),
           ),
         ),
       );
@@ -597,8 +597,8 @@ class _TodayTaskList extends StatelessWidget {
 }
 
 class SalesOverviewSection extends StatelessWidget {
-  static const darkGreen = Color(0xFF145A00);
-  static const newLeadsColor = Color(0xFF145A00);
+  static const darkGreen = Color(0xFF020F37);
+  static const newLeadsColor = Color(0xFF020F37);
   static const inProgressLeadsColor = Color(0xFFF4B400);
   static const wonLeadsColor = Color(0xFF1A73E8);
   static const lostLeadsColor = Color(0xFFD93025);
@@ -990,7 +990,7 @@ class _TaskCard extends StatelessWidget {
   Color _getStatusColor() {
     switch (status.toLowerCase()) {
       case 'completed':
-        return Colors.green;
+        return const Color(0xFF020F37);
       case 'in_progress':
       case 'in progress':
         return Colors.orange;

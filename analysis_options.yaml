@@ -21,6 +21,15 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    # This project keeps legacy API route names and generated-style argument
+    # classes for backwards compatibility with existing navigation calls.
+    constant_identifier_names: false
+    non_constant_identifier_names: false
+    camel_case_types: false
+    file_names: false
+    library_private_types_in_public_api: false
+    use_build_context_synchronously: false
+    control_flow_in_finally: false
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 

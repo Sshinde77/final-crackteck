@@ -25,8 +25,8 @@ class SalesPersonMoreScreen extends StatefulWidget {
 }
 
 class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
   bool _moreOpen = false;
   int _navIndex = 2; // 0=Home, 2=Profile
   bool _isLoggingOut = false;
@@ -190,7 +190,7 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                         const Icon(
                           Icons.error_outline,
                           size: 32,
-                          color: Colors.redAccent,
+                          color: Color(0xFFEE2D2A),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -248,9 +248,9 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                 //         //     title: "Logout",
                 //         //     time: logoutTime,
                 //         //     bg: const Color(0xFFFFE9E9),
-                //         //     iconBg: const Color(0xFFD32F2F),
+                //         //     iconBg: const Color(0xFFEE2D2A),
                 //         //     icon: Icons.access_time,
-                //         //     titleColor: const Color(0xFFD32F2F),
+                //         //     titleColor: const Color(0xFFEE2D2A),
                 //         //     onTap: () {
                 //         //       // ✅ example: update state
                 //         //       setState(() {
@@ -335,8 +335,8 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                 _OptionTile(
                   icon: Icons.logout,
                   label: _isLoggingOut ? "Logging out..." : "Log out",
-                  iconColor: Colors.redAccent,
-                  textColor: Colors.redAccent,
+                  iconColor: const Color(0xFFEE2D2A),
+                  textColor: const Color(0xFFEE2D2A),
                   trailing: _isLoggingOut
                       ? const SizedBox(
                           width: 18,
@@ -344,13 +344,13 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.redAccent,
+                              Color(0xFFEE2D2A),
                             ),
                           ),
                         )
                       : const Icon(
                           Icons.arrow_forward,
-                          color: Colors.redAccent,
+                          color: Color(0xFFEE2D2A),
                           size: 20,
                         ),
                   onTap: _isLoggingOut ? () {} : _handleLogout,
@@ -424,7 +424,7 @@ class _OptionTile extends StatelessWidget {
     this.textColor = Colors.black54,
   });
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {

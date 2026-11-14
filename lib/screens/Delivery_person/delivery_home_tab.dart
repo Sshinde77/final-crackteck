@@ -643,7 +643,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF1E7C10);
+    const green = Color(0xFF020F37);
     final provider = context.watch<DeliveryHomeProvider>();
     final attendanceProvider = context.watch<AttendanceProvider>();
 
@@ -913,7 +913,7 @@ class AttendanceSection extends StatelessWidget {
                 child: _AttendanceTile(
                   label: 'Check-in',
                   icon: Icons.login,
-                  pillColor: const Color(0xFF1E7C10),
+                  pillColor: const Color(0xFF020F37),
                   bg: const Color(0xFFEFF7EE),
                   timeText: loginTimeText,
                   onTap: isBusy ? null : onLogin,
@@ -924,7 +924,7 @@ class AttendanceSection extends StatelessWidget {
                 child: _AttendanceTile(
                   label: 'Check-out',
                   icon: Icons.logout,
-                  pillColor: const Color(0xFFD32F2F),
+                  pillColor: const Color(0xFFEE2D2A),
                   bg: const Color(0xFFFFEFEF),
                   timeText: logoutTimeText,
                   onTap: isBusy ? null : onLogout,
@@ -1074,7 +1074,7 @@ class StatsTabsSection extends StatelessWidget {
       OrdersTab.returnRequest,
       OrdersTab.returnProduct,
     ];
-    const activeGreen = Color(0xFF1E7C10);
+    const activeGreen = Color(0xFF020F37);
 
     return Container(
       width: double.infinity,
@@ -1268,7 +1268,6 @@ class OrderCard extends StatelessWidget {
       );
     }
 
-    const green = Color(0xFF1E7C10);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1356,7 +1355,7 @@ class _HomeStateCard extends StatelessWidget {
           ElevatedButton(
             onPressed: onTap,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E7C10),
+              backgroundColor: const Color(0xFF020F37),
             ),
             child: Text(
               actionLabel,

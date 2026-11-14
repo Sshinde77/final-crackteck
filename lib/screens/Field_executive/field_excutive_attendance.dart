@@ -60,7 +60,7 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   final List<AttendanceRecord> _all = <AttendanceRecord>[];
   bool _isLoading = true;
@@ -311,7 +311,7 @@ class _AttendanceCard extends StatelessWidget {
 
   const _AttendanceCard({required this.record, required this.hhmmss});
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -431,7 +431,7 @@ class _CalendarFab extends StatelessWidget {
 
   const _CalendarFab({required this.onTap});
 
-  static const Color brandGreen = Color(0xFF1B6E1B);
+  static const Color brandGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -478,7 +478,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 46, color: Colors.redAccent),
+            const Icon(Icons.error_outline, size: 46, color: Color(0xFFEE2D2A)),
             const SizedBox(height: 10),
             Text(
               message,

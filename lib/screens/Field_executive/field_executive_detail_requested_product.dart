@@ -207,7 +207,7 @@ class _ProductRequestedDetailScreenState
     ]);
 
     return _RequestedProductData(
-      image: image.isEmpty ? 'assets/products/motherboard.png' : image,
+      image: image.isEmpty ? 'assets/logo.png' : image,
       productName: productName.isEmpty ? '-' : productName,
       modelNo: modelNo.isEmpty ? '-' : modelNo,
       shortDescription: shortDescription.isEmpty ? '-' : shortDescription,
@@ -513,7 +513,7 @@ class _ProductRequestedDetailScreenState
                   'Qty: ${data.totalRequestedQuantity}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF176A21),
+                    color: Color(0xFF020F37),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -656,7 +656,7 @@ class _RequestedProductData {
   });
 
   const _RequestedProductData.empty()
-    : image = 'assets/products/motherboard.png',
+    : image = 'assets/logo.png',
       productName = '-',
       modelNo = '-',
       shortDescription = '-',

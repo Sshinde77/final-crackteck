@@ -7,22 +7,22 @@ class SalesOverviewScreen extends StatefulWidget {
   final String roleName;
 
   const SalesOverviewScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
-  }) : super(key: key);
+  });
 
   @override
   State<SalesOverviewScreen> createState() => _SalesOverviewScreenState();
 }
 
 class _SalesOverviewScreenState extends State<SalesOverviewScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   // ✅ required for bottom switcher
   bool _moreOpen = false;
-  int _navIndex = 0; // 0=Home, 2=Profile
+  final int _navIndex = 0; // 0=Home, 2=Profile
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +181,7 @@ class _MetricCard extends StatelessWidget {
 
   const _MetricCard({required this.metric, required this.onTap});
 
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +196,7 @@ class _MetricCard extends StatelessWidget {
           border: Border.all(color: Colors.black12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 6),
             ),

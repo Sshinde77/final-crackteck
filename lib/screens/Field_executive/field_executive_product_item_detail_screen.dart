@@ -35,7 +35,7 @@ class FieldExecutiveProductItemDetailScreen extends StatefulWidget {
     required this.controller,
   });
 
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
 
   @override
   State<FieldExecutiveProductItemDetailScreen> createState() =>
@@ -652,16 +652,14 @@ class _FieldExecutiveProductItemDetailScreenState
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade50,
+                                  color: const Color(0xFFEE2D2A),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.red.shade200,
-                                  ),
+                                  border: Border.all(color: const Color(0xFFEE2D2A)),
                                 ),
                                 child: Text(
                                   widget.priority,
                                   style: const TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xFFEE2D2A),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
                                   ),

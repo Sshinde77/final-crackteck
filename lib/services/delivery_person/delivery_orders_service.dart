@@ -55,9 +55,6 @@ class DeliveryOrdersService extends DeliveryApiClient {
     }
     final decoded = decodeBody(response.body);
     final items = extractList(decoded);
-    if (decoded is! Map<String, dynamic>) {
-      return items;
-    }
 
     final primaryWarehouse = decoded['primary_warehouse'];
     if (primaryWarehouse is! Map) {

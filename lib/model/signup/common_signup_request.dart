@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class CommonSignupRequest {
   const CommonSignupRequest({
@@ -37,8 +37,8 @@ class CommonSignupRequest {
   final String address;
   final String aadhar;
   final String pan;
-  final File aadharFile;
-  final File panFile;
+  final XFile aadharFile;
+  final XFile panFile;
   final String firstName;
   final String lastName;
   final String addressLine1;
@@ -48,8 +48,8 @@ class CommonSignupRequest {
   final String city;
   final String pincode;
   final String education;
-  final File? aadharBackFile;
-  final File? panBackFile;
-  final File? resultFile;
-  final File? addressProofFile;
+  final XFile? aadharBackFile;
+  final XFile? panBackFile;
+  final XFile? resultFile;
+  final XFile? addressProofFile;
 }

@@ -21,7 +21,7 @@ class DeliveryOtpScreen extends StatefulWidget {
 }
 
 class _DeliveryOtpScreenState extends State<DeliveryOtpScreen> {
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
 
   Future<void> _sendOtp() async {
     final provider = context.read<DeliveryOrderActionProvider>();

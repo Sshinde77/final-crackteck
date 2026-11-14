@@ -32,7 +32,7 @@ class FieldExecutiveUploadBeforeImagesScreen extends StatefulWidget {
 class _FieldExecutiveUploadBeforeImagesScreenState
     extends State<FieldExecutiveUploadBeforeImagesScreen> {
   final ImagePicker _picker = ImagePicker();
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
 
   bool _isPicking = false;
 
@@ -212,7 +212,7 @@ class _FieldExecutiveUploadBeforeImagesScreenState
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: primaryGreen.withOpacity(0.3)),
+                    border: Border.all(color: primaryGreen.withValues(alpha: 0.3)),
                     image: isVideo
                         ? null
                         : DecorationImage(
@@ -240,7 +240,7 @@ class _FieldExecutiveUploadBeforeImagesScreenState
                           },
                           child: const CircleAvatar(
                             radius: 8,
-                            backgroundColor: Colors.red,
+                            backgroundColor: Color(0xFFEE2D2A),
                             child: Icon(
                               Icons.close,
                               size: 10,
@@ -273,7 +273,7 @@ class _FieldExecutiveUploadBeforeImagesScreenState
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

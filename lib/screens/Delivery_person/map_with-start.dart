@@ -22,9 +22,8 @@ class DeliverypickupparcelScreen extends StatefulWidget {
       _DeliverypickupparcelScreenState();
 }
 
-class _DeliverypickupparcelScreenState
-    extends State<DeliverypickupparcelScreen> {
-  static const Color green = Color(0xFF1E7C10);
+class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen> {
+  static const Color green = Color(0xFF020F37);
   static const Color lightGreen = Color(0xFFEFF7EE);
 
   final ImagePicker _picker = ImagePicker();
@@ -299,7 +298,7 @@ class _InfoItem extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF1E7C10),
+            color: Color(0xFF020F37),
           ),
         ),
       ],
@@ -310,7 +309,7 @@ class _InfoItem extends StatelessWidget {
 class _CircleAction extends StatelessWidget {
   const _CircleAction({required this.icon, required this.onTap});
 
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
   final IconData icon;
   final VoidCallback onTap;
 

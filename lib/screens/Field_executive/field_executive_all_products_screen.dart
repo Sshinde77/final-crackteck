@@ -22,7 +22,7 @@ class FieldExecutiveAllProductsScreen extends StatefulWidget {
     this.serviceRequestId = '',
   });
 
-  static const primaryGreen = Color(0xFF1E7C10);
+  static const primaryGreen = Color(0xFF020F37);
 
   @override
   State<FieldExecutiveAllProductsScreen> createState() =>
@@ -797,14 +797,10 @@ class _FieldExecutiveAllProductsScreenState
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: isCompleted
-                                ? Colors.green.shade50
-                                : Colors.red.shade50,
+                            color: isCompleted ? const Color(0xFF020F37) : const Color(0xFFEE2D2A),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isCompleted
-                                  ? Colors.green.shade200
-                                  : Colors.red.shade200,
+                              color: isCompleted ? const Color(0xFF020F37) : const Color(0xFFEE2D2A),
                             ),
                           ),
                           child: Text(
@@ -812,7 +808,7 @@ class _FieldExecutiveAllProductsScreenState
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isCompleted ? Colors.green : Colors.red,
+                              color: isCompleted ? const Color(0xFF020F37) : const Color(0xFFEE2D2A),
                             ),
                           ),
                         ),
@@ -839,11 +835,7 @@ class _FieldExecutiveAllProductsScreenState
                 ),
                 child: Text(
                   item.priority,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEE2D2A)),
                 ),
               ),
             ),

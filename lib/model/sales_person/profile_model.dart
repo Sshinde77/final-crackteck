@@ -90,7 +90,7 @@ class ProfileModel {
   }
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
-    DateTime? _parseDate(dynamic value) {
+    DateTime? parseDate(dynamic value) {
       if (value == null) return null;
       if (value is DateTime) return value;
       if (value is int) {
@@ -114,64 +114,64 @@ class ProfileModel {
       return null;
     }
 
-    String _string(dynamic v) => v?.toString() ?? '';
+    String string(dynamic v) => v?.toString() ?? '';
 
-    final dobRaw = _string(json['dob']);
-    final joiningRaw = _string(json['joining_date'] ?? json['joiningDate']);
-    final createdRaw = _string(json['created_at'] ?? json['createdAt']);
-    final updatedRaw = _string(json['updated_at'] ?? json['updatedAt']);
+    final dobRaw = string(json['dob']);
+    final joiningRaw = string(json['joining_date'] ?? json['joiningDate']);
+    final createdRaw = string(json['created_at'] ?? json['createdAt']);
+    final updatedRaw = string(json['updated_at'] ?? json['updatedAt']);
 
     return ProfileModel(
-      id: int.tryParse(_string(json['id'])) ?? 0,
-      firstName: _string(json['first_name'] ?? json['firstName']),
-      lastName: _string(json['last_name'] ?? json['lastName']),
-      phone: _string(json['phone'] ?? json['mobile'] ?? json['contact_no']),
-      email: _string(json['email']),
-      gender: _string(json['gender']),
-      currentAddress: _string(
+      id: int.tryParse(string(json['id'])) ?? 0,
+      firstName: string(json['first_name'] ?? json['firstName']),
+      lastName: string(json['last_name'] ?? json['lastName']),
+      phone: string(json['phone'] ?? json['mobile'] ?? json['contact_no']),
+      email: string(json['email']),
+      gender: string(json['gender']),
+      currentAddress: string(
         json['current_address'] ?? json['address'] ?? json['addr'],
       ),
-      city: _string(json['city']),
-      state: _string(json['state']),
-      country: _string(json['country']),
-      pincode: _string(json['pincode'] ?? json['zip']),
-      employmentType: _string(
+      city: string(json['city']),
+      state: string(json['state']),
+      country: string(json['country']),
+      pincode: string(json['pincode'] ?? json['zip']),
+      employmentType: string(
         json['employment_type'] ?? json['employmentType'],
       ),
-      assignedArea: _string(json['assigned_area'] ?? json['area']),
-      vehicleType: _string(json['vehicle_type'] ?? json['vehicleType']),
-      vehicleNo: _string(
+      assignedArea: string(json['assigned_area'] ?? json['area']),
+      vehicleType: string(json['vehicle_type'] ?? json['vehicleType']),
+      vehicleNo: string(
         json['vehicle_no'] ?? json['vehicleNo'] ?? json['vehical_no'],
       ),
-      drivingLicenseNo: _string(
+      drivingLicenseNo: string(
         json['driving_license_no'] ?? json['drivingLicenseNo'],
       ),
-      policeVerification: _string(
+      policeVerification: string(
         json['police_verification'] ?? json['policeVerification'],
       ),
-      policeVerificationStatus: _string(
+      policeVerificationStatus: string(
         json['police_verification_status'] ?? json['policeVerificationStatus'],
       ),
-      govId: _string(json['gov_id'] ?? json['govId'] ?? json['govid']),
-      idNo: _string(json['id_no'] ?? json['idNo'] ?? json['idno']),
-      bankAccNo: _string(
+      govId: string(json['gov_id'] ?? json['govId'] ?? json['govid']),
+      idNo: string(json['id_no'] ?? json['idNo'] ?? json['idno']),
+      bankAccNo: string(
         json['bank_acc_no'] ?? json['account_no'] ?? json['bankAcc'],
       ),
-      bankName: _string(json['bank_name'] ?? json['bankName']),
-      ifscCode: _string(json['ifsc_code'] ?? json['ifscCode']),
+      bankName: string(json['bank_name'] ?? json['bankName']),
+      ifscCode: string(json['ifsc_code'] ?? json['ifscCode']),
       drivingLicenseDoc:
           json['driving_license']?.toString() ?? json['drivingLicense'],
       policeCertificateDoc:
           json['police_certificate']?.toString() ?? json['policeCertificate'],
       adharPic: json['adhar_pic']?.toString() ?? json['aadharPic'],
       passbookPic: json['passbook_pic']?.toString() ?? json['passbookPic'],
-      dob: _parseDate(json['dob']),
+      dob: parseDate(json['dob']),
       dobRaw: dobRaw,
-      joiningDate: _parseDate(joiningRaw),
+      joiningDate: parseDate(joiningRaw),
       joiningDateRaw: joiningRaw,
-      createdAt: _parseDate(createdRaw),
+      createdAt: parseDate(createdRaw),
       createdAtRaw: createdRaw,
-      updatedAt: _parseDate(updatedRaw),
+      updatedAt: parseDate(updatedRaw),
       updatedAtRaw: updatedRaw,
     );
   }

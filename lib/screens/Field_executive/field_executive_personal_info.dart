@@ -17,10 +17,9 @@ class FieldExecutivePersonalInfo extends StatefulWidget {
       _FieldExecutivePersonalInfoState();
 }
 
-class _FieldExecutivePersonalInfoState
-    extends State<FieldExecutivePersonalInfo> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+class _FieldExecutivePersonalInfoState extends State<FieldExecutivePersonalInfo> {
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -127,7 +126,7 @@ class _FieldExecutivePersonalInfoState
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.redAccent),
+              style: const TextStyle(color: Color(0xFFEE2D2A)),
             ),
             const SizedBox(height: 12),
             ElevatedButton(

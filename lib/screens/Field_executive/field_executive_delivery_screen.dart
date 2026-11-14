@@ -13,7 +13,7 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
     required this.roleName,
   });
 
-  static const Color _primaryGreen = Color(0xFF1F8B00);
+  static const Color _primaryGreen = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +131,7 @@ class _DeliveryOptionCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF145A00)),
+            Icon(icon, color: const Color(0xFF020F37)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -145,7 +145,7 @@ class _DeliveryOptionCard extends StatelessWidget {
             const Icon(
               Icons.arrow_forward_ios_rounded,
               size: 18,
-              color: Color(0xFF145A00),
+              color: Color(0xFF020F37),
             ),
           ],
         ),

@@ -7,6 +7,7 @@ import 'model/sales_person/dashboard_provider.dart';
 import 'provider/attendance_provider.dart';
 
 import 'constants/app_strings.dart';
+import 'constants/app_colors.dart';
 import 'core/navigation_service.dart';
 import 'core/secure_storage_service.dart';
 import 'services/notification_service.dart';
@@ -85,10 +86,17 @@ class _CrackTechAppState extends State<CrackTechApp>
         'route=${NavigationService.currentRouteName ?? 'unknown'}',
       );
 
-      if (!hasToken) {
+      final currentRoute = NavigationService.currentRouteName;
+      if (!hasToken &&
+          !NavigationService.isAuthenticationFlowRoute(currentRoute)) {
         await NavigationService.navigateToAuthRootIfUnauthenticated(
           roleId: roleId,
           source: 'app_resumed',
+        );
+      } else if (!hasToken) {
+        debugPrint(
+          'CrackTechApp._handleAppResumed skipped auth redirect while '
+          'authentication flow is active route=${currentRoute ?? 'unknown'}',
         );
       }
     } catch (error, stackTrace) {
@@ -133,7 +141,28 @@ class _CrackTechAppState extends State<CrackTechApp>
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primary,
+            primary: AppColors.primary,
+            secondary: AppColors.secondary,
+            surface: AppColors.primarySurface,
+            error: AppColors.secondary,
+          ),
+          scaffoldBackgroundColor: AppColors.primarySurface,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.white,
+          ),
+          inputDecorationTheme: const InputDecorationTheme(
+            filled: true,
+            fillColor: AppColors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: AppColors.borderGrey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+          ),
           useMaterial3: true,
         ),
         initialRoute: AppRoutes.splash,

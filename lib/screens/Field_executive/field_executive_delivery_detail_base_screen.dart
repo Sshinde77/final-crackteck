@@ -35,7 +35,7 @@ class FieldExecutiveDeliveryDetailBaseScreen extends StatefulWidget {
 
 class _FieldExecutiveDeliveryDetailBaseScreenState
     extends State<FieldExecutiveDeliveryDetailBaseScreen> {
-  static const Color primaryGreen = Color(0xFF1E7C10);
+  static const Color primaryGreen = Color(0xFF020F37);
 
   bool _isLoading = true;
   String? _error;
@@ -107,18 +107,19 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
       return _ParsedDetailResponse(error: message);
     }
 
-    final data = _asMap(response['data']) ?? response;
+    final data = _asMap(response['data']);
     if (data.isEmpty) {
       return const _ParsedDetailResponse(error: 'Invalid response format.');
     }
 
     final serviceRequest = _asMap(data['service_request']);
-    final customer = _asMap(serviceRequest?['customer']);
+    final customer = _asMap(serviceRequest['customer']);
     final product = _asMap(data['product']);
     final requestProduct = _asMap(data['service_request_product']);
     final customerAddress =
-        _asMap(serviceRequest?['customer_address']) ??
-        _asMap(data['customer_address']);
+        _asMap(serviceRequest['customer_address']).isNotEmpty
+        ? _asMap(serviceRequest['customer_address'])
+        : _asMap(data['customer_address']);
 
     final firstName = _readFromMap(customer, const ['first_name']);
     final lastName = _readFromMap(customer, const ['last_name']);
@@ -437,13 +438,17 @@ class _ErrorBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
+        color: const Color(0xFFEE2D2A),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.shade100),
+        border: Border.all(color: const Color(0xFFEE2D2A)),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, size: 18, color: Colors.red.shade700),
+          const Icon(
+            Icons.error_outline,
+            size: 18,
+            color: Color(0xFFEE2D2A),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

@@ -154,7 +154,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddReimbursementForm,
-        backgroundColor: const Color(0xFF145A00),
+        backgroundColor: const Color(0xFF020F37),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
@@ -201,18 +201,18 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                                 : const Color(0xFF374151),
                           ),
                           backgroundColor: Colors.white,
-                          selectedColor: const Color(0xFF145A00),
+                          selectedColor: const Color(0xFF020F37),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
                               color: isSelected
-                                  ? const Color(0xFF145A00)
+                                  ? const Color(0xFF020F37)
                                   : const Color(0xFFD9DEE7),
                             ),
                           ),
                           side: BorderSide(
                             color: isSelected
-                                ? const Color(0xFF145A00)
+                                ? const Color(0xFF020F37)
                                 : const Color(0xFFD9DEE7),
                           ),
                           showCheckmark: false,
@@ -237,7 +237,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
   Widget _buildBody(List<ReimbursementModel> filteredReimbursements) {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF145A00)),
+        child: CircularProgressIndicator(color: Color(0xFF020F37)),
       );
     }
 
@@ -246,7 +246,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF145A00),
+      color: const Color(0xFF020F37),
       onRefresh: () => _loadReimbursements(showLoader: false),
       child: filteredReimbursements.isEmpty
           ? ListView(
@@ -314,7 +314,7 @@ class _ReimbursementOverviewCard extends StatelessWidget {
             ),
             child: const Icon(
               Icons.receipt_long_outlined,
-              color: Color(0xFF145A00),
+              color: Color(0xFF020F37),
             ),
           ),
           const SizedBox(width: 12),
@@ -437,7 +437,7 @@ class ReimbursementListCard extends StatelessWidget {
                     child: const Icon(
                       Icons.description_outlined,
                       size: 18,
-                      color: Color(0xFF145A00),
+                      color: Color(0xFF020F37),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -475,7 +475,7 @@ class ReimbursementListCard extends StatelessWidget {
                       Icon(
                         Icons.attach_file_rounded,
                         size: 16,
-                        color: Color(0xFF145A00),
+                        color: Color(0xFF020F37),
                       ),
                       SizedBox(width: 6),
                       Text(
@@ -483,7 +483,7 @@ class ReimbursementListCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF145A00),
+                          color: Color(0xFF020F37),
                         ),
                       ),
                     ],
@@ -546,7 +546,7 @@ class _EmptyState extends StatelessWidget {
               child: const Icon(
                 Icons.inbox_outlined,
                 size: 34,
-                color: Color(0xFF145A00),
+                color: Color(0xFF020F37),
               ),
             ),
             const SizedBox(height: 16),
@@ -595,7 +595,7 @@ class _ErrorState extends StatelessWidget {
               child: const Icon(
                 Icons.error_outline_rounded,
                 size: 34,
-                color: Color(0xFFC62828),
+                color: Color(0xFFEE2D2A),
               ),
             ),
             const SizedBox(height: 16),
@@ -617,7 +617,7 @@ class _ErrorState extends StatelessWidget {
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF145A00),
+                backgroundColor: const Color(0xFF020F37),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -650,7 +650,7 @@ class _StatusStyle {
       case ReimbursementStatus.rejected:
         return const _StatusStyle(
           backgroundColor: Color(0xFFFDECEC),
-          textColor: Color(0xFFC62828),
+          textColor: Color(0xFFEE2D2A),
         );
     }
   }

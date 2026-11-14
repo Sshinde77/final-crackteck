@@ -35,7 +35,7 @@ class DeliveryProductDetailScreen extends StatefulWidget {
     required this.customerAddress,
   });
 
-  static const Color _primaryGreen = Color(0xFF1E7C10);
+  static const Color _primaryGreen = Color(0xFF020F37);
 
   @override
   State<DeliveryProductDetailScreen> createState() =>
@@ -226,7 +226,7 @@ class _DeliveryProductDetailScreenState
 
   Map<String, dynamic> _mapFrom(dynamic value) {
     if (value is Map<String, dynamic>) return value;
-    if (value is Map) return Map<String, dynamic>.from(value as Map);
+    if (value is Map) return Map<String, dynamic>.from(value);
     return const <String, dynamic>{};
   }
 
@@ -242,7 +242,7 @@ class _DeliveryProductDetailScreenState
     if (value is! List) return const <Map<String, dynamic>>[];
     return value
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((item) => Map<String, dynamic>.from(item))
         .toList();
   }
 
@@ -1505,7 +1505,7 @@ class _DeliveryDetailErrorState extends StatelessWidget {
           children: [
             const Icon(
               Icons.error_outline_rounded,
-              color: Colors.redAccent,
+              color: Color(0xFFEE2D2A),
               size: 30,
             ),
             const SizedBox(height: 12),

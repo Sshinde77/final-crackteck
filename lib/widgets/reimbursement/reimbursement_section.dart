@@ -95,7 +95,7 @@ class _ReimbursementSectionState extends State<ReimbursementSection> {
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_outlined,
-                  color: Color(0xFF145A00),
+                  color: Color(0xFF020F37),
                 ),
               ),
               const SizedBox(width: 12),
@@ -142,7 +142,7 @@ class _ReimbursementSectionState extends State<ReimbursementSection> {
             child: ElevatedButton.icon(
               onPressed: _openAddReimbursementForm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF145A00),
+                backgroundColor: const Color(0xFF020F37),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -255,7 +255,7 @@ class _ReimbursementCard extends StatelessWidget {
                   Icon(
                     Icons.receipt_long_outlined,
                     size: 16,
-                    color: Color(0xFF145A00),
+                    color: Color(0xFF020F37),
                   ),
                   SizedBox(width: 6),
                   Text(
@@ -263,7 +263,7 @@ class _ReimbursementCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF145A00),
+                      color: Color(0xFF020F37),
                     ),
                   ),
                 ],
@@ -324,7 +324,7 @@ class _StatusStyle {
       case ReimbursementStatus.rejected:
         return const _StatusStyle(
           backgroundColor: Color(0xFFFDECEC),
-          textColor: Color(0xFFC62828),
+          textColor: Color(0xFFEE2D2A),
         );
     }
   }

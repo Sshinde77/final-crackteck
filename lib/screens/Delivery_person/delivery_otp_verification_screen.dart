@@ -24,7 +24,7 @@ class DeliveryOtpVerificationScreen extends StatefulWidget {
 class _DeliveryOtpVerificationScreenState
     extends State<DeliveryOtpVerificationScreen> {
   final TextEditingController _otpController = TextEditingController();
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
 
   @override
   void initState() {

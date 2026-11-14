@@ -10,10 +10,10 @@ class SalesPersonPersonalInfoScreen extends StatefulWidget {
   final String roleName;
 
   const SalesPersonPersonalInfoScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
-  }) : super(key: key);
+  });
 
   @override
   State<SalesPersonPersonalInfoScreen> createState() =>
@@ -22,12 +22,12 @@ class SalesPersonPersonalInfoScreen extends StatefulWidget {
 
 class _SalesPersonPersonalInfoScreenState
     extends State<SalesPersonPersonalInfoScreen> {
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   /// ✅ STATE VARIABLES
   bool _moreOpen = false;
-  int _navIndex = 2; // Profile tab selected
+  final int _navIndex = 2; // Profile tab selected
 
   @override
   void initState() {
@@ -148,7 +148,7 @@ class _SalesPersonPersonalInfoScreenState
           const CircleAvatar(
             radius: 46,
             backgroundColor: Colors.black12,
-            backgroundImage: AssetImage('assets/profile.jpg'),
+            backgroundImage: AssetImage('assets/logo.png'),
           ),
 
           const SizedBox(height: 12),
@@ -198,13 +198,13 @@ class _SalesPersonPersonalInfoScreenState
                     Text(
                       'Edit',
                       style: TextStyle(
-                        color: Colors.red,
+                        color: Color(0xFFEE2D2A),
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
                     ),
                     SizedBox(width: 4),
-                    Icon(Icons.edit, size: 16, color: Colors.red),
+                    Icon(Icons.edit, size: 16, color: Color(0xFFEE2D2A)),
                   ],
                 ),
               ),

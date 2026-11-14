@@ -42,7 +42,7 @@ class LeadModel {
 
   /// Defensive JSON parsing to tolerate missing or malformed fields.
   factory LeadModel.fromJson(Map<String, dynamic> json) {
-    int _toInt(dynamic value) {
+    int toInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
       if (value is num) return value.toInt();
@@ -52,7 +52,7 @@ class LeadModel {
       return 0;
     }
 
-    String _toString(dynamic value) {
+    String toString(dynamic value) {
       if (value == null) return '';
       try {
         return value.toString();
@@ -62,23 +62,23 @@ class LeadModel {
     }
 
     final model = LeadModel(
-      id: _toInt(json['id']),
-      leadNumber: _toString(json['lead_number']),
-      name: _toString(json['name']),
-      phone: _toString(json['phone']),
-      email: _toString(json['email']),
-      dob: _toString(json['dob']),
-      gender: _toString(json['gender']),
-      companyName: _toString(json['company_name']),
-      designation: _toString(json['designation']),
-      industryType: _toString(json['industry_type']),
-      source: _toString(json['source']),
-      requirementType: _toString(json['requirement_type']),
-      budgetRange: _toString(json['budget_range']),
-      urgency: _toString(json['urgency']),
-      status: _toString(json['status']),
-      createdAt: _toString(json['created_at']),
-      updatedAt: _toString(json['updated_at']),
+      id: toInt(json['id']),
+      leadNumber: toString(json['lead_number']),
+      name: toString(json['name']),
+      phone: toString(json['phone']),
+      email: toString(json['email']),
+      dob: toString(json['dob']),
+      gender: toString(json['gender']),
+      companyName: toString(json['company_name']),
+      designation: toString(json['designation']),
+      industryType: toString(json['industry_type']),
+      source: toString(json['source']),
+      requirementType: toString(json['requirement_type']),
+      budgetRange: toString(json['budget_range']),
+      urgency: toString(json['urgency']),
+      status: toString(json['status']),
+      createdAt: toString(json['created_at']),
+      updatedAt: toString(json['updated_at']),
     );
 
     if (kDebugMode) {

@@ -26,7 +26,7 @@ class NewMeetingScreen extends StatefulWidget {
   final bool lockPrimaryFields;
 
   const NewMeetingScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
     this.initialMeetingId,
@@ -44,7 +44,7 @@ class NewMeetingScreen extends StatefulWidget {
     this.initialMeetingNotes,
     this.initialAttendees,
     this.lockPrimaryFields = false,
-  }) : super(key: key);
+  });
 
   @override
   State<NewMeetingScreen> createState() => _NewMeetingScreenState();
@@ -53,7 +53,7 @@ class NewMeetingScreen extends StatefulWidget {
 class _NewMeetingScreenState extends State<NewMeetingScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   // Controllers
   final clientNameCtrl = TextEditingController();
@@ -101,8 +101,8 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
     "Rescheduled",
   ];
 
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   void initState() {
@@ -527,11 +527,11 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red, width: 1.6),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A), width: 1.6),
       ),
       suffixIcon: suffixIcon,
     );
@@ -593,7 +593,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
       children: [
         _label(label),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor(
@@ -697,7 +697,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
       children: [
         _label("Lead ID *"),
         DropdownButtonFormField<int>(
-          value: selectedLeadId,
+          initialValue: selectedLeadId,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor(
@@ -731,13 +731,13 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
             padding: const EdgeInsets.only(top: 6),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const Icon(Icons.error_outline, size: 16, color: Color(0xFFEE2D2A)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     "Failed to load leads",
                     style: TextStyle(
-                      color: Colors.red.shade700,
+                      color: const Color(0xFFEE2D2A),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -802,7 +802,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
               return Chip(
                 label: Text(name),
                 onDeleted: () => _removeAttendee(name),
-                deleteIconColor: Colors.red,
+                deleteIconColor: const Color(0xFFEE2D2A),
               );
             }).toList(),
           ),

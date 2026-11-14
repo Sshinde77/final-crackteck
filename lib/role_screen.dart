@@ -1,18 +1,18 @@
-import 'package:final_crackteck/routes/app_routes.dart';
 import 'package:final_crackteck/services/session_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'constants/app_strings.dart';
+import 'constants/app_colors.dart';
 
 class rolesccreen extends StatelessWidget {
   const rolesccreen({super.key});
 
-  static const Color primaryGreen = Color(0xFF0F7A2A);
+  static const Color primaryGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.primarySurface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

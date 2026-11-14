@@ -9,7 +9,10 @@ import '../../services/api_service.dart';
 class ReimbursementDetailScreen extends StatefulWidget {
   final ReimbursementModel reimbursement;
 
-  const ReimbursementDetailScreen({super.key, required this.reimbursement});
+  const ReimbursementDetailScreen({
+    super.key,
+    required this.reimbursement,
+  });
 
   @override
   State<ReimbursementDetailScreen> createState() =>
@@ -149,152 +152,159 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF145A00)),
+                child: CircularProgressIndicator(color: Color(0xFF020F37)),
               )
             : _errorMessage != null && _detail == null
-            ? _DetailErrorState(message: _errorMessage!, onRetry: _fetchDetail)
-            : RefreshIndicator(
-                color: const Color(0xFF145A00),
-                onRefresh: _fetchDetail,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x12000000),
-                            blurRadius: 24,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _currencyFormat.format(detail.amount),
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF111827),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    const Text(
-                                      'Reimbursement Amount',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Color(0xFF6B7280),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                ? _DetailErrorState(
+                    message: _errorMessage!,
+                    onRetry: _fetchDetail,
+                  )
+                : RefreshIndicator(
+                    color: const Color(0xFF020F37),
+                    onRefresh: _fetchDetail,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x12000000),
+                                blurRadius: 24,
+                                offset: Offset(0, 10),
                               ),
-                              _DetailStatusBadge(status: detail.status),
                             ],
                           ),
-                          const SizedBox(height: 20),
-                          _DetailRow(label: 'Reason', value: detail.reason),
-                          const SizedBox(height: 16),
-                          _DetailRow(
-                            label: 'Created Date',
-                            value: _dateFormat.format(detail.createdAt),
-                          ),
-                          if (_errorMessage != null) ...[
-                            const SizedBox(height: 16),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF7ED),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: const Color(0xFFFED7AA),
-                                ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _currencyFormat.format(detail.amount),
+                                          style: const TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF111827),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        const Text(
+                                          'Reimbursement Amount',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF6B7280),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  _DetailStatusBadge(status: detail.status),
+                                ],
                               ),
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF9A3412),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              const SizedBox(height: 20),
+                              _DetailRow(
+                                label: 'Reason',
+                                value: detail.reason,
                               ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x12000000),
-                            blurRadius: 24,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Receipt',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _ReceiptPreview(uri: _resolvedReceiptUri),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton.icon(
-                              onPressed: _downloadReceipt,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF145A00),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
+                              const SizedBox(height: 16),
+                              _DetailRow(
+                                label: 'Created Date',
+                                value: _dateFormat.format(detail.createdAt),
                               ),
-                              icon: const Icon(Icons.download_rounded),
-                              label: const Text(
-                                'Download Receipt',
+                              if (_errorMessage != null) ...[
+                                const SizedBox(height: 16),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF7ED),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: const Color(0xFFFED7AA),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF9A3412),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x12000000),
+                                blurRadius: 24,
+                                offset: Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Receipt',
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
+                                  color: Color(0xFF111827),
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 12),
+                              _ReceiptPreview(uri: _resolvedReceiptUri),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: ElevatedButton.icon(
+                                  onPressed: _downloadReceipt,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF020F37),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.download_rounded),
+                                  label: const Text(
+                                    'Download Receipt',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
       ),
     );
   }
@@ -304,7 +314,10 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({required this.label, required this.value});
+  const _DetailRow({
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +408,9 @@ class _ReceiptPreview extends StatelessWidget {
             return Container(
               color: const Color(0xFFF9FAFB),
               alignment: Alignment.center,
-              child: const CircularProgressIndicator(color: Color(0xFF145A00)),
+              child: const CircularProgressIndicator(
+                color: Color(0xFF020F37),
+              ),
             );
           },
           errorBuilder: (context, error, stackTrace) {
@@ -426,7 +441,10 @@ class _DetailErrorState extends StatelessWidget {
   final String message;
   final Future<void> Function() onRetry;
 
-  const _DetailErrorState({required this.message, required this.onRetry});
+  const _DetailErrorState({
+    required this.message,
+    required this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -446,7 +464,7 @@ class _DetailErrorState extends StatelessWidget {
               child: const Icon(
                 Icons.error_outline_rounded,
                 size: 34,
-                color: Color(0xFFC62828),
+                color: Color(0xFFEE2D2A),
               ),
             ),
             const SizedBox(height: 16),
@@ -462,13 +480,16 @@ class _DetailErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF6B7280),
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF145A00),
+                backgroundColor: const Color(0xFF020F37),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -531,7 +552,7 @@ class _DetailStatusStyle {
       case ReimbursementStatus.rejected:
         return const _DetailStatusStyle(
           backgroundColor: Color(0xFFFDECEC),
-          textColor: Color(0xFFC62828),
+          textColor: Color(0xFFEE2D2A),
         );
     }
   }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_strings.dart';
@@ -19,6 +18,16 @@ class NavigationService {
   static bool _isNavigatingToAuthRoot = false;
 
   static String? get currentRouteName => _currentRouteName;
+
+  /// Routes where an empty token is expected while the user is completing
+  /// authentication. A lifecycle resume must not interrupt these flows.
+  static bool isAuthenticationFlowRoute(String? routeName) {
+    return routeName == AppRoutes.splash ||
+        routeName == AppRoutes.roleSelection ||
+        routeName == AppRoutes.login ||
+        routeName == AppRoutes.otpVerification ||
+        routeName == AppRoutes.signUp;
+  }
 
   @visibleForTesting
   static void resetForTesting() {

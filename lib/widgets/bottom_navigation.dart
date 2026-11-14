@@ -37,7 +37,7 @@ class CrackteckBottomSwitcher extends StatelessWidget {
     required this.onFollowUp,
     required this.onMeeting,
     required this.onQuotation,
-    this.activeColor = const Color(0xFF145A00),
+    this.activeColor = const Color(0xFF020F37),
     this.inactiveColor = const Color(0xFFB5B5B5),
   });
 
@@ -116,7 +116,7 @@ class _MainNavBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, -6),
           ),
@@ -190,7 +190,7 @@ class _MoreNavBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, -6),
           ),

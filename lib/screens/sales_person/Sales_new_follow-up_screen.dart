@@ -22,7 +22,7 @@ class NewFollowUpScreen extends StatefulWidget {
   final String? initialFollowUpStatus;
 
   const NewFollowUpScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
     this.isEdit = false,
@@ -36,7 +36,7 @@ class NewFollowUpScreen extends StatefulWidget {
     this.initialFollowUpTime,
     this.initialRemarks,
     this.initialFollowUpStatus,
-  }) : super(key: key);
+  });
   @override
   State<NewFollowUpScreen> createState() => _NewFollowUpScreenState();
 }
@@ -44,7 +44,7 @@ class NewFollowUpScreen extends StatefulWidget {
 class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _moreOpen = false;
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   // Controllers
   final contactCtrl = TextEditingController();
@@ -73,8 +73,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   String? _selectedStatus = 'pending';
 
   // Theme-ish colors similar to your UI
-  static const Color midGreen = Color(0xFF1F8B00);
-  static const Color darkGreen = Color(0xFF145A00);
+  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = Color(0xFF020F37);
 
   @override
   void initState() {
@@ -545,11 +545,11 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red, width: 1.6),
+        borderSide: const BorderSide(color: Color(0xFFEE2D2A), width: 1.6),
       ),
       prefixIcon: prefixIcon,
       prefixIconConstraints: const BoxConstraints(minWidth: 52),
@@ -611,7 +611,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       children: [
         _label("Lead ID"),
         DropdownButtonFormField<int>(
-          value: selectedLeadId,
+          initialValue: selectedLeadId,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor("Select lead ID"),
@@ -649,13 +649,13 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
             padding: const EdgeInsets.only(top: 6),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const Icon(Icons.error_outline, size: 16, color: Color(0xFFEE2D2A)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     "Failed to load leads",
                     style: TextStyle(
-                      color: Colors.red.shade700,
+                      color: const Color(0xFFEE2D2A),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -679,7 +679,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       children: [
         _label("Status"),
         DropdownButtonFormField<String>(
-          value: _selectedStatus,
+          initialValue: _selectedStatus,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: darkGreen),
           decoration: _decor("Select status"),

@@ -5,12 +5,13 @@ class DeliveryNotificationScreen extends StatelessWidget {
   final String roleName;
 
   const DeliveryNotificationScreen({
-    Key? key,
+    super.key,
     required this.roleId,
     required this.roleName,
-  }) : super(key: key);
 
-  static const Color green = Color(0xFF1E7C10);
+  });
+
+  static const Color green = Color(0xFF020F37);
   static const Color lightGreen = Color(0xFFE6FFE1);
 
   @override
@@ -108,7 +109,7 @@ class _NewOrderCard extends StatelessWidget {
 
   const _NewOrderCard({required this.onViewOrder});
 
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
   static const Color lightGreen = Color(0xFFE6FFE1);
 
   @override
@@ -149,7 +150,7 @@ class _NewOrderCard extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: Colors.red,
+                    color: Color(0xFFEE2D2A),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -246,7 +247,7 @@ class _SimpleNotificationCard extends StatelessWidget {
     this.trailing,
   });
 
-  static const Color green = Color(0xFF1E7C10);
+  static const Color green = Color(0xFF020F37);
 
   @override
   Widget build(BuildContext context) {
