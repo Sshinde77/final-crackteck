@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_strings.dart';
 
-
 /// Show error dialog with cancel and signup options
 Future<bool?> showPhoneNotFoundDialog({
   required BuildContext context,
@@ -15,9 +14,7 @@ Future<bool?> showPhoneNotFoundDialog({
     builder: (BuildContext context) {
       return AlertDialog(
         backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Error',
           style: TextStyle(
@@ -28,10 +25,7 @@ Future<bool?> showPhoneNotFoundDialog({
         ),
         content: const Text(
           AppStrings.phoneNotFound,
-          style: TextStyle(
-            color: AppColors.black,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: AppColors.black, fontSize: 16),
         ),
         actions: [
           // Cancel Button
@@ -78,18 +72,13 @@ Future<bool?> showPhoneNotFoundDialog({
 }
 
 /// Show generic error dialog
-void showErrorDialog({
-  required BuildContext context,
-  required String message,
-}) {
+void showErrorDialog({required BuildContext context, required String message}) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
         backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Error',
           style: TextStyle(
@@ -100,10 +89,7 @@ void showErrorDialog({
         ),
         content: Text(
           message,
-          style: const TextStyle(
-            color: AppColors.black,
-            fontSize: 16,
-          ),
+          style: const TextStyle(color: AppColors.black, fontSize: 16),
         ),
         actions: [
           TextButton(
@@ -124,4 +110,3 @@ void showErrorDialog({
     },
   );
 }
-

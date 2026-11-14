@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum FieldExecutiveProductServiceStatus {
-  incomplete,
-  completed,
-}
+enum FieldExecutiveProductServiceStatus { incomplete, completed }
 
 class FieldExecutiveProductService {
   final String title;
@@ -64,8 +61,7 @@ class FieldExecutiveProductServicesController extends ChangeNotifier {
     ]);
   }
 
-  List<FieldExecutiveProductService> get items =>
-      List.unmodifiable(_items);
+  List<FieldExecutiveProductService> get items => List.unmodifiable(_items);
 
   void replaceItems(
     List<FieldExecutiveProductService> nextItems, {
@@ -113,9 +109,11 @@ class FieldExecutiveProductServicesController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get hasIncomplete =>
-      _items.any((item) => item.status == FieldExecutiveProductServiceStatus.incomplete);
+  bool get hasIncomplete => _items.any(
+    (item) => item.status == FieldExecutiveProductServiceStatus.incomplete,
+  );
 
-  bool get allCompleted =>
-      _items.every((item) => item.status == FieldExecutiveProductServiceStatus.completed);
+  bool get allCompleted => _items.every(
+    (item) => item.status == FieldExecutiveProductServiceStatus.completed,
+  );
 }

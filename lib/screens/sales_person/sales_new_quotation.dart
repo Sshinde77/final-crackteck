@@ -132,12 +132,16 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
     final firstDayOfFollowingMonth = normalizedMonth == 12
         ? DateTime(normalizedYear + 1, 1, 1)
         : DateTime(normalizedYear, normalizedMonth + 1, 1);
-    final lastDayOfTargetMonth =
-        firstDayOfFollowingMonth.subtract(const Duration(days: 1)).day;
+    final lastDayOfTargetMonth = firstDayOfFollowingMonth
+        .subtract(const Duration(days: 1))
+        .day;
     final normalizedDay = startDate.day.clamp(1, lastDayOfTargetMonth);
 
-    return DateTime(normalizedYear, normalizedMonth, normalizedDay)
-        .subtract(const Duration(days: 1));
+    return DateTime(
+      normalizedYear,
+      normalizedMonth,
+      normalizedDay,
+    ).subtract(const Duration(days: 1));
   }
 
   Future<void> _loadLeadOptions() async {
@@ -152,7 +156,11 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       int lastPage = 1;
 
       do {
-        final result = await ApiService.fetchLeads('', widget.roleId, page: page);
+        final result = await ApiService.fetchLeads(
+          '',
+          widget.roleId,
+          page: page,
+        );
         final data = result['data'];
         if (data is List) {
           for (final item in data) {
@@ -284,7 +292,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
     final userId = await SecureStorageService.getUserId();
     if (userId == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Authentication error. Please log in again.')),
+        const SnackBar(
+          content: Text('Authentication error. Please log in again.'),
+        ),
       );
       return;
     }
@@ -317,7 +327,10 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
     try {
       final selectedPlan = _selectedAmcPlan();
       final planDurationMonths = _asInt(selectedPlan?['duration']);
-      final planEndDate = _calculatePlanEndDate(_planStartDate!, planDurationMonths);
+      final planEndDate = _calculatePlanEndDate(
+        _planStartDate!,
+        planDurationMonths,
+      );
       final totalAmount = _asDouble(
         selectedPlan?['total_cost'] ?? selectedPlan?['total_amount'],
       );
@@ -356,9 +369,7 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       );
 
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(response.message ?? 'Quotation submitted'),
-        ),
+        SnackBar(content: Text(response.message ?? 'Quotation submitted')),
       );
 
       if (response.success && mounted) {
@@ -477,7 +488,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
               ),
             );
           }).toList(),
-          onChanged: _leadsLoading ? null : (value) => setState(() => _selectedLeadId = value),
+          onChanged: _leadsLoading
+              ? null
+              : (value) => setState(() => _selectedLeadId = value),
           validator: (v) => v == null ? 'Please select lead' : null,
         ),
         if (_leadsLoading)
@@ -502,7 +515,10 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                     ),
                   ),
                 ),
-                TextButton(onPressed: _loadLeadOptions, child: const Text('Retry')),
+                TextButton(
+                  onPressed: _loadLeadOptions,
+                  child: const Text('Retry'),
+                ),
               ],
             ),
           ),
@@ -541,7 +557,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
               ),
             );
           }).toList(),
-          onChanged: _amcLoading ? null : (value) => setState(() => _selectedAmcPlanId = value),
+          onChanged: _amcLoading
+              ? null
+              : (value) => setState(() => _selectedAmcPlanId = value),
           validator: (v) => v == null ? 'Please select AMC plan' : null,
         ),
         if (_amcLoading)
@@ -566,7 +584,10 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                     ),
                   ),
                 ),
-                TextButton(onPressed: _loadAmcPlans, child: const Text('Retry')),
+                TextButton(
+                  onPressed: _loadAmcPlans,
+                  child: const Text('Retry'),
+                ),
               ],
             ),
           ),
@@ -599,9 +620,8 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
             );
           }).toList(),
           onChanged: (value) => setState(() => _priorityLevel = value),
-          validator: (v) => (v == null || v.trim().isEmpty)
-              ? 'Please select priority'
-              : null,
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? 'Please select priority' : null,
         ),
         const SizedBox(height: 12),
       ],
@@ -644,12 +664,12 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-           child: Form(
-             key: _formKey,
-             autovalidateMode: _showValidationErrors
-                 ? AutovalidateMode.onUserInteraction
-                 : AutovalidateMode.disabled,
-             child: Column(
+          child: Form(
+            key: _formKey,
+            autovalidateMode: _showValidationErrors
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _sectionTitle('Quotation Details'),
@@ -664,8 +684,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                     onSelected: (value) => _quotationDate = value,
                   ),
                   suffixIcon: const Icon(Icons.calendar_month_outlined),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Select quotation date' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Select quotation date'
+                      : null,
                 ),
                 _textField(
                   label: 'Expiry Date',
@@ -677,28 +698,32 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                     onSelected: (value) => _expiryDate = value,
                   ),
                   suffixIcon: const Icon(Icons.calendar_month_outlined),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Select expiry date' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Select expiry date'
+                      : null,
                 ),
                 const SizedBox(height: 8),
                 _sectionTitle('Product Details'),
                 _textField(
                   label: 'Product Name',
                   controller: _productNameCtrl,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter product name' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter product name'
+                      : null,
                 ),
                 _textField(
                   label: 'Product Type',
                   controller: _productTypeCtrl,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter product type' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter product type'
+                      : null,
                 ),
                 _textField(
                   label: 'Model No',
                   controller: _modelNoCtrl,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter model number' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter model number'
+                      : null,
                 ),
                 _textField(
                   label: 'HSN',
@@ -716,8 +741,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                     onSelected: (value) => _purchaseDate = value,
                   ),
                   suffixIcon: const Icon(Icons.calendar_month_outlined),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Select purchase date' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Select purchase date'
+                      : null,
                 ),
                 _textField(
                   label: 'Brand',
@@ -729,8 +755,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                   label: 'Description',
                   controller: _descriptionCtrl,
                   maxLines: 3,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter description' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter description'
+                      : null,
                 ),
                 _textField(
                   label: 'SKU',
@@ -770,7 +797,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                           child: Text(
                             _selectedProductImage == null
                                 ? 'Select product image'
-                                : _selectedProductImage!.path.split(Platform.pathSeparator).last,
+                                : _selectedProductImage!.path
+                                      .split(Platform.pathSeparator)
+                                      .last,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
@@ -793,8 +822,9 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                     onSelected: (value) => _planStartDate = value,
                   ),
                   suffixIcon: const Icon(Icons.calendar_month_outlined),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Select plan start date' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Select plan start date'
+                      : null,
                 ),
                 _priorityDropdown(),
                 _textField(

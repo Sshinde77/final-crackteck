@@ -42,7 +42,8 @@ class DeliveryProductDetailScreen extends StatefulWidget {
       _DeliveryProductDetailScreenState();
 }
 
-class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScreen> {
+class _DeliveryProductDetailScreenState
+    extends State<DeliveryProductDetailScreen> {
   static const Color _pageBackground = Color(0xFFF3F3F3);
   static const Color _cardBorder = Color(0xFFE0E0E0);
   static const Color _dangerRed = Color(0xFFD30E0E);
@@ -55,7 +56,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   Map<String, dynamic>? _detail;
   ReturnOrderDetailModel? _returnOrderDetail;
 
-  @override 
+  @override
   void initState() {
     super.initState();
     _fetchDetails();
@@ -155,27 +156,18 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       'customer_address': customerAddress,
       'shipping_address': shippingAddress,
       'primary_warehouse': primaryWarehouse,
-      'request_type': _firstNonEmpty(
-        <dynamic>[
-          payload['request_type'],
-          serviceRequest['request_type'],
-          if (_isOrderBasedDeliveryType) _normalizedDeliveryType,
-        ],
-        fallback: '',
-      ),
-      'request_id': _firstNonEmpty(
-        <dynamic>[
-          serviceRequest['request_id'],
-          payload['request_id'],
-          payload['order_number'],
-          payload['id'],
-        ],
-        fallback: '',
-      ),
-      'id': _firstNonEmpty(
-        <dynamic>[payload['id']],
-        fallback: '',
-      ),
+      'request_type': _firstNonEmpty(<dynamic>[
+        payload['request_type'],
+        serviceRequest['request_type'],
+        if (_isOrderBasedDeliveryType) _normalizedDeliveryType,
+      ], fallback: ''),
+      'request_id': _firstNonEmpty(<dynamic>[
+        serviceRequest['request_id'],
+        payload['request_id'],
+        payload['order_number'],
+        payload['id'],
+      ], fallback: ''),
+      'id': _firstNonEmpty(<dynamic>[payload['id']], fallback: ''),
     };
   }
 
@@ -297,7 +289,10 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         normalized.toLowerCase() != 'null';
   }
 
-  String _formatAddress(Map<String, dynamic> source, {String fallback = 'N/A'}) {
+  String _formatAddress(
+    Map<String, dynamic> source, {
+    String fallback = 'N/A',
+  }) {
     final parts = <String>[
       _asText(source['name']),
       _asText(source['branch_name']),
@@ -344,43 +339,35 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       _mapFrom(_detailSafe['customer_address']);
 
   String get _displayRequestId => _normalizeRequestId(
-        _firstNonEmpty(
-          <dynamic>[
-            _typedReturnOrderDetail?.orderNumber,
-            _typedReturnOrderDetail?.requestId,
-            _typedReturnOrderDetail?.id,
-            _detailSafe['request_id'],
-            _detailSafe['id'],
-            widget.requestId,
-            widget.deliveryId,
-          ],
-        ),
-      );
+    _firstNonEmpty(<dynamic>[
+      _typedReturnOrderDetail?.orderNumber,
+      _typedReturnOrderDetail?.requestId,
+      _typedReturnOrderDetail?.id,
+      _detailSafe['request_id'],
+      _detailSafe['id'],
+      widget.requestId,
+      widget.deliveryId,
+    ]),
+  );
 
-  String get _displayHeaderId => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.orderNumber,
-          _typedReturnOrderDetail?.requestId,
-          _typedReturnOrderDetail?.id,
-          if (_isOrderBasedDeliveryType)
-            _payload['order_number'],
-          _detailSafe['request_id'],
-          widget.requestId,
-          widget.deliveryId,
-        ],
-      );
+  String get _displayHeaderId => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.orderNumber,
+    _typedReturnOrderDetail?.requestId,
+    _typedReturnOrderDetail?.id,
+    if (_isOrderBasedDeliveryType) _payload['order_number'],
+    _detailSafe['request_id'],
+    widget.requestId,
+    widget.deliveryId,
+  ]);
 
   String get _displayImageUrl {
-    final raw = _firstNonEmpty(
-      <dynamic>[
-        _typedReturnOrderDetail?.product.imageUrl,
-        _mapFrom(_product['product_details'])['main_product_image'],
-        _product['main_product_image'],
-        _product['product_image'],
-        _product['image'],
-      ],
-      fallback: '',
-    );
+    final raw = _firstNonEmpty(<dynamic>[
+      _typedReturnOrderDetail?.product.imageUrl,
+      _mapFrom(_product['product_details'])['main_product_image'],
+      _product['main_product_image'],
+      _product['product_image'],
+      _product['image'],
+    ], fallback: '');
 
     if (raw.isEmpty) return '';
     if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
@@ -388,104 +375,88 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     return '${ApiConstants.siteBaseUrl}/$raw';
   }
 
-  String get _displayProductName => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.product.productName,
-          (_isPartDeliveryType || _isOrderBasedDeliveryType)
-              ? _product['product_name']
-              : _product['name'],
-          _mapFrom(_product['product_details'])['product_name'],
-          _product['name'],
-          widget.productName,
-        ],
-      );
+  String get _displayProductName => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.product.productName,
+    (_isPartDeliveryType || _isOrderBasedDeliveryType)
+        ? _product['product_name']
+        : _product['name'],
+    _mapFrom(_product['product_details'])['product_name'],
+    _product['name'],
+    widget.productName,
+  ]);
 
-  String get _displayModelNo => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.product.modelNo,
-          _mapFrom(_product['product_details'])['model_no'],
-          _product['model_no'],
-          _product['model'],
-        ],
-      );
+  String get _displayModelNo => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.product.modelNo,
+    _mapFrom(_product['product_details'])['model_no'],
+    _product['model_no'],
+    _product['model'],
+  ]);
 
-  String get _displayMacAddress => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.product.macAddress,
-          _product['mac_address'],
-          _product['macAddress'],
-          _mapFrom(_product['product_details'])['mac_address'],
-          _mapFrom(_product['product_details'])['macAddress'],
-        ],
-        fallback: '',
-      );
+  String get _displayMacAddress => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.product.macAddress,
+    _product['mac_address'],
+    _product['macAddress'],
+    _mapFrom(_product['product_details'])['mac_address'],
+    _mapFrom(_product['product_details'])['macAddress'],
+  ], fallback: '');
 
   String get _displayPriceOrCharge => _normalizePrice(
-        _firstNonEmpty(
-          <dynamic>[
-            _typedReturnOrderDetail?.totalAmount,
-            _typedReturnOrderDetail?.product.unitPrice,
-            _normalizedDeliveryType == DeliveryRequestTypes.productDelivery
-                ? _payload['total_amount']
-                : _isPartDeliveryType
-                ? _product['final_price']
-                : _product['service_charge'],
-            _product['line_total'],
-            _payload['final_price'],
-            _payload['total_amount'],
-          ],
-        ),
-      );
+    _firstNonEmpty(<dynamic>[
+      _typedReturnOrderDetail?.totalAmount,
+      _typedReturnOrderDetail?.product.unitPrice,
+      _normalizedDeliveryType == DeliveryRequestTypes.productDelivery
+          ? _payload['total_amount']
+          : _isPartDeliveryType
+          ? _product['final_price']
+          : _product['service_charge'],
+      _product['line_total'],
+      _payload['final_price'],
+      _payload['total_amount'],
+    ]),
+  );
 
-  String get _displayQuantity => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.quantity,
-          _product['quantity'],
-          _payload['requested_quantity'],
-          _payload['quantity'],
-          _product['requested_quantity'],
-          _product['qty'],
-          _payload['total_items'],
-        ],
-        fallback: '1',
-      );
+  String get _displayQuantity => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.quantity,
+    _product['quantity'],
+    _payload['requested_quantity'],
+    _payload['quantity'],
+    _product['requested_quantity'],
+    _product['qty'],
+    _payload['total_items'],
+  ], fallback: '1');
 
-  String get _displayCustomerName => _joinNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customer.firstName,
-          _typedReturnOrderDetail?.customer.lastName,
-          _typedReturnOrderDetail?.customer.fullName,
-          _customer['first_name'],
-          _customer['last_name'],
-          _customer['name'],
-          _customer['full_name'],
-          _customer['customer_name'],
-          widget.customerName,
-        ],
-      );
+  String get _displayCustomerName => _joinNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customer.firstName,
+    _typedReturnOrderDetail?.customer.lastName,
+    _typedReturnOrderDetail?.customer.fullName,
+    _customer['first_name'],
+    _customer['last_name'],
+    _customer['name'],
+    _customer['full_name'],
+    _customer['customer_name'],
+    widget.customerName,
+  ]);
 
-  String get _displayCustomerPhone => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customer.phone,
-          _customer['phone'],
-          _customer['phone_number'],
-          _customer['mobile'],
-          _customer['mobile_number'],
-          _customer['contact_number'],
-          widget.customerPhone,
-        ],
-      );
+  String get _displayCustomerPhone => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customer.phone,
+    _customer['phone'],
+    _customer['phone_number'],
+    _customer['mobile'],
+    _customer['mobile_number'],
+    _customer['contact_number'],
+    widget.customerPhone,
+  ]);
 
-  String get _displayCustomerEmail => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customer.email,
-          _customer['email'],
-          _customer['email_id'],
-        ],
-      );
+  String get _displayCustomerEmail => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customer.email,
+    _customer['email'],
+    _customer['email_id'],
+  ]);
 
-  Map<String, dynamic> get _shippingAddress =>
-      _firstMap(<dynamic>[_detailSafe['shipping_address'], _payload['shipping_address']]);
+  Map<String, dynamic> get _shippingAddress => _firstMap(<dynamic>[
+    _detailSafe['shipping_address'],
+    _payload['shipping_address'],
+  ]);
   Map<String, dynamic> get _warehouseDetails {
     final primaryWarehouse = _mapFrom(_detailSafe['primary_warehouse']);
     if (primaryWarehouse.isNotEmpty) return primaryWarehouse;
@@ -507,54 +478,42 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   }
 
   Map<String, dynamic> get _addressDetail => _firstMap(<dynamic>[
-        _payload['address_detail'],
-        _serviceRequest['address_detail'],
-        _detailSafe['address_detail'],
-      ]);
+    _payload['address_detail'],
+    _serviceRequest['address_detail'],
+    _detailSafe['address_detail'],
+  ]);
 
-  String get _displayWarehouseName => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.warehouseAddress.name,
-          _typedReturnOrderDetail?.warehouseAddress.branchName,
-          _warehouseDetails['name'],
-          _warehouseDetails['branch_name'],
-        ],
-        fallback: 'Warehouse',
-      );
+  String get _displayWarehouseName => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.warehouseAddress.name,
+    _typedReturnOrderDetail?.warehouseAddress.branchName,
+    _warehouseDetails['name'],
+    _warehouseDetails['branch_name'],
+  ], fallback: 'Warehouse');
 
-  String get _displayBranchName => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.shippingAddress.branchName,
-          _typedReturnOrderDetail?.customerAddress.branchName,
-          _shippingAddress['branch_name'],
-          _customerAddress['branch_name'],
-          _payload['branch_name'],
-          widget.location,
-        ],
-        fallback: 'Warehouse',
-      );
+  String get _displayBranchName => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.shippingAddress.branchName,
+    _typedReturnOrderDetail?.customerAddress.branchName,
+    _shippingAddress['branch_name'],
+    _customerAddress['branch_name'],
+    _payload['branch_name'],
+    widget.location,
+  ], fallback: 'Warehouse');
 
   String get _displayAddressLine {
-    final address1 = _firstNonEmpty(
-      <dynamic>[
-        _typedReturnOrderDetail?.customerAddress.address1,
-        _typedReturnOrderDetail?.shippingAddress.address1,
-        _shippingAddress['address1'],
-        _customerAddress['address1'],
-        _customerAddress['address_1'],
-      ],
-      fallback: '',
-    );
-    final address2 = _firstNonEmpty(
-      <dynamic>[
-        _typedReturnOrderDetail?.customerAddress.address2,
-        _typedReturnOrderDetail?.shippingAddress.address2,
-        _shippingAddress['address2'],
-        _customerAddress['address2'],
-        _customerAddress['address_2'],
-      ],
-      fallback: '',
-    );
+    final address1 = _firstNonEmpty(<dynamic>[
+      _typedReturnOrderDetail?.customerAddress.address1,
+      _typedReturnOrderDetail?.shippingAddress.address1,
+      _shippingAddress['address1'],
+      _customerAddress['address1'],
+      _customerAddress['address_1'],
+    ], fallback: '');
+    final address2 = _firstNonEmpty(<dynamic>[
+      _typedReturnOrderDetail?.customerAddress.address2,
+      _typedReturnOrderDetail?.shippingAddress.address2,
+      _shippingAddress['address2'],
+      _customerAddress['address2'],
+      _customerAddress['address_2'],
+    ], fallback: '');
     final fromApi = _joinNonEmpty(
       <dynamic>[address1, address2],
       separator: ', ',
@@ -569,54 +528,43 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     return 'N/A';
   }
 
-  String get _displayCity => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customerAddress.city,
-          _typedReturnOrderDetail?.shippingAddress.city,
-          _shippingAddress['city'],
-          _customerAddress['city'],
-        ],
-      );
+  String get _displayCity => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customerAddress.city,
+    _typedReturnOrderDetail?.shippingAddress.city,
+    _shippingAddress['city'],
+    _customerAddress['city'],
+  ]);
 
-  String get _displayState => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customerAddress.state,
-          _typedReturnOrderDetail?.shippingAddress.state,
-          _shippingAddress['state'],
-          _customerAddress['state'],
-        ],
-      );
+  String get _displayState => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customerAddress.state,
+    _typedReturnOrderDetail?.shippingAddress.state,
+    _shippingAddress['state'],
+    _customerAddress['state'],
+  ]);
 
-  String get _displayCountry => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customerAddress.country,
-          _typedReturnOrderDetail?.shippingAddress.country,
-          _shippingAddress['country'],
-          _customerAddress['country'],
-        ],
-      );
+  String get _displayCountry => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customerAddress.country,
+    _typedReturnOrderDetail?.shippingAddress.country,
+    _shippingAddress['country'],
+    _customerAddress['country'],
+  ]);
 
-  String get _displayPincode => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.customerAddress.pincode,
-          _typedReturnOrderDetail?.shippingAddress.pincode,
-          _shippingAddress['pincode'],
-          _customerAddress['pincode'],
-          _customerAddress['pin_code'],
-        ],
-      );
+  String get _displayPincode => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.customerAddress.pincode,
+    _typedReturnOrderDetail?.shippingAddress.pincode,
+    _shippingAddress['pincode'],
+    _customerAddress['pincode'],
+    _customerAddress['pin_code'],
+  ]);
 
   String get _displayFromLocation {
     final returnOrderDetail = _typedReturnOrderDetail;
     if (returnOrderDetail != null) {
-      final value = _firstNonEmpty(
-        <dynamic>[
-          returnOrderDetail.warehouseAddress.formatted,
-          returnOrderDetail.warehouseAddress.primaryLabel,
-          widget.location,
-        ],
-        fallback: 'Warehouse',
-      );
+      final value = _firstNonEmpty(<dynamic>[
+        returnOrderDetail.warehouseAddress.formatted,
+        returnOrderDetail.warehouseAddress.primaryLabel,
+        widget.location,
+      ], fallback: 'Warehouse');
       return value;
     }
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
@@ -643,14 +591,11 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayToLocation {
     final returnOrderDetail = _typedReturnOrderDetail;
     if (returnOrderDetail != null) {
-      return _firstNonEmpty(
-        <dynamic>[
-          returnOrderDetail.customerAddress.formatted,
-          returnOrderDetail.shippingAddress.formatted,
-          widget.customerAddress,
-        ],
-        fallback: 'Customer address not available',
-      );
+      return _firstNonEmpty(<dynamic>[
+        returnOrderDetail.customerAddress.formatted,
+        returnOrderDetail.shippingAddress.formatted,
+        widget.customerAddress,
+      ], fallback: 'Customer address not available');
     }
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(
@@ -696,14 +641,11 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
   String get _displayCustomerAddressForNavigation {
     final returnOrderDetail = _typedReturnOrderDetail;
     if (returnOrderDetail != null) {
-      return _firstNonEmpty(
-        <dynamic>[
-          returnOrderDetail.customerAddress.formatted,
-          returnOrderDetail.shippingAddress.formatted,
-          widget.customerAddress,
-        ],
-        fallback: 'N/A',
-      );
+      return _firstNonEmpty(<dynamic>[
+        returnOrderDetail.customerAddress.formatted,
+        returnOrderDetail.shippingAddress.formatted,
+        widget.customerAddress,
+      ], fallback: 'N/A');
     }
     if (_normalizedDeliveryType == DeliveryRequestTypes.productDelivery) {
       return _formatAddress(_shippingAddress, fallback: 'N/A');
@@ -722,30 +664,24 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         : 'N/A';
   }
 
-  String get _acceptId => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.id,
-          _detailSafe['id'],
-          widget.deliveryId,
-        ],
-        fallback: '',
-      );
+  String get _acceptId => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.id,
+    _detailSafe['id'],
+    widget.deliveryId,
+  ], fallback: '');
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  String get _currentStatus => _firstNonEmpty(
-        <dynamic>[
-          _typedReturnOrderDetail?.status,
-          _payload['status'],
-          _payload['order_status'],
-          widget.status,
-        ],
-        fallback: '',
-      );
+  String get _currentStatus => _firstNonEmpty(<dynamic>[
+    _typedReturnOrderDetail?.status,
+    _payload['status'],
+    _payload['order_status'],
+    widget.status,
+  ], fallback: '');
 
   String get _statusKey =>
       _currentStatus.trim().toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
@@ -796,8 +732,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
       _isAccepting = true;
     });
 
-    final response =
-        _normalizedDeliveryType == DeliveryRequestTypes.returnOrder
+    final response = _normalizedDeliveryType == DeliveryRequestTypes.returnOrder
         ? await ApiService.acceptReturnOrder(
             deliveryId: acceptId,
             roleId: widget.roleId,
@@ -818,8 +753,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final message = responseMessage.isNotEmpty
         ? responseMessage
         : (response.success
-            ? 'Delivery request accepted successfully'
-            : 'Failed to accept delivery request');
+              ? 'Delivery request accepted successfully'
+              : 'Failed to accept delivery request');
     _showSnack(message);
 
     if (!response.success) return;
@@ -867,10 +802,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
           ),
         ],
       ),
-      body: SafeArea(
-        top: false,
-        child: _buildBody(),
-      ),
+      body: SafeArea(top: false, child: _buildBody()),
       bottomNavigationBar: showActionButton
           ? SafeArea(
               top: false,
@@ -887,11 +819,11 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
                   child: ElevatedButton(
                     onPressed: _isAccepting ? null : _onAcceptPressed,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DeliveryProductDetailScreen._primaryGreen,
-                      disabledBackgroundColor:
-                          DeliveryProductDetailScreen._primaryGreen.withValues(
-                        alpha: 0.75,
-                      ),
+                      backgroundColor:
+                          DeliveryProductDetailScreen._primaryGreen,
+                      disabledBackgroundColor: DeliveryProductDetailScreen
+                          ._primaryGreen
+                          .withValues(alpha: 0.75),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -984,7 +916,8 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
             children: [
               Expanded(
                 child: _summaryPair(
-                  label: _normalizedDeliveryType ==
+                  label:
+                      _normalizedDeliveryType ==
                           DeliveryRequestTypes.productDelivery
                       ? 'Order No'
                       : 'Request ID',
@@ -1002,17 +935,11 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
             ),
           ),
           if (_hasVisibleValue(fromLocation))
-            _locationRow(
-              label: 'From:',
-              value: fromLocation,
-            ),
+            _locationRow(label: 'From:', value: fromLocation),
           if (_hasVisibleValue(fromLocation) && _hasVisibleValue(toLocation))
             SizedBox(height: _isCompactLayout ? 14 : 18),
           if (_hasVisibleValue(toLocation))
-            _locationRow(
-              label: 'To:',
-              value: toLocation,
-            ),
+            _locationRow(label: 'To:', value: toLocation),
         ],
       ),
     );
@@ -1024,8 +951,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     bool alignEnd = false,
   }) {
     return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         if (label.isNotEmpty)
           Text(
@@ -1036,8 +964,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
               fontWeight: FontWeight.w700,
             ),
           ),
-        if (label.isEmpty)
-        SizedBox(height: _isCompactLayout ? 2 : 4),
+        if (label.isEmpty) SizedBox(height: _isCompactLayout ? 2 : 4),
         const SizedBox(height: 2),
         Text(
           value,
@@ -1052,10 +979,7 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     );
   }
 
-  Widget _locationRow({
-    required String label,
-    required String value,
-  }) {
+  Widget _locationRow({required String label, required String value}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1108,8 +1032,9 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
         builder: (context, constraints) {
           final stackProductMeta = constraints.maxWidth < 360;
           final qtyWidget = Column(
-            crossAxisAlignment:
-                stackProductMeta ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+            crossAxisAlignment: stackProductMeta
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.end,
             children: [
               const Text(
                 'Qty',
@@ -1332,39 +1257,114 @@ class _DeliveryProductDetailScreenState extends State<DeliveryProductDetailScree
     final productDetails = _mapFrom(_product['product_details']);
     final items = <MapEntry<String, String>>[
       MapEntry('Order No', _displayHeaderId),
-      MapEntry('First Name', _firstNonEmpty(<dynamic>[_customer['first_name']], fallback: '')),
-      MapEntry('Last Name', _firstNonEmpty(<dynamic>[_customer['last_name']], fallback: '')),
+      MapEntry(
+        'First Name',
+        _firstNonEmpty(<dynamic>[_customer['first_name']], fallback: ''),
+      ),
+      MapEntry(
+        'Last Name',
+        _firstNonEmpty(<dynamic>[_customer['last_name']], fallback: ''),
+      ),
       MapEntry('Customer', _displayCustomerName),
       MapEntry('Phone', _displayCustomerPhone),
       MapEntry('Email', _displayCustomerEmail),
-      MapEntry('Shipping Branch', _firstNonEmpty(<dynamic>[_shippingAddress['branch_name']])),
-      MapEntry('Payment Status', _firstNonEmpty(<dynamic>[_payload['payment_status']])),
-      MapEntry('Total Amount', _normalizePrice(_firstNonEmpty(<dynamic>[_payload['total_amount']]))),
-      MapEntry('Unit Price', _normalizePrice(_firstNonEmpty(<dynamic>[_product['unit_price'], _product['line_total']]))),
+      MapEntry(
+        'Shipping Branch',
+        _firstNonEmpty(<dynamic>[_shippingAddress['branch_name']]),
+      ),
+      MapEntry(
+        'Payment Status',
+        _firstNonEmpty(<dynamic>[_payload['payment_status']]),
+      ),
+      MapEntry(
+        'Total Amount',
+        _normalizePrice(_firstNonEmpty(<dynamic>[_payload['total_amount']])),
+      ),
+      MapEntry(
+        'Unit Price',
+        _normalizePrice(
+          _firstNonEmpty(<dynamic>[
+            _product['unit_price'],
+            _product['line_total'],
+          ]),
+        ),
+      ),
       MapEntry('Quantity', _displayQuantity),
       MapEntry('Product Name', _displayProductName),
       MapEntry('Model No', _displayModelNo),
       MapEntry('MAC Address', _displayMacAddress),
-      MapEntry('HSN Code', _firstNonEmpty(<dynamic>[_product['hsn_code'], productDetails['hsn_code']])),
-      MapEntry('Weight', _firstNonEmpty(<dynamic>[_product['weight'], productDetails['weight']])),
-      MapEntry('Dimensions', _firstNonEmpty(<dynamic>[_product['dimensions'], productDetails['dimensions']])),
-      MapEntry('Shipping Time', _firstNonEmpty(<dynamic>[_product['shipping_time'], productDetails['shipping_time']])),
-      MapEntry('Brand Warranty', _firstNonEmpty(<dynamic>[productDetails['brand_warranty']])),
-      MapEntry('COD', _firstNonEmpty(<dynamic>[_product['cod'], productDetails['cod']])),
-      MapEntry('Installation', _firstNonEmpty(<dynamic>[_product['installation'], productDetails['installation']])),
+      MapEntry(
+        'HSN Code',
+        _firstNonEmpty(<dynamic>[
+          _product['hsn_code'],
+          productDetails['hsn_code'],
+        ]),
+      ),
+      MapEntry(
+        'Weight',
+        _firstNonEmpty(<dynamic>[_product['weight'], productDetails['weight']]),
+      ),
+      MapEntry(
+        'Dimensions',
+        _firstNonEmpty(<dynamic>[
+          _product['dimensions'],
+          productDetails['dimensions'],
+        ]),
+      ),
+      MapEntry(
+        'Shipping Time',
+        _firstNonEmpty(<dynamic>[
+          _product['shipping_time'],
+          productDetails['shipping_time'],
+        ]),
+      ),
+      MapEntry(
+        'Brand Warranty',
+        _firstNonEmpty(<dynamic>[productDetails['brand_warranty']]),
+      ),
+      MapEntry(
+        'COD',
+        _firstNonEmpty(<dynamic>[_product['cod'], productDetails['cod']]),
+      ),
+      MapEntry(
+        'Installation',
+        _firstNonEmpty(<dynamic>[
+          _product['installation'],
+          productDetails['installation'],
+        ]),
+      ),
       MapEntry('Warehouse', _displayWarehouseName),
-      MapEntry('Warehouse Code', _firstNonEmpty(<dynamic>[_warehouseDetails['warehouse_code']])),
-      MapEntry('Warehouse Contact', _firstNonEmpty(<dynamic>[_warehouseDetails['phone_number']])),
+      MapEntry(
+        'Warehouse Code',
+        _firstNonEmpty(<dynamic>[_warehouseDetails['warehouse_code']]),
+      ),
+      MapEntry(
+        'Warehouse Contact',
+        _firstNonEmpty(<dynamic>[_warehouseDetails['phone_number']]),
+      ),
       MapEntry('Warehouse Address', _formatAddress(_warehouseDetails)),
       MapEntry(
         'Shipping Address',
         _formatAddress(
-          _firstMap(<dynamic>[_shippingAddress, _addressDetail, _customerAddress]),
+          _firstMap(<dynamic>[
+            _shippingAddress,
+            _addressDetail,
+            _customerAddress,
+          ]),
         ),
       ),
-      MapEntry('Expected Delivery', _firstNonEmpty(<dynamic>[_payload['expected_delivery_date']])),
-      MapEntry('Customer Notes', _firstNonEmpty(<dynamic>[_payload['customer_notes']], fallback: '')),
-      MapEntry('Admin Notes', _firstNonEmpty(<dynamic>[_payload['admin_notes']], fallback: '')),
+      MapEntry(
+        'Expected Delivery',
+        _firstNonEmpty(<dynamic>[_payload['expected_delivery_date']]),
+      ),
+      MapEntry(
+        'Customer Notes',
+        _firstNonEmpty(<dynamic>[_payload['customer_notes']], fallback: ''),
+      ),
+      MapEntry(
+        'Admin Notes',
+        _firstNonEmpty(<dynamic>[_payload['admin_notes']], fallback: ''),
+      ),
     ].where((item) => item.value.isNotEmpty && item.value != 'N/A').toList();
 
     if (items.isEmpty) {
@@ -1524,10 +1524,7 @@ class _DeliveryDetailErrorState extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: DeliveryProductDetailScreen._primaryGreen,
               ),
-              child: const Text(
-                'Retry',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Retry', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -1539,9 +1536,7 @@ class _DeliveryDetailErrorState extends StatelessWidget {
 class _DeliveryDetailEmptyState extends StatelessWidget {
   final VoidCallback onRetry;
 
-  const _DeliveryDetailEmptyState({
-    required this.onRetry,
-  });
+  const _DeliveryDetailEmptyState({required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -1572,10 +1567,7 @@ class _DeliveryDetailEmptyState extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: DeliveryProductDetailScreen._primaryGreen,
               ),
-              child: const Text(
-                'Retry',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Retry', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),

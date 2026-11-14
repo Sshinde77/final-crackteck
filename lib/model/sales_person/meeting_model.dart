@@ -104,7 +104,9 @@ class MeetingModel {
       endTime: toStr(json['end_time'] ?? json['endTime']),
       location: toStr(json['location'] ?? json['meeting_link']),
       attachment: json['attachment'] == null ? null : toStr(json['attachment']),
-      meetAgenda: toStr(json['meetAgenda'] ?? json['meet_agenda'] ?? json['agenda']),
+      meetAgenda: toStr(
+        json['meetAgenda'] ?? json['meet_agenda'] ?? json['agenda'],
+      ),
       followUp: toStr(json['followUp'] ?? json['follow_up']),
       meetingNotes: toStr(json['meeting_notes'] ?? json['notes']),
       attendees: parseAttendees(json['attendees']),

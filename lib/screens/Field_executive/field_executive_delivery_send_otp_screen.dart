@@ -149,10 +149,7 @@ class _FieldExecutiveDeliverySendOtpScreenState
               const SizedBox(height: 16),
               const Text(
                 'Send OTP to continue delivery verification.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.black87),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 14),

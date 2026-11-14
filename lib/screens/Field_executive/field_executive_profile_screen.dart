@@ -68,11 +68,16 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
 
       final firstName = _readString(profile, const ['first_name']);
       final lastName = _readString(profile, const ['last_name']);
-      final fullName = [firstName, lastName].where((part) => part.isNotEmpty).join(' ').trim();
-      final fallbackName = _readString(
-        profile,
-        const ['name', 'full_name', 'user_name', 'username'],
-      );
+      final fullName = [
+        firstName,
+        lastName,
+      ].where((part) => part.isNotEmpty).join(' ').trim();
+      final fallbackName = _readString(profile, const [
+        'name',
+        'full_name',
+        'user_name',
+        'username',
+      ]);
       final resolvedName = fullName.isNotEmpty ? fullName : fallbackName;
 
       if (resolvedName.isEmpty || resolvedName == _displayName) {
@@ -98,16 +103,16 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
         apiCall: () => ApiService.instance.clockIn(roleId: widget.roleId),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(response)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong during clock-in. Please try again.'),
+          content: Text(
+            'Something went wrong during clock-in. Please try again.',
+          ),
         ),
       );
     }
@@ -120,16 +125,16 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
         apiCall: () => ApiService.instance.clockOut(roleId: widget.roleId),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(response)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong during clock-out. Please try again.'),
+          content: Text(
+            'Something went wrong during clock-out. Please try again.',
+          ),
         ),
       );
     }
@@ -158,7 +163,7 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
       },
     );
 
-    if (shouldLogout != true || !mounted) return; 
+    if (shouldLogout != true || !mounted) return;
 
     setState(() => _isLoggingOut = true);
 
@@ -179,14 +184,16 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
       }
 
       await SessionManager.logoutAndNavigate(roleId: widget.roleId);
-      if (!mounted) return; 
+      if (!mounted) return;
       return;
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoggingOut = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong during logout. Please try again.'),
+          content: Text(
+            'Something went wrong during logout. Please try again.',
+          ),
         ),
       );
     }
@@ -259,9 +266,13 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         time: loginTime,
                         bg: const Color(0xFFE9FFE6),
                         iconBg: const Color(0xFF2E7D32),
-                        icon: attendanceProvider.isUpdating ? Icons.sync : Icons.login,
+                        icon: attendanceProvider.isUpdating
+                            ? Icons.sync
+                            : Icons.login,
                         titleColor: const Color(0xFF2E7D32),
-                        onTap: attendanceProvider.canClockIn ? _handleClockIn : null,
+                        onTap: attendanceProvider.canClockIn
+                            ? _handleClockIn
+                            : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -271,9 +282,13 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                         time: logoutTime,
                         bg: const Color(0xFFFFE9E9),
                         iconBg: const Color(0xFFD32F2F),
-                        icon: attendanceProvider.isUpdating ? Icons.sync : Icons.logout,
+                        icon: attendanceProvider.isUpdating
+                            ? Icons.sync
+                            : Icons.logout,
                         titleColor: const Color(0xFFD32F2F),
-                        onTap: attendanceProvider.canClockOut ? _handleClockOut : null,
+                        onTap: attendanceProvider.canClockOut
+                            ? _handleClockOut
+                            : null,
                       ),
                     ),
                   ],
@@ -310,42 +325,54 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              _OptionTile(icon: Icons.event_available, label: "Attendance", onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => field_executive_attendance(
+              _OptionTile(
+                icon: Icons.event_available,
+                label: "Attendance",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => field_executive_attendance(
+                        roleId: widget.roleId,
+                        roleName: widget.roleName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.local_shipping,
+                label: "Pick up request",
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.DeliveryRequestListScreen,
+                    arguments: deliveryrequestlistArguments(
                       roleId: widget.roleId,
                       roleName: widget.roleName,
+                      deliveryType: DeliveryRequestTypes.pickup,
+                      showCompletedOnly: true,
                     ),
-                  ),
-                );
-              },),
+                  );
+                },
+              ),
               const SizedBox(height: 12),
-              _OptionTile(icon: Icons.local_shipping, label: "Pick up request", onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoutes.DeliveryRequestListScreen,
-                  arguments: deliveryrequestlistArguments(
-                    roleId: widget.roleId,
-                    roleName: widget.roleName,
-                    deliveryType: DeliveryRequestTypes.pickup,
-                    showCompletedOnly: true,
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.handyman, label: "Repair part request", onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoutes.DeliveryRequestListScreen,
-                  arguments: deliveryrequestlistArguments(
-                    roleId: widget.roleId,
-                    roleName: widget.roleName,
-                    deliveryType: DeliveryRequestTypes.part,
-                  ),
-                );
-              },),
+              _OptionTile(
+                icon: Icons.handyman,
+                label: "Repair part request",
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.DeliveryRequestListScreen,
+                    arguments: deliveryrequestlistArguments(
+                      roleId: widget.roleId,
+                      roleName: widget.roleName,
+                      deliveryType: DeliveryRequestTypes.part,
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 12),
               _OptionTile(
                 icon: Icons.location_on_outlined,
@@ -363,58 +390,87 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              _OptionTile(icon: Icons.warehouse, label: "Stock in Hand", onTap: ()  {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StockInHandScreen ( roleId: 0, roleName: '', ),
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.privacy_tip_outlined, label: "Privacy policy", onTap: ()  {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => fieldexecutivePrivacyPolicyScreen ( roleId: 0, roleName: '', ),
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.privacy_tip_outlined, label: "Feedbacks ", onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => fieldexecutiveFeedbackScreen ( roleId: 0, roleName: '', ),
-                  ),
-                );
-              },),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.privacy_tip_outlined, label: "Help & Support", onTap: () {}),
-              const SizedBox(height: 12),
-              _OptionTile(icon: Icons.payment_rounded, label: "Payment", onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ComingSoonScreen(
-                      roleId: widget.roleId,
-                      roleName: widget.roleName,
+              _OptionTile(
+                icon: Icons.warehouse,
+                label: "Stock in Hand",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          StockInHandScreen(roleId: 0, roleName: ''),
                     ),
-                  ),
-                );
-              },),
+                  );
+                },
+              ),
               const SizedBox(height: 12),
-              _OptionTile(icon: Icons.payments_outlined, label: "Wallet", onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WalletScreen(
-                      roleId: widget.roleId,
-                      roleName: widget.roleName,
+              _OptionTile(
+                icon: Icons.privacy_tip_outlined,
+                label: "Privacy policy",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => fieldexecutivePrivacyPolicyScreen(
+                        roleId: 0,
+                        roleName: '',
+                      ),
                     ),
-                  ),
-                );
-              },),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.privacy_tip_outlined,
+                label: "Feedbacks ",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          fieldexecutiveFeedbackScreen(roleId: 0, roleName: ''),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.privacy_tip_outlined,
+                label: "Help & Support",
+                onTap: () {},
+              ),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.payment_rounded,
+                label: "Payment",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ComingSoonScreen(
+                        roleId: widget.roleId,
+                        roleName: widget.roleName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _OptionTile(
+                icon: Icons.payments_outlined,
+                label: "Wallet",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WalletScreen(
+                        roleId: widget.roleId,
+                        roleName: widget.roleName,
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 12),
               _OptionTile(
                 icon: Icons.logout,
@@ -562,7 +618,8 @@ class _OptionTile extends StatelessWidget {
                 ),
               ),
             ),
-            trailing ?? const Icon(Icons.arrow_forward, color: Color(0xFF145A00)),
+            trailing ??
+                const Icon(Icons.arrow_forward, color: Color(0xFF145A00)),
           ],
         ),
       ),

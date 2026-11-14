@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -93,8 +93,10 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
       } while (page <= lastPage);
 
       allLeads.sort((a, b) {
-        final aDate = _leadUpdatedAt(a) ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = _leadUpdatedAt(b) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final aDate =
+            _leadUpdatedAt(a) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate =
+            _leadUpdatedAt(b) ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bDate.compareTo(aDate);
       });
 
@@ -380,9 +382,11 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 30),
-          _TodayTaskHeader(onViewAll: () {
-            Navigator.pushNamed(context, AppRoutes.TaskViewAll);
-          }),
+          _TodayTaskHeader(
+            onViewAll: () {
+              Navigator.pushNamed(context, AppRoutes.TaskViewAll);
+            },
+          ),
           const SizedBox(height: 10),
           _TodayTaskList(tasks: provider.tasks, isLoading: provider.loading),
           const SizedBox(height: 16),
@@ -839,7 +843,10 @@ class _LegendDot extends StatelessWidget {
 class _DonutChart extends StatelessWidget {
   final double newLeads, inProgressLeads, wonLeads, lostLeads;
   final int totalLeads;
-  final Color newLeadsColor, inProgressLeadsColor, wonLeadsColor, lostLeadsColor;
+  final Color newLeadsColor,
+      inProgressLeadsColor,
+      wonLeadsColor,
+      lostLeadsColor;
 
   const _DonutChart({
     required this.newLeads,
@@ -907,18 +914,13 @@ class _DonutSegment {
   final double value;
   final Color color;
 
-  const _DonutSegment({
-    required this.value,
-    required this.color,
-  });
+  const _DonutSegment({required this.value, required this.color});
 }
 
 class _DonutPainter extends CustomPainter {
   final List<_DonutSegment> segments;
 
-  _DonutPainter({
-    required this.segments,
-  });
+  _DonutPainter({required this.segments});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -963,22 +965,19 @@ class _DonutPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DonutPainter oldDelegate) {
     return oldDelegate.segments.length != segments.length ||
-        oldDelegate.segments
-            .asMap()
-            .entries
-            .any((entry) =>
-                entry.key >= segments.length ||
-                entry.value.color != segments[entry.key].color ||
-                entry.value.value != segments[entry.key].value);
+        oldDelegate.segments.asMap().entries.any(
+          (entry) =>
+              entry.key >= segments.length ||
+              entry.value.color != segments[entry.key].color ||
+              entry.value.value != segments[entry.key].value,
+        );
   }
 }
 
 class _TaskCard extends StatelessWidget {
   final TaskModel task;
 
-  const _TaskCard({
-    required this.task,
-  });
+  const _TaskCard({required this.task});
 
   String get title {
     if (task.meet != null) return 'Meeting';
@@ -1037,10 +1036,7 @@ class _TaskCard extends StatelessWidget {
       final followup = task.followup!;
       return <MapEntry<String, String>>[
         MapEntry('Lead ID', _valueOrFallback(task.leadId)),
-        MapEntry(
-          'Follow-up Type',
-          _valueOrFallback(followup.followupType),
-        ),
+        MapEntry('Follow-up Type', _valueOrFallback(followup.followupType)),
         MapEntry('Follow-up Time', _valueOrFallback(followup.followupTime)),
         MapEntry('Remarks', _valueOrFallback(followup.remarks)),
       ];

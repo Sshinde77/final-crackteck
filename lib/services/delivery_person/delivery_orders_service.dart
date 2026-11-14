@@ -34,9 +34,7 @@ class DeliveryOrdersService extends DeliveryApiClient {
       ),
     );
     if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to load pickup requests: ${response.statusCode}',
-      );
+      throw Exception('Failed to load pickup requests: ${response.statusCode}');
     }
     return extractList(decodeBody(response.body));
   }
@@ -53,9 +51,7 @@ class DeliveryOrdersService extends DeliveryApiClient {
       ),
     );
     if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to load return requests: ${response.statusCode}',
-      );
+      throw Exception('Failed to load return requests: ${response.statusCode}');
     }
     final decoded = decodeBody(response.body);
     final items = extractList(decoded);
@@ -74,7 +70,8 @@ class DeliveryOrdersService extends DeliveryApiClient {
       final returnRequest = item['return_request'];
 
       Map<String, dynamic>? asMap(dynamic value) {
-        if (value is Map<String, dynamic>) return Map<String, dynamic>.from(value);
+        if (value is Map<String, dynamic>)
+          return Map<String, dynamic>.from(value);
         if (value is Map) return Map<String, dynamic>.from(value);
         return null;
       }
@@ -115,9 +112,7 @@ class DeliveryOrdersService extends DeliveryApiClient {
       ),
     );
     if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to load part requests: ${response.statusCode}',
-      );
+      throw Exception('Failed to load part requests: ${response.statusCode}');
     }
     return extractList(decodeBody(response.body));
   }
@@ -167,9 +162,13 @@ class DeliveryOrdersService extends DeliveryApiClient {
     required String orderId,
     required String otp,
   }) async {
-    final query = await requiredQuery(roleId: 2)..['otp'] = otp.trim();
+    final query = await requiredQuery(roleId: 2)
+      ..['otp'] = otp.trim();
     final response = await performAuthenticatedPost(
-      buildUri(replaceId(ApiConstants.deliveryManVerifyOrderOtp, orderId), query),
+      buildUri(
+        replaceId(ApiConstants.deliveryManVerifyOrderOtp, orderId),
+        query,
+      ),
       json: true,
       body: jsonEncode(<String, String>{'otp': otp.trim()}),
     );
@@ -224,10 +223,7 @@ class DeliveryOrdersService extends DeliveryApiClient {
       throw Exception(validation.message);
     }
     final response = await performAuthenticatedGet(
-      buildUri(
-        ApiConstants.listreturnorders,
-        await requiredQuery(roleId: 2),
-      ),
+      buildUri(ApiConstants.listreturnorders, await requiredQuery(roleId: 2)),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load return orders: ${response.statusCode}');
@@ -286,7 +282,8 @@ class DeliveryOrdersService extends DeliveryApiClient {
     required String orderId,
     required String otp,
   }) async {
-    final query = await requiredQuery(roleId: 2)..['otp'] = otp.trim();
+    final query = await requiredQuery(roleId: 2)
+      ..['otp'] = otp.trim();
     final response = await performAuthenticatedPost(
       buildUri(
         replaceId(ApiConstants.deliveryManVerifyReturnOrderOtp, orderId),

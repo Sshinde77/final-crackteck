@@ -16,4 +16,3 @@ class TransparentAssetBundle extends CachingAssetBundle {
     return ByteData.view(_transparentPng.buffer);
   }
 }
-

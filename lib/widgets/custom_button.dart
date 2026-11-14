@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_spacing.dart';
 
-
 /// Reusable custom button with loading state
 class CustomButton extends StatelessWidget {
   final String text;
@@ -58,4 +57,3 @@ class CustomButton extends StatelessWidget {
     );
   }
 }
-

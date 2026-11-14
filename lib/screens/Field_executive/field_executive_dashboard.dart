@@ -17,7 +17,8 @@ class FieldExecutiveDashboard extends StatefulWidget {
   });
 
   @override
-  State<FieldExecutiveDashboard> createState() => _FieldExecutiveDashboardState();
+  State<FieldExecutiveDashboard> createState() =>
+      _FieldExecutiveDashboardState();
 }
 
 class _FieldExecutiveDashboardState extends State<FieldExecutiveDashboard> {
@@ -31,31 +32,20 @@ class _FieldExecutiveDashboardState extends State<FieldExecutiveDashboard> {
 
     _screens = [
       /// 🏠 HOME
-      FieldExecutiveHomeTab(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-      ),
+      FieldExecutiveHomeTab(roleId: widget.roleId, roleName: widget.roleName),
 
       /// 💬 CHAT
-      ComingSoonScreen(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-      ),
+      ComingSoonScreen(roleId: widget.roleId, roleName: widget.roleName),
 
       /// 👤 PROFILE
-      CombinedProfileScreen(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-      ),
+      CombinedProfileScreen(roleId: widget.roleId, roleName: widget.roleName),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: _screens[_currentIndex],
-      ),
+      body: SafeArea(child: _screens[_currentIndex]),
       bottomNavigationBar: DeliveryBottomNavigation(
         currentIndex: _currentIndex,
         onTap: (index) {

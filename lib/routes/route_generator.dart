@@ -41,7 +41,8 @@ import '../screens/Field_executive/field_executive_delivery_product_detail_scree
 import '../screens/Field_executive/field_executive_delivery_request_list_screen.dart';
 import '../screens/Field_executive/field_executive_dashboard.dart';
 import '../screens/Field_executive/field_executive_delivery_screen.dart';
-import '../screens/Field_executive/field_executive_detail_requested_product.dart' as detail_requested;
+import '../screens/Field_executive/field_executive_detail_requested_product.dart'
+    as detail_requested;
 import '../screens/Field_executive/field_executive_feedback.dart';
 import '../screens/Field_executive/field_executive_installation_detail_screen.dart';
 import '../screens/Field_executive/field_executive_map_tracking_screen.dart';
@@ -53,9 +54,11 @@ import '../screens/Field_executive/field_executive_payment_receipts.dart';
 import '../screens/Field_executive/field_executive_personal_info.dart';
 import '../screens/Field_executive/field_executive_pickup_product.dart';
 import '../screens/Field_executive/field_executive_privacy_policy.dart';
-import '../screens/Field_executive/field_executive_product_detail.dart' as product_detail;
+import '../screens/Field_executive/field_executive_product_detail.dart'
+    as product_detail;
 import '../screens/Field_executive/field_executive_product_item_detail_screen.dart';
-import '../screens/Field_executive/field_executive_product_list_to_add_more.dart' as product_list;
+import '../screens/Field_executive/field_executive_product_list_to_add_more.dart'
+    as product_list;
 import '../screens/Field_executive/field_executive_product_payment.dart';
 import '../screens/Field_executive/field_executive_repair_request_part.dart';
 import '../screens/Field_executive/field_executive_stock_in_hand.dart';
@@ -100,13 +103,12 @@ class RouteGenerator {
           return _errorRoute('Login arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              LoginScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                redirectRoute: args.redirectRoute,
-                redirectArguments: args.redirectArguments,
-              ),
+          builder: (_) => LoginScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            redirectRoute: args.redirectRoute,
+            redirectArguments: args.redirectArguments,
+          ),
           settings: settings,
         );
 
@@ -372,10 +374,8 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => DeliveryDoneScreen(
-            roleId: args.roleId,
-            roleName: args.roleName,
-          ),
+          builder: (_) =>
+              DeliveryDoneScreen(roleId: args.roleId, roleName: args.roleName),
           settings: settings,
         );
 
@@ -392,20 +392,18 @@ class RouteGenerator {
           settings: settings,
         );
 
-
-    // Field Executive cases
+      // Field Executive cases
       case AppRoutes.FieldExecutiveDashboard:
         final args = settings.arguments as fieldexecutivedashboardArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveDashboard(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                initialIndex: args.initialIndex,
-              ),
+          builder: (_) => FieldExecutiveDashboard(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            initialIndex: args.initialIndex,
+          ),
           settings: settings,
         );
 
@@ -415,11 +413,10 @@ class RouteGenerator {
         //   return _errorRoute('Arguments missing');
         // }
         return MaterialPageRoute(
-          builder: (_) =>
-              const EnigneerNotificationScreen(
-                // roleId: args.roleId,
-                // roleName: args.roleName,
-              ),
+          builder: (_) => const EnigneerNotificationScreen(
+            // roleId: args.roleId,
+            // roleName: args.roleName,
+          ),
           settings: settings,
         );
 
@@ -429,29 +426,28 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              StockInHandScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                selectionMode: args.selectionMode,
-                diagnosisName: args.diagnosisName,
-                initialSelectedItems: args.initialSelectedItems,
-              ),
+          builder: (_) => StockInHandScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            selectionMode: args.selectionMode,
+            diagnosisName: args.diagnosisName,
+            initialSelectedItems: args.initialSelectedItems,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveProductDetailScreen:
-        final args = settings.arguments as fieldexecutiveproductdetailArguments?;
+        final args =
+            settings.arguments as fieldexecutiveproductdetailArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              product_detail.ProductDetailScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                productId: args.productId,
-              ),
+          builder: (_) => product_detail.ProductDetailScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            productId: args.productId,
+          ),
           settings: settings,
         );
 
@@ -461,60 +457,59 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              AddProductScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                selectionMode: args.selectionMode,
-                diagnosisName: args.diagnosisName,
-                initialSelectedPart: args.initialSelectedPart,
-              ),
+          builder: (_) => AddProductScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            selectionMode: args.selectionMode,
+            diagnosisName: args.diagnosisName,
+            initialSelectedPart: args.initialSelectedPart,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveProductListToAddMoreScreen:
-        final args = settings.arguments as fieldexecutiveproductlisttoaddmoreArguments?;
+        final args =
+            settings.arguments as fieldexecutiveproductlisttoaddmoreArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              product_list.ProductListScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => product_list.ProductListScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveRequestedProductDetailScreen:
-        final args = settings.arguments as fieldexecutiverequestedproductlistArguments?;
+        final args =
+            settings.arguments as fieldexecutiverequestedproductlistArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              detail_requested.ProductRequestedDetailScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                productId: args.productId,
-                selectionMode: args.selectionMode,
-                diagnosisName: args.diagnosisName,
-                initialSelectedPart: args.initialSelectedPart,
-              ),
+          builder: (_) => detail_requested.ProductRequestedDetailScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            productId: args.productId,
+            selectionMode: args.selectionMode,
+            diagnosisName: args.diagnosisName,
+            initialSelectedPart: args.initialSelectedPart,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveProductPaymentScreen:
-        final args = settings.arguments as fieldexecutiveproductpaymentArguments?;
+        final args =
+            settings.arguments as fieldexecutiveproductpaymentArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveProductPaymentScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => FieldExecutiveProductPaymentScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
@@ -524,11 +519,10 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveCashInHandScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => FieldExecutiveCashInHandScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
@@ -538,11 +532,10 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveDeliveryScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => FieldExecutiveDeliveryScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
@@ -645,16 +638,15 @@ class RouteGenerator {
         if (rawArgs is deliveryotpverificationArguments &&
             (rawArgs.deliveryId.isEmpty && rawArgs.requestId.isEmpty)) {
           return MaterialPageRoute(
-            builder: (_) =>
-                ChangeNotifierProvider<DeliveryOrderActionProvider>(
-                  create: (_) =>
-                      DeliveryOrderActionProvider(orderId: rawArgs.orderId),
-                  child: delivery_person.DeliveryOtpVerificationScreen(
-                    roleId: rawArgs.roleId,
-                    roleName: rawArgs.roleName,
-                    orderId: rawArgs.orderId,
-                  ),
-                ),
+            builder: (_) => ChangeNotifierProvider<DeliveryOrderActionProvider>(
+              create: (_) =>
+                  DeliveryOrderActionProvider(orderId: rawArgs.orderId),
+              child: delivery_person.DeliveryOtpVerificationScreen(
+                roleId: rawArgs.roleId,
+                roleName: rawArgs.roleName,
+                orderId: rawArgs.orderId,
+              ),
+            ),
             settings: settings,
           );
         }
@@ -675,16 +667,16 @@ class RouteGenerator {
         );
 
       case AppRoutes.FieldExecutivePaymentReceiptsScreen:
-        final args = settings.arguments as fieldexecutivepaymentreceiptsArguments?;
+        final args =
+            settings.arguments as fieldexecutivepaymentreceiptsArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutivePaymentReceiptsScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => FieldExecutivePaymentReceiptsScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
@@ -694,11 +686,10 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutivePaymentDoneScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => FieldExecutivePaymentDoneScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
@@ -708,27 +699,25 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveWorkCallScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-              ),
+          builder: (_) => FieldExecutiveWorkCallScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+          ),
           settings: settings,
         );
 
-
       case AppRoutes.FieldExecutiveOtpVerificationScreen:
-        final args = settings.arguments as fieldexecutiveotpverificationArguments?;
+        final args =
+            settings.arguments as fieldexecutiveotpverificationArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveOtpVerificationScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                serviceId: args.serviceId,
-              ),
+          builder: (_) => FieldExecutiveOtpVerificationScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            serviceId: args.serviceId,
+          ),
           settings: settings,
         );
 
@@ -738,36 +727,35 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveAllProductsScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                flow: args.flow,
-                controller: args.controller,
-                serviceRequestId: args.serviceRequestId,
-              ),
+          builder: (_) => FieldExecutiveAllProductsScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            flow: args.flow,
+            controller: args.controller,
+            serviceRequestId: args.serviceRequestId,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveProductItemDetailScreen:
-        final args = settings.arguments as fieldexecutiveproductitemdetailArguments?;
+        final args =
+            settings.arguments as fieldexecutiveproductitemdetailArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveProductItemDetailScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                title: args.title,
-                serviceId: args.serviceId,
-                serviceRequestId: args.serviceRequestId,
-                displayServiceId: args.displayServiceId,
-                location: args.location,
-                priority: args.priority,
-                flow: args.flow,
-                controller: args.controller,
-              ),
+          builder: (_) => FieldExecutiveProductItemDetailScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            title: args.title,
+            serviceId: args.serviceId,
+            serviceRequestId: args.serviceRequestId,
+            displayServiceId: args.displayServiceId,
+            location: args.location,
+            priority: args.priority,
+            flow: args.flow,
+            controller: args.controller,
+          ),
           settings: settings,
         );
 
@@ -777,55 +765,54 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveMapTrackingScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                serviceId: args.serviceId,
-                deliveryType: args.deliveryType,
-                requestId: args.requestId,
-                customerName: args.customerName,
-                customerAddress: args.customerAddress,
-                customerPhone: args.customerPhone,
-                displayServiceId: args.displayServiceId,
-              ),
+          builder: (_) => FieldExecutiveMapTrackingScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            serviceId: args.serviceId,
+            deliveryType: args.deliveryType,
+            requestId: args.requestId,
+            customerName: args.customerName,
+            customerAddress: args.customerAddress,
+            customerPhone: args.customerPhone,
+            displayServiceId: args.displayServiceId,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveUploadBeforeImagesScreen:
-        final args = settings.arguments as fieldexecutiveuploadbeforeimagesArguments?;
+        final args =
+            settings.arguments as fieldexecutiveuploadbeforeimagesArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveUploadBeforeImagesScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                serviceId: args.serviceId,
-                flow: args.flow,
-                controller: args.controller,
-              ),
+          builder: (_) => FieldExecutiveUploadBeforeImagesScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            serviceId: args.serviceId,
+            flow: args.flow,
+            controller: args.controller,
+          ),
           settings: settings,
         );
 
       case AppRoutes.FieldExecutiveInstallationDetailScreen:
-        final args = settings.arguments as fieldexecutiveinstallationdetailArguments?;
+        final args =
+            settings.arguments as fieldexecutiveinstallationdetailArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveInstallationDetailScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                title: args.title,
-                serviceId: args.serviceId,
-                location: args.location,
-                priority: args.priority,
-                // new: pass jobType so the screen can render differently for repairs
-                jobType: args.jobType,
-              ),
+          builder: (_) => FieldExecutiveInstallationDetailScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            title: args.title,
+            serviceId: args.serviceId,
+            location: args.location,
+            priority: args.priority,
+            // new: pass jobType so the screen can render differently for repairs
+            jobType: args.jobType,
+          ),
           settings: settings,
         );
 
@@ -835,14 +822,13 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) =>
-              FieldExecutiveWriteReportScreen(
-                roleId: args.roleId,
-                roleName: args.roleName,
-                serviceId: args.serviceId,
-                flow: args.flow,
-                controller: args.controller,
-              ),
+          builder: (_) => FieldExecutiveWriteReportScreen(
+            roleId: args.roleId,
+            roleName: args.roleName,
+            serviceId: args.serviceId,
+            flow: args.flow,
+            controller: args.controller,
+          ),
           settings: settings,
         );
 
@@ -887,7 +873,8 @@ class RouteGenerator {
         );
 
       case AppRoutes.PickupMaterialsScreen:
-        final args = settings.arguments as fieldexecutivePickupMaterialArguments?;
+        final args =
+            settings.arguments as fieldexecutivePickupMaterialArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
@@ -900,31 +887,28 @@ class RouteGenerator {
         );
 
       case AppRoutes.RepairRequestScreen:
-        final args = settings.arguments as fieldexecutiveRepairRequestArguments?;
+        final args =
+            settings.arguments as fieldexecutiveRepairRequestArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => RepairRequestScreen(
-            roleId: args.roleId,
-            roleName: args.roleName,
-          ),
+          builder: (_) =>
+              RepairRequestScreen(roleId: args.roleId, roleName: args.roleName),
           settings: settings,
         );
 
       case AppRoutes.PaymentsScreen:
-        final args = settings.arguments as fieldexecutivePaymentsScreenArguments?;
+        final args =
+            settings.arguments as fieldexecutivePaymentsScreenArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => PaymentsScreen(
-            roleId: args.roleId,
-            roleName: args.roleName,
-          ),
+          builder: (_) =>
+              PaymentsScreen(roleId: args.roleId, roleName: args.roleName),
           settings: settings,
         );
-
 
       case AppRoutes.WorksScreen:
         final args = settings.arguments as fieldexecutiveWorksScreenArguments?;
@@ -932,17 +916,14 @@ class RouteGenerator {
           return _errorRoute('Arguments missing');
         }
         return MaterialPageRoute(
-          builder: (_) => WorksScreen(
-            roleId: args.roleId,
-            roleName: args.roleName,
-          ),
+          builder: (_) =>
+              WorksScreen(roleId: args.roleId, roleName: args.roleName),
           settings: settings,
         );
 
-
-
       case AppRoutes.fieldexecutivePrivacyPolicyScreen:
-        final args = settings.arguments as fieldexecutivePrivacyPolicyScreenArguments?;
+        final args =
+            settings.arguments as fieldexecutivePrivacyPolicyScreenArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
@@ -954,12 +935,9 @@ class RouteGenerator {
           settings: settings,
         );
 
-
-
-
-
       case AppRoutes.fieldexecutiveFeedbackScreen:
-        final args = settings.arguments as fieldexecutiveFeedbackScreenArguments?;
+        final args =
+            settings.arguments as fieldexecutiveFeedbackScreenArguments?;
         if (args == null) {
           return _errorRoute('Arguments missing');
         }
@@ -970,8 +948,6 @@ class RouteGenerator {
           ),
           settings: settings,
         );
-
-
 
       default:
         return _errorRoute(settings.name);

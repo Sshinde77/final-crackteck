@@ -69,12 +69,10 @@ class _DeliveryPersonAttendanceScreenState
 
   String _deriveStatus(Map<String, dynamic> log, DateTime? logoutAt) {
     if (logoutAt != null) return 'Completed';
-    final rawStatus = (log['status'] ??
-            log['attendance_status'] ??
-            log['state'] ??
-            '')
-        .toString()
-        .trim();
+    final rawStatus =
+        (log['status'] ?? log['attendance_status'] ?? log['state'] ?? '')
+            .toString()
+            .trim();
     if (rawStatus.isNotEmpty) {
       return rawStatus;
     }
@@ -101,7 +99,9 @@ class _DeliveryPersonAttendanceScreenState
       );
 
       final date = loginAt ?? logoutAt;
-      if (_selectedDate != null && date != null && !_isSameDate(date, _selectedDate!)) {
+      if (_selectedDate != null &&
+          date != null &&
+          !_isSameDate(date, _selectedDate!)) {
         continue;
       }
       if (_selectedDate != null && date == null) {
@@ -136,7 +136,8 @@ class _DeliveryPersonAttendanceScreenState
     final now = DateTime.now();
     final provider = context.read<DeliveryAttendanceProvider>();
     final records = _visibleRecords(provider.logs);
-    final initial = _selectedDate ?? (records.isNotEmpty ? records.first.date ?? now : now);
+    final initial =
+        _selectedDate ?? (records.isNotEmpty ? records.first.date ?? now : now);
 
     final picked = await showDatePicker(
       context: context,
@@ -147,9 +148,9 @@ class _DeliveryPersonAttendanceScreenState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: brandGreen,
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: brandGreen),
           ),
           child: child!,
         );
@@ -232,22 +233,22 @@ class _DeliveryPersonAttendanceScreenState
               child: provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : records.isEmpty
-                      ? _EmptyState(
-                          date: _selectedDate,
-                          onPick: _openCalendar,
-                          onClear: _selectedDate == null ? null : _clearFilter,
-                        )
-                      : RefreshIndicator(
-                          onRefresh: provider.load,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
-                            itemCount: records.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              return _AttendanceCard(record: records[index]);
-                            },
-                          ),
-                        ),
+                  ? _EmptyState(
+                      date: _selectedDate,
+                      onPick: _openCalendar,
+                      onClear: _selectedDate == null ? null : _clearFilter,
+                    )
+                  : RefreshIndicator(
+                      onRefresh: provider.load,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
+                        itemCount: records.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return _AttendanceCard(record: records[index]);
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -423,7 +424,9 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: onPick,
-              style: ElevatedButton.styleFrom(backgroundColor: _CalendarFab.green),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _CalendarFab.green,
+              ),
               child: Text(
                 date == null ? 'Select Date' : 'Change Date',
                 style: const TextStyle(color: Colors.white),
@@ -455,10 +458,7 @@ class _CalendarFab extends StatelessWidget {
       icon: const Icon(Icons.calendar_month, color: Colors.white),
       label: const Text(
         'Calendar',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
       ),
     );
   }

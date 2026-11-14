@@ -33,10 +33,7 @@ class DeliveryDoneScreen extends StatelessWidget {
                     height: 110,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: lightGreen,
-                        width: 12,
-                      ),
+                      border: Border.all(color: lightGreen, width: 12),
                     ),
                   ),
 
@@ -51,11 +48,7 @@ class DeliveryDoneScreen extends StatelessWidget {
                   ),
 
                   // Check icon
-                  const Icon(
-                    Icons.check_rounded,
-                    size: 40,
-                    color: darkGreen,
-                  ),
+                  const Icon(Icons.check_rounded, size: 40, color: darkGreen),
                 ],
               ),
 

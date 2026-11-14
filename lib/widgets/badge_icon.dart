@@ -6,7 +6,11 @@ class BadgeIcon extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
 
-  const BadgeIcon({required this.icon, required this.count, required this.onTap});
+  const BadgeIcon({
+    required this.icon,
+    required this.count,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

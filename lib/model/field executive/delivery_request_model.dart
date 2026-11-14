@@ -28,26 +28,24 @@ class DeliveryRequestModel {
   });
 
   factory DeliveryRequestModel.fromJson(Map<String, dynamic> json) {
-    final product = _asMap(
-          json['product'],
-        ) ??
+    final product =
+        _asMap(json['product']) ??
         _asMap(json['product_detail']) ??
         _asMap(json['product_details']) ??
         _asMap(json['service_request_product']) ??
         const <String, dynamic>{};
-    final serviceRequest = _asMap(json['service_request']) ?? const <String, dynamic>{};
-    final customer = _asMap(serviceRequest['customer']) ??
+    final serviceRequest =
+        _asMap(json['service_request']) ?? const <String, dynamic>{};
+    final customer =
+        _asMap(serviceRequest['customer']) ??
         _asMap(json['customer']) ??
         const <String, dynamic>{};
-    final customerAddress = _asMap(serviceRequest['customer_address']) ??
+    final customerAddress =
+        _asMap(serviceRequest['customer_address']) ??
         _asMap(json['customer_address']) ??
         const <String, dynamic>{};
 
-    final id = _firstText([
-      json['id'],
-      json['order_id'],
-      json['delivery_id'],
-    ]);
+    final id = _firstText([json['id'], json['order_id'], json['delivery_id']]);
     final requestId = _firstText([
       json['request_id'],
       json['order_no'],
@@ -118,7 +116,9 @@ class DeliveryRequestModel {
       location: location.isEmpty ? 'N/A' : location,
       customer_name: customerName.isEmpty ? 'N/A' : customerName,
       customer_phone: customerPhone.isEmpty ? 'N/A' : customerPhone,
-      customer_address: customerAddressText.isEmpty ? 'N/A' : customerAddressText,
+      customer_address: customerAddressText.isEmpty
+          ? 'N/A'
+          : customerAddressText,
     );
   }
 

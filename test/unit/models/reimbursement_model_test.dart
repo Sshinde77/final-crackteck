@@ -3,10 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('ReimbursementStatus.fromRaw normalizes common variants', () {
-    expect(ReimbursementStatus.fromRaw('approved'), ReimbursementStatus.approved);
-    expect(ReimbursementStatus.fromRaw('Accepted'), ReimbursementStatus.approved);
-    expect(ReimbursementStatus.fromRaw('rejected'), ReimbursementStatus.rejected);
-    expect(ReimbursementStatus.fromRaw('under review'), ReimbursementStatus.pending);
+    expect(
+      ReimbursementStatus.fromRaw('approved'),
+      ReimbursementStatus.approved,
+    );
+    expect(
+      ReimbursementStatus.fromRaw('Accepted'),
+      ReimbursementStatus.approved,
+    );
+    expect(
+      ReimbursementStatus.fromRaw('rejected'),
+      ReimbursementStatus.rejected,
+    );
+    expect(
+      ReimbursementStatus.fromRaw('under review'),
+      ReimbursementStatus.pending,
+    );
   });
 
   test('ReimbursementModel.fromJson parses amount and created_at', () {
@@ -26,4 +38,3 @@ void main() {
     expect(model.receiptImagePath, contains('receipts'));
   });
 }
-

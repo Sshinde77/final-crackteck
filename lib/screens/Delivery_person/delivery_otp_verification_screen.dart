@@ -47,9 +47,9 @@ class _DeliveryOtpVerificationScreenState
     final provider = context.read<DeliveryOrderActionProvider>();
     final message = await provider.verifyAndDeliver(_otpController.text.trim());
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     if (provider.lastActionSucceeded) {
       Navigator.pushNamed(
         context,
@@ -66,9 +66,9 @@ class _DeliveryOtpVerificationScreenState
     final provider = context.read<DeliveryOrderActionProvider>();
     final message = await provider.sendOtpMessage();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

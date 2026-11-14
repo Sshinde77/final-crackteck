@@ -30,10 +30,10 @@ class FieldExecutiveDeliveryPartRequestDetailScreen extends StatelessWidget {
       appBarTitle: 'Part Request Detail',
       loadDetail: (selectedRequestId, selectedRoleId, selectedUserId) =>
           ApiService.fetchDeliveryRequestDetail(
-        deliveryType: DeliveryRequestTypes.part,
-        deliveryId: selectedRequestId,
-        roleId: selectedRoleId,
-      ),
+            deliveryType: DeliveryRequestTypes.part,
+            deliveryId: selectedRequestId,
+            roleId: selectedRoleId,
+          ),
     );
   }
 }

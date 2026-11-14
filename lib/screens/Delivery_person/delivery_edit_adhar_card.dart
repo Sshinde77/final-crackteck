@@ -52,7 +52,9 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
               title: const Text('Camera'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.camera);
+                final file = await _picker.pickImage(
+                  source: ImageSource.camera,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (isFront) {
@@ -71,7 +73,9 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
               title: const Text('Gallery'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.gallery);
+                final file = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (isFront) {
@@ -125,7 +129,9 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
       isUpdate: _isUpdate,
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     if (provider.lastSaveSucceeded) {
       Navigator.pop(context);
     }
@@ -136,9 +142,12 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
     final provider = context.watch<DeliveryDocumentsProvider>();
     final aadhar = provider.aadhar;
     if (!provider.isLoading && numberCtrl.text.isEmpty) {
-      numberCtrl.text = (aadhar['aadhar_number'] ?? aadhar['aadhar_no'] ?? '').toString();
-      _frontLabel ??= (aadhar['aadhar_front_path'] ?? aadhar['aadhar_front'])?.toString();
-      _backLabel ??= (aadhar['aadhar_back_path'] ?? aadhar['aadhar_back'])?.toString();
+      numberCtrl.text = (aadhar['aadhar_number'] ?? aadhar['aadhar_no'] ?? '')
+          .toString();
+      _frontLabel ??= (aadhar['aadhar_front_path'] ?? aadhar['aadhar_front'])
+          ?.toString();
+      _backLabel ??= (aadhar['aadhar_back_path'] ?? aadhar['aadhar_back'])
+          ?.toString();
       _isUpdate = numberCtrl.text.trim().isNotEmpty;
     }
     return Scaffold(
@@ -147,7 +156,10 @@ class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
         backgroundColor: darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -270,11 +282,7 @@ class _InputField extends StatelessWidget {
 }
 
 class _UploadBox extends StatelessWidget {
-  const _UploadBox({
-    required this.label,
-    required this.onTap,
-    this.fileName,
-  });
+  const _UploadBox({required this.label, required this.onTap, this.fileName});
 
   final String label;
   final VoidCallback onTap;

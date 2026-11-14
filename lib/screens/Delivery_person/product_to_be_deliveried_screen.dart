@@ -22,7 +22,8 @@ class ProductToBeDeliveredScreen extends StatefulWidget {
       _ProductToBeDeliveredScreenState();
 }
 
-class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen> {
+class _ProductToBeDeliveredScreenState
+    extends State<ProductToBeDeliveredScreen> {
   static const Color _green = Color(0xFF1E7C10);
 
   int _unreadNoti = 1;
@@ -152,9 +153,10 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                   ? const Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                       child: Column(
-                         children: [
-                          if (provider.error != null && provider.error!.trim().isNotEmpty)
+                      child: Column(
+                        children: [
+                          if (provider.error != null &&
+                              provider.error!.trim().isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Container(
@@ -163,7 +165,9 @@ class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen>
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFFF5F5),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFFFD6D6)),
+                                  border: Border.all(
+                                    color: const Color(0xFFFFD6D6),
+                                  ),
                                 ),
                                 child: Text(
                                   provider.error!,
@@ -282,10 +286,7 @@ class _AdditionalDetailsCard extends StatelessWidget {
         children: [
           const Text(
             'Additional Details',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
           ),
           const SizedBox(height: 10),
           _AdditionalDetailRow(label: 'First Name', value: firstName),
@@ -304,10 +305,7 @@ class _AdditionalDetailsCard extends StatelessWidget {
 }
 
 class _AdditionalDetailRow extends StatelessWidget {
-  const _AdditionalDetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _AdditionalDetailRow({required this.label, required this.value});
 
   final String label;
   final String value;

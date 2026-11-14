@@ -49,7 +49,9 @@ class QuotationProductModel {
     return QuotationProductModel(
       id: toInt(json['id']),
       quotationId: toInt(json['quotation_id'] ?? json['quotationId']),
-      productName: toStr(json['product_name'] ?? json['name'] ?? json['product']),
+      productName: toStr(
+        json['product_name'] ?? json['name'] ?? json['product'],
+      ),
       hsnCode: toStr(json['hsn_code'] ?? json['hsn'] ?? ''),
       sku: toStr(json['sku'] ?? json['sku_code'] ?? ''),
       price: toDouble(json['price'] ?? json['unit_price']),
@@ -171,4 +173,3 @@ class QuotationModel {
     );
   }
 }
-

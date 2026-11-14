@@ -35,22 +35,13 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
 
     _screens = [
       /// 🏠 HOME
-      DeliveryPersonHomeTab(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-      ),
+      DeliveryPersonHomeTab(roleId: widget.roleId, roleName: widget.roleName),
 
       /// 💬 CHAT / ORDERS
-      ComingSoonScreen(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-      ),
+      ComingSoonScreen(roleId: widget.roleId, roleName: widget.roleName),
 
       /// 👤 PROFILE (temporary)
-      DeliveryProfileScreen(
-        roleId: widget.roleId,
-        roleName: widget.roleName,
-      ),
+      DeliveryProfileScreen(roleId: widget.roleId, roleName: widget.roleName),
     ];
   }
 

@@ -158,19 +158,15 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else {
-        final message =
-            response.message?.trim().isNotEmpty == true
-                ? response.message!.trim()
-                : AppStrings.somethingWentWrong;
+        final message = response.message?.trim().isNotEmpty == true
+            ? response.message!.trim()
+            : AppStrings.somethingWentWrong;
 
         if (_isNetworkMessage(message)) {
           setState(() {
             _errorText = message;
           });
-          showErrorDialog(
-            context: context,
-            message: message,
-          );
+          showErrorDialog(context: context, message: message);
         } else if (_isPhoneNotFoundMessage(message)) {
           await showPhoneNotFoundDialog(
             context: context,

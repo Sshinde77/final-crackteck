@@ -14,17 +14,21 @@ class FieldExecutiveCaseTransferScreen extends StatefulWidget {
   });
 
   @override
-  State<FieldExecutiveCaseTransferScreen> createState() => _FieldExecutiveCaseTransferScreenState();
+  State<FieldExecutiveCaseTransferScreen> createState() =>
+      _FieldExecutiveCaseTransferScreenState();
 }
 
-class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTransferScreen> {
+class _FieldExecutiveCaseTransferScreenState
+    extends State<FieldExecutiveCaseTransferScreen> {
   final TextEditingController _reasonController = TextEditingController();
   static const primaryGreen = Color(0xFF1E7C10);
   bool _isSubmitting = false;
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submitCaseTransfer() async {
@@ -36,7 +40,10 @@ class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTra
       return;
     }
 
-    final serviceRequestId = widget.serviceId.trim().replaceFirst(RegExp(r'^#'), '');
+    final serviceRequestId = widget.serviceId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     if (int.tryParse(serviceRequestId) == null) {
       _snack('Invalid service request id');
       return;
@@ -86,7 +93,11 @@ class _FieldExecutiveCaseTransferScreenState extends State<FieldExecutiveCaseTra
         ),
         title: const Text(
           'Case Transfer',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: SafeArea(

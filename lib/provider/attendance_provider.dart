@@ -22,7 +22,8 @@ class AttendanceProvider extends ChangeNotifier {
   bool get hasClockIn => _attendance.hasClockIn;
   bool get hasClockOut => _attendance.hasClockOut;
   bool get canClockIn => !isLoading && !isUpdating && !hasClockIn;
-  bool get canClockOut => !isLoading && !isUpdating && hasClockIn && !hasClockOut;
+  bool get canClockOut =>
+      !isLoading && !isUpdating && hasClockIn && !hasClockOut;
 
   Future<void> initialize({
     required int roleId,
@@ -81,16 +82,16 @@ class AttendanceProvider extends ChangeNotifier {
       }
 
       final clockInAt =
-          _extractAttendanceDateTime(
-            response.data,
-            const ['login_at', 'check_in_at', 'clock_in_at', 'check_in', 'clock_in'],
-          ) ??
+          _extractAttendanceDateTime(response.data, const [
+            'login_at',
+            'check_in_at',
+            'clock_in_at',
+            'check_in',
+            'clock_in',
+          ]) ??
           DateTime.now();
 
-      await _service.saveClockIn(
-        roleId: roleId,
-        clockInTimestamp: clockInAt,
-      );
+      await _service.saveClockIn(roleId: roleId, clockInTimestamp: clockInAt);
 
       _attendance = _attendance.copyWith(
         clockInAt: clockInAt,
@@ -127,10 +128,13 @@ class AttendanceProvider extends ChangeNotifier {
       }
 
       final clockOutAt =
-          _extractAttendanceDateTime(
-            response.data,
-            const ['logout_at', 'check_out_at', 'clock_out_at', 'check_out', 'clock_out'],
-          ) ??
+          _extractAttendanceDateTime(response.data, const [
+            'logout_at',
+            'check_out_at',
+            'clock_out_at',
+            'check_out',
+            'clock_out',
+          ]) ??
           DateTime.now();
 
       await _service.saveClockOut(
@@ -172,7 +176,11 @@ class AttendanceProvider extends ChangeNotifier {
       }
 
       for (final value in source.values) {
-        final parsed = _extractAttendanceDateTime(value, keys, depth: depth + 1);
+        final parsed = _extractAttendanceDateTime(
+          value,
+          keys,
+          depth: depth + 1,
+        );
         if (parsed != null) {
           return parsed;
         }
@@ -182,7 +190,11 @@ class AttendanceProvider extends ChangeNotifier {
 
     if (source is List) {
       for (final value in source) {
-        final parsed = _extractAttendanceDateTime(value, keys, depth: depth + 1);
+        final parsed = _extractAttendanceDateTime(
+          value,
+          keys,
+          depth: depth + 1,
+        );
         if (parsed != null) {
           return parsed;
         }

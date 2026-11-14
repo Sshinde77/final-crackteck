@@ -51,7 +51,9 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
               title: const Text('Camera'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.camera);
+                final file = await _picker.pickImage(
+                  source: ImageSource.camera,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (front) {
@@ -70,7 +72,9 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
               title: const Text('Gallery'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.gallery);
+                final file = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (front) {
@@ -125,7 +129,9 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
       backFile: _backFile,
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     if (provider.lastSaveSucceeded) {
       Navigator.pop(context);
     }
@@ -137,14 +143,21 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
     final vehicle = provider.vehicle;
     if (!provider.isLoading && licenceCtrl.text.isEmpty) {
       licenceCtrl.text =
-          (vehicle['driving_license_no'] ?? vehicle['licence_no'] ?? '').toString();
-      _vehicleType = (vehicle['vehicle_type'] ?? vehicle['brand'] ?? 'Bike').toString();
+          (vehicle['driving_license_no'] ?? vehicle['licence_no'] ?? '')
+              .toString();
+      _vehicleType = (vehicle['vehicle_type'] ?? vehicle['brand'] ?? 'Bike')
+          .toString();
       _vehicleNumber =
-          (vehicle['vehicle_number'] ?? vehicle['registration_number'] ?? '').toString();
+          (vehicle['vehicle_number'] ?? vehicle['registration_number'] ?? '')
+              .toString();
       _frontLabel ??=
-          (vehicle['driving_license_front_path'] ?? vehicle['licence_front_image'])?.toString();
+          (vehicle['driving_license_front_path'] ??
+                  vehicle['licence_front_image'])
+              ?.toString();
       _backLabel ??=
-          (vehicle['driving_license_back_path'] ?? vehicle['licence_back_image'])?.toString();
+          (vehicle['driving_license_back_path'] ??
+                  vehicle['licence_back_image'])
+              ?.toString();
     }
     return Scaffold(
       backgroundColor: Colors.white,
@@ -152,7 +165,10 @@ class _LicenseEditScreenState extends State<LicenseEditScreen> {
         backgroundColor: darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -242,10 +258,7 @@ class _Label extends StatelessWidget {
 }
 
 class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.controller,
-    required this.hint,
-  });
+  const _InputField({required this.controller, required this.hint});
 
   final TextEditingController controller;
   final String hint;
@@ -265,11 +278,7 @@ class _InputField extends StatelessWidget {
 }
 
 class _UploadBox extends StatelessWidget {
-  const _UploadBox({
-    required this.label,
-    required this.onTap,
-    this.fileName,
-  });
+  const _UploadBox({required this.label, required this.onTap, this.fileName});
 
   final String label;
   final VoidCallback onTap;

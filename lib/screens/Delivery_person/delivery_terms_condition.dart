@@ -22,15 +22,15 @@ class DeliveryTermsConditionScreen extends StatelessWidget {
         backgroundColor: darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Terms & Conditions",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
@@ -47,16 +47,12 @@ class DeliveryTermsConditionScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// =========================
               /// 🔴 ADD TITLE HERE
               /// =========================
               const Text(
                 "Terms & Conditions",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
               ),
 
               const SizedBox(height: 12),
@@ -66,7 +62,6 @@ class DeliveryTermsConditionScreen extends StatelessWidget {
               /// =========================
 
               // ⬇️ Paste your paragraphs like this
-
               Text(
                 """TermsCondition for Cracktack
 
@@ -132,11 +127,6 @@ class DeliveryTermsConditionScreen extends StatelessWidget {
           If you make a request, we have one month to respond to you. If you would like to exercise any of these rights, please contact us.""",
                 style: TextStyle(fontSize: 14, height: 1.6),
               ),
-
-
-
-
-
 
               /// =========================
               /// 🔴 END OF PRIVACY POLICY

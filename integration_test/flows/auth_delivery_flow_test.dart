@@ -18,7 +18,9 @@ void main() {
   });
 
   group('P0 Auth Flow', () {
-    testWidgets('Delivery OTP login lands on delivery dashboard (mock HTTP)', (tester) async {
+    testWidgets('Delivery OTP login lands on delivery dashboard (mock HTTP)', (
+      tester,
+    ) async {
       // Arrange
       await SessionManager.clearSession();
 
@@ -34,7 +36,9 @@ void main() {
                 'data': <String, Object?>{'ok': true},
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -53,7 +57,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -63,11 +69,11 @@ void main() {
               path.endsWith('/return-requests') ||
               path.endsWith('/part-requests')) {
             return http.Response(
-              jsonEncode(<String, Object?>{
-                'data': <Object?>[],
-              }),
+              jsonEncode(<String, Object?>{'data': <Object?>[]}),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -106,4 +112,3 @@ void main() {
     });
   });
 }
-

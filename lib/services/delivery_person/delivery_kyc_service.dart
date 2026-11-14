@@ -22,7 +22,10 @@ class DeliveryKycService extends DeliveryApiClient {
 
   Future<Map<String, dynamic>> fetchKycStatus() async {
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.deliveryManKycStatus, await requiredQuery(roleId: 2)),
+      buildUri(
+        ApiConstants.deliveryManKycStatus,
+        await requiredQuery(roleId: 2),
+      ),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load KYC status: ${response.statusCode}');

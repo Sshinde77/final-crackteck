@@ -46,7 +46,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -70,14 +72,13 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
-          return http.Response(
-            '{"message":"unhandled"}',
-            500,
-          );
+          return http.Response('{"message":"unhandled"}', 500);
         }),
       );
 

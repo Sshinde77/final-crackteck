@@ -33,9 +33,7 @@ void main() {
     await tester.pumpWidget(
       DefaultAssetBundle(
         bundle: _TransparentAssetBundle(),
-        child: const MaterialApp(
-          home: rolesccreen(),
-        ),
+        child: const MaterialApp(home: rolesccreen()),
       ),
     );
 

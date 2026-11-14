@@ -4,12 +4,10 @@ class DeliveryNotificationScreen extends StatelessWidget {
   final int roleId;
   final String roleName;
 
-
   const DeliveryNotificationScreen({
     Key? key,
     required this.roleId,
     required this.roleName,
-
   }) : super(key: key);
 
   static const Color green = Color(0xFF1E7C10);
@@ -25,12 +23,20 @@ class DeliveryNotificationScreen extends StatelessWidget {
         backgroundColor: green,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Notification",
-          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontSize: 18,
+          ),
         ),
         actions: [
           IconButton(
@@ -56,7 +62,7 @@ class DeliveryNotificationScreen extends StatelessWidget {
           _SimpleNotificationCard(
             title: "Service Rating",
             description:
-            "Nice! #12345678 customer rated you 4 stars.\nKeep up the good work!",
+                "Nice! #12345678 customer rated you 4 stars.\nKeep up the good work!",
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
@@ -76,7 +82,7 @@ class DeliveryNotificationScreen extends StatelessWidget {
           _SimpleNotificationCard(
             title: "You completed 32 deliveries this week.",
             description:
-            "Great hustle!\nYou're on the right track to unlock more rewards and recognition!",
+                "Great hustle!\nYou're on the right track to unlock more rewards and recognition!",
             time: "2 days ago",
             onTap: () {},
           ),
@@ -100,9 +106,7 @@ class DeliveryNotificationScreen extends StatelessWidget {
 class _NewOrderCard extends StatelessWidget {
   final VoidCallback onViewOrder;
 
-  const _NewOrderCard({
-    required this.onViewOrder,
-  });
+  const _NewOrderCard({required this.onViewOrder});
 
   static const Color green = Color(0xFF1E7C10);
   static const Color lightGreen = Color(0xFFE6FFE1);
@@ -281,17 +285,11 @@ class _SimpleNotificationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Text(
-              description,
-              style: const TextStyle(fontSize: 13),
-            ),
+            Text(description, style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 8),
             Text(
               time,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
         ),
@@ -306,10 +304,7 @@ class _KeyValue extends StatelessWidget {
   final String label;
   final String value;
 
-  const _KeyValue({
-    required this.label,
-    required this.value,
-  });
+  const _KeyValue({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

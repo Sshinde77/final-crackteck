@@ -5,12 +5,7 @@ class ApiResponse<T> {
   final T? data;
   final Map<String, dynamic>? errors;
 
-  ApiResponse({
-    required this.success,
-    this.message,
-    this.data,
-    this.errors,
-  });
+  ApiResponse({required this.success, this.message, this.data, this.errors});
 
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
@@ -26,4 +21,3 @@ class ApiResponse<T> {
     );
   }
 }
-

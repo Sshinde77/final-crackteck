@@ -17,7 +17,8 @@ class FieldExecutivePersonalInfo extends StatefulWidget {
       _FieldExecutivePersonalInfoState();
 }
 
-class _FieldExecutivePersonalInfoState extends State<FieldExecutivePersonalInfo> {
+class _FieldExecutivePersonalInfoState
+    extends State<FieldExecutivePersonalInfo> {
   static const Color midGreen = Color(0xFF1F8B00);
   static const Color darkGreen = Color(0xFF145A00);
 

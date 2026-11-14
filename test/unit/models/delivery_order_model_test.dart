@@ -32,4 +32,3 @@ void main() {
     expect(cancelled.status, DeliveryOrderStatus.cancelled);
   });
 }
-

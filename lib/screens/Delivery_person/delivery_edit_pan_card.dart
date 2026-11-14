@@ -52,7 +52,9 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
               title: const Text('Camera'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.camera);
+                final file = await _picker.pickImage(
+                  source: ImageSource.camera,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (isFront) {
@@ -71,7 +73,9 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
               title: const Text('Gallery'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.gallery);
+                final file = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (isFront) {
@@ -125,7 +129,9 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
       isUpdate: _isUpdate,
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     if (provider.lastSaveSucceeded) {
       Navigator.pop(context);
     }
@@ -137,7 +143,8 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
     final pan = provider.pan;
     if (!provider.isLoading && panCtrl.text.isEmpty) {
       panCtrl.text = (pan['pan_number'] ?? pan['pan_no'] ?? '').toString();
-      _frontLabel ??= (pan['pan_card_front_path'] ?? pan['pan_front'])?.toString();
+      _frontLabel ??= (pan['pan_card_front_path'] ?? pan['pan_front'])
+          ?.toString();
       _backLabel ??= (pan['pan_card_back_path'] ?? pan['pan_back'])?.toString();
       _isUpdate = panCtrl.text.trim().isNotEmpty;
     }
@@ -147,7 +154,10 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
         backgroundColor: darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -171,10 +181,7 @@ class _PancardEditScreenState extends State<PancardEditScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _Label('Pan no.'),
-                    _InputField(
-                      controller: panCtrl,
-                      hint: 'Enter PAN number',
-                    ),
+                    _InputField(controller: panCtrl, hint: 'Enter PAN number'),
                     const SizedBox(height: 20),
                     _UploadBox(
                       label: 'Pan Card Front Image',
@@ -243,10 +250,7 @@ class _Label extends StatelessWidget {
 }
 
 class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.controller,
-    required this.hint,
-  });
+  const _InputField({required this.controller, required this.hint});
 
   final TextEditingController controller;
   final String hint;
@@ -266,11 +270,7 @@ class _InputField extends StatelessWidget {
 }
 
 class _UploadBox extends StatelessWidget {
-  const _UploadBox({
-    required this.label,
-    required this.onTap,
-    this.fileName,
-  });
+  const _UploadBox({required this.label, required this.onTap, this.fileName});
 
   final String label;
   final VoidCallback onTap;

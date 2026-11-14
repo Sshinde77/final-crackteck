@@ -11,13 +11,16 @@ import '../../support/secure_storage_mock.dart';
 import '../../support/test_bootstrap.dart';
 
 String _jwtWithExpiry(DateTime expiryUtc) {
-  final header = base64Url.encode(utf8.encode(jsonEncode(<String, Object>{
-    'alg': 'HS256',
-    'typ': 'JWT',
-  })));
-  final payload = base64Url.encode(utf8.encode(jsonEncode(<String, Object>{
-    'exp': expiryUtc.millisecondsSinceEpoch ~/ 1000,
-  })));
+  final header = base64Url.encode(
+    utf8.encode(jsonEncode(<String, Object>{'alg': 'HS256', 'typ': 'JWT'})),
+  );
+  final payload = base64Url.encode(
+    utf8.encode(
+      jsonEncode(<String, Object>{
+        'exp': expiryUtc.millisecondsSinceEpoch ~/ 1000,
+      }),
+    ),
+  );
   return '$header.$payload.signature';
 }
 
@@ -26,8 +29,10 @@ Widget _app() {
     bundle: TransparentAssetBundle(),
     child: MaterialApp(
       routes: <String, WidgetBuilder>{
-        AppRoutes.roleSelection: (_) => const Scaffold(body: Text('Role Selection')),
-        AppRoutes.salespersonDashboard: (_) => const Scaffold(body: Text('Sales Dashboard')),
+        AppRoutes.roleSelection: (_) =>
+            const Scaffold(body: Text('Role Selection')),
+        AppRoutes.salespersonDashboard: (_) =>
+            const Scaffold(body: Text('Sales Dashboard')),
       },
       home: const SplashScreen(),
     ),
@@ -61,7 +66,11 @@ void main() {
       final token = _jwtWithExpiry(
         DateTime.now().toUtc().add(const Duration(hours: 1)),
       );
-      await SessionManager.saveSession(accessToken: token, roleId: 3, userId: 99);
+      await SessionManager.saveSession(
+        accessToken: token,
+        roleId: 3,
+        userId: 99,
+      );
 
       // Act
       await tester.pumpWidget(_app());

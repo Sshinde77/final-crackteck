@@ -5,11 +5,7 @@ class DeliveryDetailsScreen extends StatelessWidget {
   final int? roleId;
   final String? roleName;
 
-  const DeliveryDetailsScreen({
-    super.key,
-    this.roleId,
-    this.roleName,
-  });
+  const DeliveryDetailsScreen({super.key, this.roleId, this.roleName});
 
   static const Color darkGreen = Color(0xFF145A00);
 
@@ -37,10 +33,7 @@ class DeliveryDetailsScreen extends StatelessWidget {
         backgroundColor: darkGreen,
         title: const Text(
           "Delivery Details",
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
         ),
         actions: [
           IconButton(
@@ -80,7 +73,7 @@ class DeliveryDetailsScreen extends StatelessWidget {
                     _DetailRow(
                       label: "To",
                       value:
-                      "Office No 501, 5th Floor,\n"
+                          "Office No 501, 5th Floor,\n"
                           "Ghanshyam Enclave, New Link Rd,\n"
                           "Kandivali, Kandivali West,\n"
                           "Mumbai, Maharashtra 400067",
@@ -89,9 +82,9 @@ class DeliveryDetailsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-        
+
               const SizedBox(height: 20),
-        
+
               const Text(
                 "Delivered Products",
                 style: TextStyle(
@@ -100,23 +93,23 @@ class DeliveryDetailsScreen extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-        
+
               const SizedBox(height: 12),
-        
+
               const _ProductTile(
                 title:
-                "AURA EDITION Yoga Slim 7 Intel, 35.56cms - Core Ultra 5 (Luna Grey)",
+                    "AURA EDITION Yoga Slim 7 Intel, 35.56cms - Core Ultra 5 (Luna Grey)",
               ),
               const _ProductTile(
                 title: "Intel Core i3 12100F 12th Gen Desktop PC Processor",
               ),
               const _ProductTile(
                 title:
-                "AURA EDITION Yoga Slim 7 Intel, 35.56cms - Core Ultra 5 (Luna Grey)",
+                    "AURA EDITION Yoga Slim 7 Intel, 35.56cms - Core Ultra 5 (Luna Grey)",
               ),
               const _ProductTile(
                 title:
-                "AURA EDITION Yoga Slim 7 Intel, 35.56cms - Core Ultra 5 (Luna Grey)",
+                    "AURA EDITION Yoga Slim 7 Intel, 35.56cms - Core Ultra 5 (Luna Grey)",
               ),
             ],
           ),
@@ -145,17 +138,15 @@ class _DetailRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        crossAxisAlignment:
-        multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        crossAxisAlignment: multiline
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 70,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ),
           const SizedBox(width: 10),
@@ -163,10 +154,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -204,10 +192,7 @@ class _ProductTile extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 12),
@@ -221,10 +206,7 @@ class _ProductTile extends StatelessWidget {
             alignment: Alignment.center,
             child: const Text(
               "IMG",
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-              ),
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
             ),
           ),
         ],

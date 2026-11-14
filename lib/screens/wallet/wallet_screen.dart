@@ -40,7 +40,9 @@ class _WalletScreenState extends State<WalletScreen> {
     });
 
     try {
-      final entries = await ApiService.fetchCashReceivedList(roleId: widget.roleId);
+      final entries = await ApiService.fetchCashReceivedList(
+        roleId: widget.roleId,
+      );
       if (!mounted) return;
       setState(() {
         _entries = entries;
@@ -98,14 +100,20 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   String _entryId(Map<String, dynamic> entry) {
-    return _readString(entry, const ['id', 'cash_received_id', 'transaction_id']);
+    return _readString(entry, const [
+      'id',
+      'cash_received_id',
+      'transaction_id',
+    ]);
   }
 
   String _orderId(Map<String, dynamic> entry) {
-    return _readString(
-      entry,
-      const ['order_id', 'order_no', 'invoice_no', 'reference_id'],
-    );
+    return _readString(entry, const [
+      'order_id',
+      'order_no',
+      'invoice_no',
+      'reference_id',
+    ]);
   }
 
   Map<String, dynamic>? _readMap(Map<String, dynamic> map, List<String> keys) {
@@ -119,45 +127,57 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   String _customerNameFor(Map<String, dynamic> entry) {
-    final direct = _readString(entry, const ['customer_name', 'party_name', 'name']);
+    final direct = _readString(entry, const [
+      'customer_name',
+      'party_name',
+      'name',
+    ]);
     if (direct.isNotEmpty) return direct;
 
-    final customerMap = _readMap(
-      entry,
-      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
-    );
+    final customerMap = _readMap(entry, const [
+      'customer',
+      'customer_detail',
+      'customer_details',
+      'party',
+      'user',
+    ]);
     if (customerMap == null) return '';
 
-    return _readString(
-      customerMap,
-      const ['customer_name', 'party_name', 'name', 'full_name'],
-    );
+    return _readString(customerMap, const [
+      'customer_name',
+      'party_name',
+      'name',
+      'full_name',
+    ]);
   }
 
   String _customerPhoneFor(Map<String, dynamic> entry) {
-    final direct = _readString(
-      entry,
-      const ['customer_phone', 'customer_mobile', 'mobile', 'phone', 'phone_no'],
-    );
+    final direct = _readString(entry, const [
+      'customer_phone',
+      'customer_mobile',
+      'mobile',
+      'phone',
+      'phone_no',
+    ]);
     if (direct.isNotEmpty) return direct;
 
-    final customerMap = _readMap(
-      entry,
-      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
-    );
+    final customerMap = _readMap(entry, const [
+      'customer',
+      'customer_detail',
+      'customer_details',
+      'party',
+      'user',
+    ]);
     if (customerMap == null) return '';
 
-    return _readString(
-      customerMap,
-      const [
-        'mobile',
-        'mobile_no',
-        'phone',
-        'phone_no',
-        'contact',
-        'contact_no',
-      ],
-    );
+    return _readString(customerMap, const [
+      'mobile',
+      'mobile_no',
+      'phone',
+      'phone_no',
+      'contact',
+      'contact_no',
+    ]);
   }
 
   String _customerDisplayLine(Map<String, dynamic> entry) {
@@ -184,15 +204,19 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   String _subtitleFor(Map<String, dynamic> entry) {
-    final method = _readString(
-      entry,
-      const ['payment_mode', 'payment_method', 'mode', 'type'],
-    );
+    final method = _readString(entry, const [
+      'payment_mode',
+      'payment_method',
+      'mode',
+      'type',
+    ]);
     final dateText = _formatDate(
-      _readString(
-        entry,
-        const ['received_at', 'created_at', 'updated_at', 'date'],
-      ),
+      _readString(entry, const [
+        'received_at',
+        'created_at',
+        'updated_at',
+        'date',
+      ]),
     );
 
     if (method.isNotEmpty && dateText.isNotEmpty) {
@@ -210,8 +234,8 @@ class _WalletScreenState extends State<WalletScreen> {
     final customerLine = orderId.isNotEmpty
         ? _customerDisplayLine(entry)
         : (customerName.isNotEmpty && customerPhone.isNotEmpty
-            ? customerPhone
-            : _customerDisplayLine(entry));
+              ? customerPhone
+              : _customerDisplayLine(entry));
     final metaLine = _subtitleFor(entry);
 
     if (customerLine.isEmpty) {
@@ -219,10 +243,7 @@ class _WalletScreenState extends State<WalletScreen> {
         metaLine,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontSize: 12.5,
-          color: Colors.black54,
-        ),
+        style: const TextStyle(fontSize: 12.5, color: Colors.black54),
       );
     }
 
@@ -244,10 +265,7 @@ class _WalletScreenState extends State<WalletScreen> {
           metaLine,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black54,
-          ),
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
         ),
       ],
     );
@@ -273,7 +291,9 @@ class _WalletScreenState extends State<WalletScreen> {
     final entryId = _entryId(entry);
     if (entryId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wallet detail is not available for this item.')),
+        const SnackBar(
+          content: Text('Wallet detail is not available for this item.'),
+        ),
       );
       return;
     }
@@ -615,61 +635,74 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
   }
 
   String _customerName() {
-    final direct = widget.readString(
-      _detail,
-      const ['customer_name', 'party_name', 'name'],
-    );
+    final direct = widget.readString(_detail, const [
+      'customer_name',
+      'party_name',
+      'name',
+    ]);
     if (direct.isNotEmpty) return direct;
 
-    final customerMap = _readMap(
-      _detail,
-      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
-    );
+    final customerMap = _readMap(_detail, const [
+      'customer',
+      'customer_detail',
+      'customer_details',
+      'party',
+      'user',
+    ]);
     if (customerMap == null) return '';
 
-    return widget.readString(
-      customerMap,
-      const ['customer_name', 'party_name', 'name', 'full_name'],
-    );
+    return widget.readString(customerMap, const [
+      'customer_name',
+      'party_name',
+      'name',
+      'full_name',
+    ]);
   }
 
   String _customerPhone() {
-    final direct = widget.readString(
-      _detail,
-      const ['customer_phone', 'customer_mobile', 'mobile', 'phone', 'phone_no'],
-    );
+    final direct = widget.readString(_detail, const [
+      'customer_phone',
+      'customer_mobile',
+      'mobile',
+      'phone',
+      'phone_no',
+    ]);
     if (direct.isNotEmpty) return direct;
 
-    final customerMap = _readMap(
-      _detail,
-      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
-    );
+    final customerMap = _readMap(_detail, const [
+      'customer',
+      'customer_detail',
+      'customer_details',
+      'party',
+      'user',
+    ]);
     if (customerMap == null) return '';
 
-    return widget.readString(
-      customerMap,
-      const [
-        'mobile',
-        'mobile_no',
-        'phone',
-        'phone_no',
-        'contact',
-        'contact_no',
-      ],
-    );
+    return widget.readString(customerMap, const [
+      'mobile',
+      'mobile_no',
+      'phone',
+      'phone_no',
+      'contact',
+      'contact_no',
+    ]);
   }
 
   String _customerAddress() {
-    final direct = widget.readString(
-      _detail,
-      const ['customer_address', 'address', 'full_address'],
-    );
+    final direct = widget.readString(_detail, const [
+      'customer_address',
+      'address',
+      'full_address',
+    ]);
     if (direct.isNotEmpty) return direct;
 
-    final customerMap = _readMap(
-      _detail,
-      const ['customer', 'customer_detail', 'customer_details', 'party', 'user'],
-    );
+    final customerMap = _readMap(_detail, const [
+      'customer',
+      'customer_detail',
+      'customer_details',
+      'party',
+      'user',
+    ]);
     if (customerMap == null) return '';
 
     final addressValue = customerMap['address'] ?? customerMap['full_address'];
@@ -680,20 +713,26 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
     if (addressValue is Map) {
       final addressMap = Map<String, dynamic>.from(addressValue as Map);
       final parts = <String>[
-        widget.readString(
-          addressMap,
-          const ['address1', 'address_1', 'line1', 'street'],
-        ),
-        widget.readString(
-          addressMap,
-          const ['address2', 'address_2', 'line2', 'area'],
-        ),
+        widget.readString(addressMap, const [
+          'address1',
+          'address_1',
+          'line1',
+          'street',
+        ]),
+        widget.readString(addressMap, const [
+          'address2',
+          'address_2',
+          'line2',
+          'area',
+        ]),
         widget.readString(addressMap, const ['city']),
         widget.readString(addressMap, const ['state']),
-        widget.readString(
-          addressMap,
-          const ['pincode', 'pin_code', 'zip', 'postal_code'],
-        ),
+        widget.readString(addressMap, const [
+          'pincode',
+          'pin_code',
+          'zip',
+          'postal_code',
+        ]),
       ].where((part) => part.trim().isNotEmpty).toList();
       return parts.join(', ');
     }
@@ -714,65 +753,70 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
       _DetailRowData(
         label: 'Amount',
         value: widget.formatCurrency(
-          widget.readValue(
-            _detail,
-            const [
-              'amount',
-              'cash_received_amount',
-              'collected_amount',
-              'cod_amount',
-              'received_amount',
-            ],
-          ),
+          widget.readValue(_detail, const [
+            'amount',
+            'cash_received_amount',
+            'collected_amount',
+            'cod_amount',
+            'received_amount',
+          ]),
         ),
       ),
       _DetailRowData(
         label: 'Order ID',
-        value: widget.readString(
-          _detail,
-          const ['order_id', 'order_no', 'invoice_no', 'reference_id'],
-        ),
+        value: widget.readString(_detail, const [
+          'order_id',
+          'order_no',
+          'invoice_no',
+          'reference_id',
+        ]),
       ),
-      _DetailRowData(
-        label: 'Customer',
-        value: _customerDetailText(),
-      ),
+      _DetailRowData(label: 'Customer', value: _customerDetailText()),
       _DetailRowData(
         label: 'Payment Mode',
-        value: widget.readString(
-          _detail,
-          const ['payment_mode', 'payment_method', 'mode', 'type'],
-        ),
+        value: widget.readString(_detail, const [
+          'payment_mode',
+          'payment_method',
+          'mode',
+          'type',
+        ]),
       ),
       _DetailRowData(
         label: 'Received At',
         value: widget.formatDate(
-          widget.readString(
-            _detail,
-            const ['received_at', 'created_at', 'updated_at', 'date'],
-          ),
+          widget.readString(_detail, const [
+            'received_at',
+            'created_at',
+            'updated_at',
+            'date',
+          ]),
         ),
       ),
       _DetailRowData(
         label: 'Status',
-        value: widget.readString(
-          _detail,
-          const ['status', 'payment_status', 'received_status'],
-        ),
+        value: widget.readString(_detail, const [
+          'status',
+          'payment_status',
+          'received_status',
+        ]),
       ),
       _DetailRowData(
         label: 'Reference',
-        value: widget.readString(
-          _detail,
-          const ['reference_no', 'transaction_no', 'transaction_id', 'id'],
-        ),
+        value: widget.readString(_detail, const [
+          'reference_no',
+          'transaction_no',
+          'transaction_id',
+          'id',
+        ]),
       ),
       _DetailRowData(
         label: 'Notes',
-        value: widget.readString(
-          _detail,
-          const ['notes', 'remark', 'remarks', 'description'],
-        ),
+        value: widget.readString(_detail, const [
+          'notes',
+          'remark',
+          'remarks',
+          'description',
+        ]),
       ),
     ];
 

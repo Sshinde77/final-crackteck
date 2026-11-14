@@ -4,12 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AddReimbursementScreen', () {
-    testWidgets('shows snackbar when submitting without receipt', (tester) async {
+    testWidgets('shows snackbar when submitting without receipt', (
+      tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AddReimbursementScreen()),
-        ),
+        const MaterialApp(home: Scaffold(body: AddReimbursementScreen())),
       );
       await tester.pumpAndSettle();
 
@@ -24,4 +24,3 @@ void main() {
     });
   });
 }
-

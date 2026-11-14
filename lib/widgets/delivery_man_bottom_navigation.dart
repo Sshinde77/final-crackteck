@@ -90,11 +90,7 @@ class _NavItem extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isActive ? _green : _inactive,
-            ),
+            Icon(icon, size: 22, color: isActive ? _green : _inactive),
             const SizedBox(width: 6),
             Text(
               label,

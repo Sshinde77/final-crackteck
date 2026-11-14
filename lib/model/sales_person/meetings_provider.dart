@@ -35,7 +35,11 @@ class MeetingsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.fetchMeetings(userId, roleId, page: page);
+      final response = await ApiService.fetchMeetings(
+        userId,
+        roleId,
+        page: page,
+      );
       final data = response['data'];
 
       final List<MeetingModel> parsed = <MeetingModel>[];

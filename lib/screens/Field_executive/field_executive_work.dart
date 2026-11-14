@@ -44,8 +44,9 @@ class _WorksScreenState extends State<WorksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredList =
-    works.where((item) => item["tab"] == selectedTab).toList();
+    final filteredList = works
+        .where((item) => item["tab"] == selectedTab)
+        .toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -62,9 +63,9 @@ class _WorksScreenState extends State<WorksScreen> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.green.shade700,
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Calendar clicked")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Calendar clicked")));
         },
         icon: const Icon(Icons.calendar_month),
         label: const Text("Calendar"),
@@ -73,33 +74,33 @@ class _WorksScreenState extends State<WorksScreen> {
       body: SafeArea(
         child: Column(
           children: [
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          /// Tabs
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _tabButton("Done", 0),
-                _tabButton("Pending", 1),
-                _tabButton("Transferred", 2),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          /// List
-          Expanded(
-            child: ListView.builder(
+            /// Tabs
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: filteredList.length,
-              itemBuilder: (context, index) {
-                final item = filteredList[index];
-                return _workCard(item);
-              },
+              child: Row(
+                children: [
+                  _tabButton("Done", 0),
+                  _tabButton("Pending", 1),
+                  _tabButton("Transferred", 2),
+                ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 16),
+
+            /// List
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: filteredList.length,
+                itemBuilder: (context, index) {
+                  final item = filteredList[index];
+                  return _workCard(item);
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -208,10 +209,7 @@ class _WorksScreenState extends State<WorksScreen> {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],

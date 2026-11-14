@@ -14,12 +14,7 @@ class GoogleAuthService {
   GoogleAuthService({GoogleSignIn? googleSignIn})
     : _googleSignIn =
           googleSignIn ??
-          GoogleSignIn(
-            scopes: const <String>[
-              'email',
-              'profile',
-            ],
-          );
+          GoogleSignIn(scopes: const <String>['email', 'profile']);
 
   final GoogleSignIn _googleSignIn;
 

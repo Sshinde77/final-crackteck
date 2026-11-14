@@ -74,21 +74,21 @@ class NotificationService {
   }
 
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings();
 
     await _localNotifications.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload;
         if (payload == null || payload.isEmpty) return;
 
         try {
-          final Map<String, dynamic> data =
-              Map<String, dynamic>.from(jsonDecode(payload) as Map);
+          final Map<String, dynamic> data = Map<String, dynamic>.from(
+            jsonDecode(payload) as Map,
+          );
           _handleNotificationTapData(data);
         } catch (error) {
           debugPrint('Failed to parse local notification payload: $error');
@@ -110,7 +110,9 @@ class NotificationService {
       sound: true,
       provisional: false,
     );
-    debugPrint('FCM notification authorization: ${settings.authorizationStatus}');
+    debugPrint(
+      'FCM notification authorization: ${settings.authorizationStatus}',
+    );
 
     if (Platform.isAndroid) {
       final status = await Permission.notification.status;
@@ -161,7 +163,8 @@ class NotificationService {
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final RemoteNotification? notification = message.notification;
-    final String? title = notification?.title ?? message.data['title']?.toString();
+    final String? title =
+        notification?.title ?? message.data['title']?.toString();
     final String? body = notification?.body ?? message.data['body']?.toString();
 
     if ((title == null || title.isEmpty) && (body == null || body.isEmpty)) {
@@ -227,9 +230,7 @@ class NotificationService {
         normalized.contains('TIMEOUT');
   }
 
-  Future<String?> _getMessagingTokenWithRetry({
-    int maxAttempts = 3,
-  }) async {
+  Future<String?> _getMessagingTokenWithRetry({int maxAttempts = 3}) async {
     Object? lastError;
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -271,7 +272,9 @@ class NotificationService {
     return _messaging.getNotificationSettings();
   }
 
-  Future<void> syncTokenWithBackendIfPossible({bool forceRefresh = false}) async {
+  Future<void> syncTokenWithBackendIfPossible({
+    bool forceRefresh = false,
+  }) async {
     if (_notificationsDisabledForBuild) {
       return;
     }
@@ -279,7 +282,7 @@ class NotificationService {
       final String? token = forceRefresh
           ? await _logAndPersistCurrentToken()
           : (await SecureStorageService.getFcmToken()) ??
-              await _logAndPersistCurrentToken();
+                await _logAndPersistCurrentToken();
       if (token == null || token.isEmpty) return;
 
       final int? userId = await SecureStorageService.getUserId();
@@ -307,9 +310,7 @@ class NotificationService {
         return;
       }
 
-      final Uri uri = Uri.parse(
-        ApiConstants.FCMtoken,
-      ).replace(
+      final Uri uri = Uri.parse(ApiConstants.FCMtoken).replace(
         queryParameters: <String, String>{
           'user_id': userId.toString(),
           'role_id': roleId.toString(),
@@ -349,7 +350,9 @@ class NotificationService {
     final String? routeName =
         data['route']?.toString() ?? data['screen']?.toString();
 
-    if (routeName != null && routeName.isNotEmpty && routeName.startsWith('/')) {
+    if (routeName != null &&
+        routeName.isNotEmpty &&
+        routeName.startsWith('/')) {
       navigator.pushNamed(routeName, arguments: data);
       return;
     }

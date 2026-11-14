@@ -19,7 +19,10 @@ class DeliveryHomeProvider extends ChangeNotifier {
 
   int get totalCount => _orders.length;
   int get pendingCount => _orders
-      .where((order) => order.status == DeliveryOrderStatus.pending && !order.accepted)
+      .where(
+        (order) =>
+            order.status == DeliveryOrderStatus.pending && !order.accepted,
+      )
       .length;
   int get cancelledCount => _orders
       .where((order) => order.status == DeliveryOrderStatus.cancelled)
@@ -64,23 +67,20 @@ class DeliveryHomeProvider extends ChangeNotifier {
         ...results[2]
             .map(DeliveryOrderModel.fromJson)
             .map(
-              (order) => order.copyWith(
-                category: DeliveryOrderCategory.returnRequest,
-              ),
+              (order) =>
+                  order.copyWith(category: DeliveryOrderCategory.returnRequest),
             ),
         ...results[3]
             .map(DeliveryOrderModel.fromJson)
             .map(
-              (order) => order.copyWith(
-                category: DeliveryOrderCategory.requestPart,
-              ),
+              (order) =>
+                  order.copyWith(category: DeliveryOrderCategory.requestPart),
             ),
         ...results[4]
             .map(DeliveryOrderModel.fromJson)
             .map(
-              (order) => order.copyWith(
-                category: DeliveryOrderCategory.returnProduct,
-              ),
+              (order) =>
+                  order.copyWith(category: DeliveryOrderCategory.returnProduct),
             ),
       ];
 
@@ -105,9 +105,8 @@ class DeliveryHomeProvider extends ChangeNotifier {
   void markOrderAccepted(String orderId) {
     _orders = _orders
         .map(
-          (order) => order.id == orderId
-              ? order.copyWith(accepted: true)
-              : order,
+          (order) =>
+              order.id == orderId ? order.copyWith(accepted: true) : order,
         )
         .toList();
     notifyListeners();

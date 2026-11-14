@@ -51,10 +51,7 @@ class RequestedProductsStore extends ChangeNotifier {
         ? existing.quantity + (product.quantity < 1 ? 1 : product.quantity)
         : (product.quantity < 1 ? 1 : product.quantity);
 
-    _items[index] = product.copyWith(
-      id: normalizedId,
-      quantity: nextQuantity,
-    );
+    _items[index] = product.copyWith(id: normalizedId, quantity: nextQuantity);
     notifyListeners();
   }
 

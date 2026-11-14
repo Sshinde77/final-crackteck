@@ -7,9 +7,9 @@ class DeliveryOrderDetailProvider extends ChangeNotifier {
   DeliveryOrderDetailProvider({
     required String orderId,
     DeliveryOrdersService? ordersService,
-  })  : orderId = orderId.startsWith('#') ? orderId : '#$orderId',
-        _ordersService = ordersService ?? DeliveryOrdersService(),
-        _detail = DeliveryOrderDetailModel.placeholder(orderId);
+  }) : orderId = orderId.startsWith('#') ? orderId : '#$orderId',
+       _ordersService = ordersService ?? DeliveryOrdersService(),
+       _detail = DeliveryOrderDetailModel.placeholder(orderId);
 
   final String orderId;
   final DeliveryOrdersService _ordersService;

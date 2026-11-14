@@ -279,11 +279,8 @@ class ReturnOrderAddress {
     pincode,
   ]);
 
-  String get primaryLabel => _firstNonEmpty(<dynamic>[
-    name,
-    branchName,
-    formatted,
-  ], fallback: '');
+  String get primaryLabel =>
+      _firstNonEmpty(<dynamic>[name, branchName, formatted], fallback: '');
 
   factory ReturnOrderAddress.fromMap(Map<String, dynamic>? source) {
     final map = source ?? const <String, dynamic>{};
@@ -423,8 +420,7 @@ Map<String, dynamic>? _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
     return value.map(
-      (dynamic key, dynamic entryValue) =>
-          MapEntry(key.toString(), entryValue),
+      (dynamic key, dynamic entryValue) => MapEntry(key.toString(), entryValue),
     );
   }
   return null;

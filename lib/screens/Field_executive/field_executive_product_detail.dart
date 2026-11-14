@@ -54,7 +54,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+        _error = e
+            .toString()
+            .replaceFirst(RegExp(r'^Exception:\s*'), '')
+            .trim();
         _isLoading = false;
       });
     }
@@ -98,8 +101,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final relative = value.startsWith('//')
         ? Uri.parse('https:$value')
         : value.startsWith('/')
-            ? Uri.parse(value)
-            : Uri.parse('/$value');
+        ? Uri.parse(value)
+        : Uri.parse('/$value');
 
     return origin.resolveUri(relative).toString();
   }
@@ -138,47 +141,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final image = _readImage(products) != ''
         ? _readImage(products)
         : _readImage(item);
-    final productName = _readText(
-      products ?? item,
-      const ['product_name', 'name', 'title'],
-    );
-    final modelNo = _readText(
-      products ?? item,
-      const ['model_no', 'model_number', 'model', 'modelNo'],
-    );
-    final shortDescription = _readText(
-      products ?? item,
-      const ['short_description', 'short_desc', 'subtitle'],
-    );
-    final finalPrice = _readText(
-      products ?? item,
-      const ['final_price', 'selling_price', 'price', 'amount'],
-    );
-    final fullDescription = _readText(
-      products ?? item,
-      const ['full_description', 'description', 'long_description', 'details'],
-    );
-    final technicalSpecification = _readText(
-      products ?? item,
-      const [
-        'technical_specification',
-        'technical_specifications',
-        'specification',
-        'specifications',
-      ],
-    );
-    final brandWarranty = _readText(
-      products ?? item,
-      const ['brand_warranty', 'warranty', 'brandWarranty'],
-    );
-    final companyWarranty = _readText(
-      products ?? item,
-      const ['company_warranty', 'companyWarranty'],
-    );
-    final totalRequestedQuantity = _readText(
-      item,
-      const ['total_requested_quantity', 'requested_quantity', 'quantity', 'qty'],
-    );
+    final productName = _readText(products ?? item, const [
+      'product_name',
+      'name',
+      'title',
+    ]);
+    final modelNo = _readText(products ?? item, const [
+      'model_no',
+      'model_number',
+      'model',
+      'modelNo',
+    ]);
+    final shortDescription = _readText(products ?? item, const [
+      'short_description',
+      'short_desc',
+      'subtitle',
+    ]);
+    final finalPrice = _readText(products ?? item, const [
+      'final_price',
+      'selling_price',
+      'price',
+      'amount',
+    ]);
+    final fullDescription = _readText(products ?? item, const [
+      'full_description',
+      'description',
+      'long_description',
+      'details',
+    ]);
+    final technicalSpecification = _readText(products ?? item, const [
+      'technical_specification',
+      'technical_specifications',
+      'specification',
+      'specifications',
+    ]);
+    final brandWarranty = _readText(products ?? item, const [
+      'brand_warranty',
+      'warranty',
+      'brandWarranty',
+    ]);
+    final companyWarranty = _readText(products ?? item, const [
+      'company_warranty',
+      'companyWarranty',
+    ]);
+    final totalRequestedQuantity = _readText(item, const [
+      'total_requested_quantity',
+      'requested_quantity',
+      'quantity',
+      'qty',
+    ]);
 
     return _ProductDetailData(
       image: image.isEmpty ? 'assets/products/motherboard.png' : image,
@@ -187,12 +198,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       shortDescription: shortDescription.isEmpty ? '-' : shortDescription,
       finalPrice: _formatPrice(finalPrice),
       fullDescription: fullDescription.isEmpty ? '-' : fullDescription,
-      technicalSpecification:
-          technicalSpecification.isEmpty ? '-' : technicalSpecification,
+      technicalSpecification: technicalSpecification.isEmpty
+          ? '-'
+          : technicalSpecification,
       brandWarranty: brandWarranty.isEmpty ? '-' : brandWarranty,
       companyWarranty: companyWarranty.isEmpty ? '-' : companyWarranty,
-      totalRequestedQuantity:
-          totalRequestedQuantity.isEmpty ? '0' : totalRequestedQuantity,
+      totalRequestedQuantity: totalRequestedQuantity.isEmpty
+          ? '0'
+          : totalRequestedQuantity,
     );
   }
 
@@ -209,70 +222,74 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         title: const Text(
           AppStrings.productTitle,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: _loadProductDetail,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryGreen,
-                            ),
-                            child: const Text(
-                              'Retry',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.black54),
                       ),
-                    ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildImageCard(_product.image),
-                        const SizedBox(height: 14),
-                        _buildHeaderCard(_product),
-                        const SizedBox(height: 14),
-                        _buildTextCard('Short Description', _product.shortDescription),
-                        const SizedBox(height: 12),
-                        _buildTextCard('Full Description', _product.fullDescription),
-                        const SizedBox(height: 12),
-                        _buildTextCard(
-                          'Technical Specification',
-                          _product.technicalSpecification,
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _loadProductDetail,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryGreen,
                         ),
-                        const SizedBox(height: 12),
-                        _buildInfoGrid(_product),
-                      ],
-                    ),
+                        child: const Text(
+                          'Retry',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildImageCard(_product.image),
+                    const SizedBox(height: 14),
+                    _buildHeaderCard(_product),
+                    const SizedBox(height: 14),
+                    _buildTextCard(
+                      'Short Description',
+                      _product.shortDescription,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTextCard(
+                      'Full Description',
+                      _product.fullDescription,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTextCard(
+                      'Technical Specification',
+                      _product.technicalSpecification,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoGrid(_product),
+                  ],
+                ),
+              ),
       ),
     );
   }
 
   Widget _buildImageCard(String imagePathOrUrl) {
-    final isNetwork = imagePathOrUrl.startsWith('http://') ||
+    final isNetwork =
+        imagePathOrUrl.startsWith('http://') ||
         imagePathOrUrl.startsWith('https://');
 
     return Container(
@@ -358,7 +375,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF8EC),
                   borderRadius: BorderRadius.circular(30),
@@ -434,10 +454,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildMiniInfoCard({
-    required String title,
-    required String value,
-  }) {
+  Widget _buildMiniInfoCard({required String title, required String value}) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -498,14 +515,14 @@ class _ProductDetailData {
   });
 
   const _ProductDetailData.empty()
-      : image = 'assets/products/motherboard.png',
-        productName = '-',
-        modelNo = '-',
-        shortDescription = '-',
-        finalPrice = '-',
-        fullDescription = '-',
-        technicalSpecification = '-',
-        brandWarranty = '-',
-        companyWarranty = '-',
-        totalRequestedQuantity = '0';
+    : image = 'assets/products/motherboard.png',
+      productName = '-',
+      modelNo = '-',
+      shortDescription = '-',
+      finalPrice = '-',
+      fullDescription = '-',
+      technicalSpecification = '-',
+      brandWarranty = '-',
+      companyWarranty = '-',
+      totalRequestedQuantity = '0';
 }

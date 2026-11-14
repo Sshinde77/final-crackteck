@@ -25,8 +25,9 @@ class DeliveryManService extends DeliveryApiClient {
       throw Exception(validation.message);
     }
     final query = await requiredQuery(roleId: _defaultRoleId);
-    final response =
-        await performAuthenticatedGet(buildUri(ApiConstants.dashboard, query));
+    final response = await performAuthenticatedGet(
+      buildUri(ApiConstants.dashboard, query),
+    );
     if (response.statusCode != 200) {
       throw Exception('Failed to load dashboard: ${response.statusCode}');
     }
@@ -58,7 +59,10 @@ class DeliveryManService extends DeliveryApiClient {
     required XFile drivingLicenseBackFile,
     int roleId = _defaultRoleId,
   }) async {
-    final request = http.MultipartRequest('POST', Uri.parse(ApiConstants.signup));
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(ApiConstants.signup),
+    );
     request.fields.addAll(<String, String>{
       'role_id': roleId.toString(),
       'name': name.trim(),
@@ -91,7 +95,10 @@ class DeliveryManService extends DeliveryApiClient {
       ),
     );
     request.files.add(
-      await http.MultipartFile.fromPath('pan_card_front_path', panFrontFile.path),
+      await http.MultipartFile.fromPath(
+        'pan_card_front_path',
+        panFrontFile.path,
+      ),
     );
     request.files.add(
       await http.MultipartFile.fromPath('pan_card_back_path', panBackFile.path),
@@ -145,7 +152,10 @@ class DeliveryManService extends DeliveryApiClient {
 
   Future<List<Map<String, dynamic>>> fetchReturnOrders() async {
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.deliveryManReturnOrders, await requiredQuery(roleId: 2)),
+      buildUri(
+        ApiConstants.deliveryManReturnOrders,
+        await requiredQuery(roleId: 2),
+      ),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load return orders: ${response.statusCode}');
@@ -270,7 +280,10 @@ class DeliveryManService extends DeliveryApiClient {
     final query = await requiredQuery(roleId: 2)
       ..['otp'] = otp.trim();
     final response = await performAuthenticatedPost(
-      buildUri(replaceId(ApiConstants.deliveryManVerifyOrderOtp, orderId), query),
+      buildUri(
+        replaceId(ApiConstants.deliveryManVerifyOrderOtp, orderId),
+        query,
+      ),
       json: true,
       body: jsonEncode(<String, String>{'otp': otp.trim()}),
     );
@@ -352,7 +365,10 @@ class DeliveryManService extends DeliveryApiClient {
 
   Future<Map<String, dynamic>> fetchKycStatus() async {
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.deliveryManKycStatus, await requiredQuery(roleId: 2)),
+      buildUri(
+        ApiConstants.deliveryManKycStatus,
+        await requiredQuery(roleId: 2),
+      ),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load KYC status: ${response.statusCode}');
@@ -613,10 +629,7 @@ class DeliveryManService extends DeliveryApiClient {
     }
     if (backFile != null) {
       request.files.add(
-        await http.MultipartFile.fromPath(
-          'pan_card_back_path',
-          backFile.path,
-        ),
+        await http.MultipartFile.fromPath('pan_card_back_path', backFile.path),
       );
     }
     final response = await performAuthenticatedMultipart(request);
@@ -629,7 +642,10 @@ class DeliveryManService extends DeliveryApiClient {
 
   Future<Map<String, dynamic>> fetchAttendance() async {
     final response = await performAuthenticatedGet(
-      buildUri(ApiConstants.deliveryManAttendance, await requiredQuery(roleId: 2)),
+      buildUri(
+        ApiConstants.deliveryManAttendance,
+        await requiredQuery(roleId: 2),
+      ),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to load attendance: ${response.statusCode}');

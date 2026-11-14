@@ -34,10 +34,7 @@ class UsedStockItem {
     String productIdKey = 'product_id',
     String quantityKey = 'quantity',
   }) {
-    return <String, dynamic>{
-      productIdKey: productId,
-      quantityKey: quantity,
-    };
+    return <String, dynamic>{productIdKey: productId, quantityKey: quantity};
   }
 
   factory UsedStockItem.fromMap(Map<String, dynamic> map) {
@@ -65,21 +62,26 @@ class UsedStockItem {
               ? Map<String, dynamic>.from(map['products'] as Map)
               : <String, dynamic>{});
 
-    final String rootProductId = readFromMap(
-      map,
-      const ['product_id', 'productId', 'id', 'part_id'],
-    );
-    final String nestedProductId = readFromMap(
-      products,
-      const ['id', 'product_id', 'productId', 'part_id'],
-    );
+    final String rootProductId = readFromMap(map, const [
+      'product_id',
+      'productId',
+      'id',
+      'part_id',
+    ]);
+    final String nestedProductId = readFromMap(products, const [
+      'id',
+      'product_id',
+      'productId',
+      'part_id',
+    ]);
     final String resolvedProductId = rootProductId.isNotEmpty
         ? rootProductId
         : nestedProductId;
-    final String rootProductName = readFromMap(
-      map,
-      const ['product_name', 'name', 'title'],
-    );
+    final String rootProductName = readFromMap(map, const [
+      'product_name',
+      'name',
+      'title',
+    ]);
     final String resolvedProductName = rootProductName.isNotEmpty
         ? rootProductName
         : readFromMap(products, const ['product_name', 'name', 'title']);

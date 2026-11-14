@@ -16,7 +16,7 @@ class PaymentsScreen extends StatelessWidget {
       "bankAccount": "846735629",
       "category": "CCTV",
       "transactionId": "372638263769",
-      "status": "Completed"
+      "status": "Completed",
     },
     {
       "name": "Darron Kulikowski",
@@ -26,7 +26,7 @@ class PaymentsScreen extends StatelessWidget {
       "bankAccount": "846735629",
       "category": "CCTV",
       "transactionId": "372638263770",
-      "status": "Completed"
+      "status": "Completed",
     },
     {
       "name": "Darron Kulikowski",
@@ -36,7 +36,7 @@ class PaymentsScreen extends StatelessWidget {
       "bankAccount": "846735629",
       "category": "CCTV",
       "transactionId": "372638263771",
-      "status": "Completed"
+      "status": "Completed",
     },
     {
       "name": "Darron Kulikowski",
@@ -46,7 +46,7 @@ class PaymentsScreen extends StatelessWidget {
       "bankAccount": "846735629",
       "category": "CCTV",
       "transactionId": "372638263772",
-      "status": "Completed"
+      "status": "Completed",
     },
     {
       "name": "Darron Kulikowski",
@@ -56,7 +56,7 @@ class PaymentsScreen extends StatelessWidget {
       "bankAccount": "846735629",
       "category": "CCTV",
       "transactionId": "372638263773",
-      "status": "Completed"
+      "status": "Completed",
     },
     {
       "name": "Darron Kulikowski",
@@ -66,7 +66,7 @@ class PaymentsScreen extends StatelessWidget {
       "bankAccount": "846735629",
       "category": "CCTV",
       "transactionId": "372638263774",
-      "status": "Completed"
+      "status": "Completed",
     },
   ];
 
@@ -80,61 +80,55 @@ class PaymentsScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Payments",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Payments", style: TextStyle(color: Colors.white)),
       ),
       body: SafeArea(
         child: Column(
           children: [
-          /// Payment List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: payments.length,
-              itemBuilder: (context, index) {
-                final item = payments[index];
+            /// Payment List
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: payments.length,
+                itemBuilder: (context, index) {
+                  final item = payments[index];
 
-                return _paymentTile(
-                  context: context,
-                  data: item,
-                );
-              },
-            ),
-          ),
-
-          /// Bottom Button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Request clear cash submitted"),
-                    ),
-                  );
+                  return _paymentTile(context: context, data: item);
                 },
-                child: const Text(
-                  "Request clear cash",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+              ),
+            ),
+
+            /// Bottom Button
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Request clear cash submitted"),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Request clear cash",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           ],
         ),
       ),
@@ -178,19 +172,12 @@ class PaymentsScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     data["date"],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
               ),
             ),
-            Container(
-              height: 40,
-              width: 1,
-              color: Colors.grey.shade300,
-            ),
+            Container(height: 40, width: 1, color: Colors.grey.shade300),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -206,10 +193,7 @@ class PaymentsScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   data["mode"],
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -219,5 +203,3 @@ class PaymentsScreen extends StatelessWidget {
     );
   }
 }
-
-

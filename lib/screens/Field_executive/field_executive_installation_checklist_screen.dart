@@ -147,15 +147,12 @@ class _FieldExecutiveInstallationChecklistScreenState
   String _serviceRequestIdForApi() {
     return _firstResolvedId([
       widget.serviceRequestDbId,
-      _readFromMap(
-        widget.selectedProduct,
-        const [
-          'service_requests_id',
-          'service_request_id',
-          'serviceRequestId',
-          'request_service_id',
-        ],
-      ),
+      _readFromMap(widget.selectedProduct, const [
+        'service_requests_id',
+        'service_request_id',
+        'serviceRequestId',
+        'request_service_id',
+      ]),
       widget.serviceRequestId,
     ]);
   }
@@ -163,10 +160,13 @@ class _FieldExecutiveInstallationChecklistScreenState
   String _productIdForApi() {
     return _firstResolvedId([
       widget.productDbId,
-      _readFromMap(
-        widget.selectedProduct,
-        const ['id', 'product_id', 'productId', 'item_code_id', 'itemCodeId'],
-      ),
+      _readFromMap(widget.selectedProduct, const [
+        'id',
+        'product_id',
+        'productId',
+        'item_code_id',
+        'itemCodeId',
+      ]),
       widget.serviceId,
     ]);
   }
@@ -189,9 +189,21 @@ class _FieldExecutiveInstallationChecklistScreenState
   }
 
   String _readProductDiagnosisStatus(Map<String, dynamic> product) {
-    final directStatus = _readFromMap(
-      product,
-      const [
+    final directStatus = _readFromMap(product, const [
+      'diagnosis_status',
+      'diagnosisStatus',
+      'product_status',
+      'productStatus',
+      'service_status',
+      'serviceStatus',
+      'status',
+    ]);
+    if (directStatus.isNotEmpty) {
+      return directStatus;
+    }
+
+    for (final key in const ['product', 'products', 'service_product']) {
+      final nestedStatus = _readFromMap(_asMap(product[key]), const [
         'diagnosis_status',
         'diagnosisStatus',
         'product_status',
@@ -199,25 +211,7 @@ class _FieldExecutiveInstallationChecklistScreenState
         'service_status',
         'serviceStatus',
         'status',
-      ],
-    );
-    if (directStatus.isNotEmpty) {
-      return directStatus;
-    }
-
-    for (final key in const ['product', 'products', 'service_product']) {
-      final nestedStatus = _readFromMap(
-        _asMap(product[key]),
-        const [
-          'diagnosis_status',
-          'diagnosisStatus',
-          'product_status',
-          'productStatus',
-          'service_status',
-          'serviceStatus',
-          'status',
-        ],
-      );
+      ]);
       if (nestedStatus.isNotEmpty) {
         return nestedStatus;
       }
@@ -698,7 +692,9 @@ class _FieldExecutiveInstallationChecklistScreenState
     if (localSelection != null) {
       return localSelection;
     }
-    return _sanitizeRequestedPartSelection(_requestedPartFromDiagnosis(diagnosis));
+    return _sanitizeRequestedPartSelection(
+      _requestedPartFromDiagnosis(diagnosis),
+    );
   }
 
   DiagnosisItem? _findDiagnosisByName(String name) {
@@ -716,9 +712,10 @@ class _FieldExecutiveInstallationChecklistScreenState
     };
 
     for (final key in _itemSelectedStockItems.keys.toList()) {
-      final List<SelectedStockItem> sanitizedItems = _sanitizeSelectedStockItems(
-        _itemSelectedStockItems[key] ?? const <SelectedStockItem>[],
-      );
+      final List<SelectedStockItem> sanitizedItems =
+          _sanitizeSelectedStockItems(
+            _itemSelectedStockItems[key] ?? const <SelectedStockItem>[],
+          );
       if (sanitizedItems.isEmpty) {
         _itemSelectedStockItems.remove(key);
         continue;
@@ -733,7 +730,9 @@ class _FieldExecutiveInstallationChecklistScreenState
         continue;
       }
 
-      final apiStatus = _normalizeStatusLabel(diagnosisByName[key]?.statusLabel);
+      final apiStatus = _normalizeStatusLabel(
+        diagnosisByName[key]?.statusLabel,
+      );
       if (apiStatus.isNotEmpty && !_isUseStockInHandStatus(apiStatus)) {
         _itemSelectedStockItems.remove(key);
       }
@@ -772,9 +771,9 @@ class _FieldExecutiveInstallationChecklistScreenState
 
   void _showMessageSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _stockItemKey(SelectedStockItem item) {
@@ -893,8 +892,8 @@ class _FieldExecutiveInstallationChecklistScreenState
     }
 
     final List<SelectedStockItem> mergedItems = _mergeSelectedStockItems(
-      existingItems: _itemSelectedStockItems[diagnosisName] ??
-          const <SelectedStockItem>[],
+      existingItems:
+          _itemSelectedStockItems[diagnosisName] ?? const <SelectedStockItem>[],
       incomingItems: selectedFromStockScreen,
     );
 
@@ -1165,10 +1164,8 @@ class _FieldExecutiveInstallationChecklistScreenState
     String diagnosisName,
   ) async {
     final DiagnosisItem? diagnosis = _findDiagnosisByName(diagnosisName);
-    final SelectedStockItem? initialSelectedPart = _resolvedRequestedPartSelection(
-      diagnosisName,
-      diagnosis: diagnosis,
-    );
+    final SelectedStockItem? initialSelectedPart =
+        _resolvedRequestedPartSelection(diagnosisName, diagnosis: diagnosis);
     final dynamic result = await Navigator.pushNamed(
       context,
       AppRoutes.FieldExecutiveAddProductScreen,
@@ -1195,8 +1192,7 @@ class _FieldExecutiveInstallationChecklistScreenState
         selectionMode: true,
         diagnosisName: diagnosisName,
         initialSelectedItems: _sanitizeSelectedStockItems(
-          _itemSelectedStockItems[diagnosisName] ??
-              const <SelectedStockItem>[],
+          _itemSelectedStockItems[diagnosisName] ?? const <SelectedStockItem>[],
         ),
       ),
     );
@@ -1356,8 +1352,9 @@ class _FieldExecutiveInstallationChecklistScreenState
         _buildLargeButton(
           onPressed: _showBeforeImagePickerOptions,
           icon: Icons.add_a_photo_outlined,
-          label:
-              _beforeImage == null ? 'Upload before image' : 'Re-upload before image',
+          label: _beforeImage == null
+              ? 'Upload before image'
+              : 'Re-upload before image',
         ),
         if (_beforeImage != null) ...[
           const SizedBox(height: 10),
@@ -1383,7 +1380,10 @@ class _FieldExecutiveInstallationChecklistScreenState
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: primaryGreen,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     minimumSize: const Size(0, 0),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
@@ -1419,7 +1419,9 @@ class _FieldExecutiveInstallationChecklistScreenState
         _buildLargeButton(
           onPressed: _showAfterImagePickerOptions,
           icon: Icons.cloud_upload,
-          label: _afterImage == null ? 'Upload after photos' : 'Re-upload after photos',
+          label: _afterImage == null
+              ? 'Upload after photos'
+              : 'Re-upload after photos',
         ),
         if (_afterImage != null) ...[
           const SizedBox(height: 10),
@@ -1445,7 +1447,10 @@ class _FieldExecutiveInstallationChecklistScreenState
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: primaryGreen,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     minimumSize: const Size(0, 0),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
@@ -1518,10 +1523,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               const SizedBox(height: 6),
               Text(
                 _writtenReportText,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
               ),
             ],
           ),
@@ -1581,7 +1583,6 @@ class _FieldExecutiveInstallationChecklistScreenState
                               Navigator.of(
                                 dialogContext,
                               ).pop(reportText.trim());
-                              
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -1699,8 +1700,8 @@ class _FieldExecutiveInstallationChecklistScreenState
       final File? issueImage = _itemIssueImage[name];
       final List<SelectedStockItem> selectedStockItems =
           _sanitizeSelectedStockItems(
-        _itemSelectedStockItems[name] ?? const <SelectedStockItem>[],
-      );
+            _itemSelectedStockItems[name] ?? const <SelectedStockItem>[],
+          );
       final SelectedStockItem? selectedStockItem = selectedStockItems.isNotEmpty
           ? selectedStockItems.first
           : null;
@@ -1709,7 +1710,9 @@ class _FieldExecutiveInstallationChecklistScreenState
           : int.tryParse(_normalizeId(selectedStockItem.productId));
       final int? selectedQuantity = selectedStockItem == null
           ? null
-          : (selectedStockItem.quantity > 0 ? selectedStockItem.quantity : null);
+          : (selectedStockItem.quantity > 0
+                ? selectedStockItem.quantity
+                : null);
       final SelectedStockItem? requestedPartSelection =
           _resolvedRequestedPartSelection(name, diagnosis: diagnosis);
       final int? requestedPartId = requestedPartSelection == null
@@ -1789,7 +1792,8 @@ class _FieldExecutiveInstallationChecklistScreenState
       return;
     }
 
-    final String? invalidMarkedUsedPartData = _firstMarkedUsedDiagnosisMissingPartData();
+    final String? invalidMarkedUsedPartData =
+        _firstMarkedUsedDiagnosisMissingPartData();
     if (invalidMarkedUsedPartData != null) {
       _showMessageSnackBar(
         'Part data missing for "$invalidMarkedUsedPartData". Please refresh and try again.',
@@ -1841,8 +1845,7 @@ class _FieldExecutiveInstallationChecklistScreenState
 
       if (!mounted) return;
 
-      final String message =
-          response.message?.trim().isNotEmpty == true
+      final String message = response.message?.trim().isNotEmpty == true
           ? response.message!.trim()
           : (response.success
                 ? 'Diagnosis submitted successfully.'
@@ -1884,7 +1887,9 @@ class _FieldExecutiveInstallationChecklistScreenState
     final DiagnosisItem? diagnosis = _findDiagnosisByName(title);
     String notes = _itemProblemSolution[title] ?? diagnosis?.report ?? '';
     final String initialStatus = _normalizeStatusLabel(
-      _itemSelectedAction[title] ?? _itemStatus[title] ?? diagnosis?.statusLabel,
+      _itemSelectedAction[title] ??
+          _itemStatus[title] ??
+          diagnosis?.statusLabel,
     );
     String? selectedOption = _isNonWorkingStatus(initialStatus)
         ? initialStatus
@@ -1892,8 +1897,8 @@ class _FieldExecutiveInstallationChecklistScreenState
     File? selectedImage = _itemIssueImage[title];
     bool isPickingImage = false;
 
-    final _NotWorkingDialogResult? result =
-        await showDialog<_NotWorkingDialogResult>(
+    final _NotWorkingDialogResult?
+    result = await showDialog<_NotWorkingDialogResult>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -1925,9 +1930,8 @@ class _FieldExecutiveInstallationChecklistScreenState
             }
 
             Future<void> showIssueImagePicker() async {
-              final ImageSource? source = await _showImageSourcePickerBottomSheet(
-                dialogContext,
-              );
+              final ImageSource? source =
+                  await _showImageSourcePickerBottomSheet(dialogContext);
               if (source != null) {
                 await pickIssueImage(source);
               }
@@ -2078,8 +2082,8 @@ class _FieldExecutiveInstallationChecklistScreenState
     if (!mounted || result == null) return;
 
     final bool hadExistingStock = _hasSelectedStockItems(title);
-    final bool hadExistingRequestedPart =
-        _itemRequestedPartSelections.containsKey(title);
+    final bool hadExistingRequestedPart = _itemRequestedPartSelections
+        .containsKey(title);
     List<SelectedStockItem>? selectedStockItems;
     SelectedStockItem? selectedRequestedPart;
     if (result.selectedOption == 'Use Stock in Hand') {
@@ -2089,8 +2093,8 @@ class _FieldExecutiveInstallationChecklistScreenState
         return;
       }
       final List<SelectedStockItem> mergedItems = _mergeSelectedStockItems(
-        existingItems: _itemSelectedStockItems[title] ??
-            const <SelectedStockItem>[],
+        existingItems:
+            _itemSelectedStockItems[title] ?? const <SelectedStockItem>[],
         incomingItems: selectedStockItems,
       );
       if (mergedItems.isEmpty) {
@@ -2153,7 +2157,9 @@ class _FieldExecutiveInstallationChecklistScreenState
       _showMessageSnackBar('Stock selection cleared due to status change');
     }
     if (shouldAutoClearRequestedPart) {
-      _showMessageSnackBar('Requested part selection cleared due to status change');
+      _showMessageSnackBar(
+        'Requested part selection cleared due to status change',
+      );
     }
   }
 
@@ -2212,11 +2218,7 @@ class _FieldExecutiveInstallationChecklistScreenState
         child: SizedBox(
           width: 32,
           height: 32,
-          child: Icon(
-            icon,
-            size: 18,
-            color: Colors.white,
-          ),
+          child: Icon(icon, size: 18, color: Colors.white),
         ),
       ),
     );
@@ -2251,20 +2253,14 @@ class _FieldExecutiveInstallationChecklistScreenState
               padding: EdgeInsets.only(bottom: 8),
               child: Text(
                 'No stock items selected.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
             )
           else
             ...items.map(
               (item) => Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -2336,9 +2332,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               icon: const Icon(Icons.add_shopping_cart_outlined, size: 18),
               label: const Text(
                 'Add more products',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -2495,12 +2489,10 @@ class _FieldExecutiveInstallationChecklistScreenState
     final File? issueImage = _itemIssueImage[title];
     final List<SelectedStockItem> selectedStockItems =
         _sanitizeSelectedStockItems(
-      _itemSelectedStockItems[title] ?? const <SelectedStockItem>[],
-    );
-    final SelectedStockItem? requestedPartSelection = _resolvedRequestedPartSelection(
-      title,
-      diagnosis: diagnosis,
-    );
+          _itemSelectedStockItems[title] ?? const <SelectedStockItem>[],
+        );
+    final SelectedStockItem? requestedPartSelection =
+        _resolvedRequestedPartSelection(title, diagnosis: diagnosis);
     final bool showRequestedPartSummary =
         requestedPartSelection != null &&
         (showRequestedPartBadge ||
@@ -2613,12 +2605,16 @@ class _FieldExecutiveInstallationChecklistScreenState
                                   onPressed: () {
                                     setState(() {
                                       _itemPartUsed[title] = true;
-                                      debugPrint('MARK USED -> $title = ${_itemPartUsed[title]}');
+                                      debugPrint(
+                                        'MARK USED -> $title = ${_itemPartUsed[title]}',
+                                      );
                                     });
                                   },
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: primaryGreen,
-                                    side: BorderSide(color: Colors.green.shade300),
+                                    side: BorderSide(
+                                      color: Colors.green.shade300,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -2629,10 +2625,13 @@ class _FieldExecutiveInstallationChecklistScreenState
                                   ),
                                   child: const Text(
                                     'Mark as Used',
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                                
+
                               if (isMarkedPartUsed)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -2642,7 +2641,9 @@ class _FieldExecutiveInstallationChecklistScreenState
                                   decoration: BoxDecoration(
                                     color: Colors.green.shade50,
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: Colors.green.shade200),
+                                    border: Border.all(
+                                      color: Colors.green.shade200,
+                                    ),
                                   ),
                                   child: Text(
                                     'Part will be marked as used on submit',
@@ -2730,9 +2731,8 @@ class _FieldExecutiveInstallationChecklistScreenState
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
-                            final bool hadStockSelection = _hasSelectedStockItems(
-                              title,
-                            );
+                            final bool hadStockSelection =
+                                _hasSelectedStockItems(title);
                             final bool hadRequestedPartSelection =
                                 _itemRequestedPartSelections.containsKey(title);
                             setState(() {
@@ -2817,28 +2817,19 @@ class _FieldExecutiveInstallationChecklistScreenState
         disabledBackgroundColor: Colors.grey.shade300,
         disabledForegroundColor: Colors.grey.shade600,
         minimumSize: const Size(double.infinity, 54),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (icon != null) ...[
-            Icon(icon),
-            const SizedBox(width: 8),
-          ],
+          if (icon != null) ...[Icon(icon), const SizedBox(width: 8)],
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 }
-

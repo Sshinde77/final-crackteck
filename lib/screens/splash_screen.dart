@@ -24,9 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _bootstrapSession() async {
     await SecureStorageService.refreshSessionCache();
 
-    final isAuthenticated = await SessionManager.isLoggedIn(
-      checkExpiry: false,
-    );
+    final isAuthenticated = await SessionManager.isLoggedIn(checkExpiry: false);
     if (!mounted) return;
 
     if (!isAuthenticated) {
@@ -71,9 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

@@ -3,10 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/secure_storage_service.dart';
 
 class AttendanceState {
-  const AttendanceState({
-    required this.clockInAt,
-    required this.clockOutAt,
-  });
+  const AttendanceState({required this.clockInAt, required this.clockOutAt});
 
   final DateTime? clockInAt;
   final DateTime? clockOutAt;
@@ -146,10 +143,7 @@ class AttendanceService {
     await clearAttendance(roleId: roleId, userId: resolvedUserId);
   }
 
-  Future<void> clearAttendance({
-    required int roleId,
-    int? userId,
-  }) async {
+  Future<void> clearAttendance({required int roleId, int? userId}) async {
     final resolvedUserId = userId ?? await SecureStorageService.getUserId();
     if (resolvedUserId == null) return;
 
@@ -177,7 +171,8 @@ class AttendanceService {
     return parsed.isUtc ? parsed.toLocal() : parsed;
   }
 
-  static String _scope(int userId, int roleId) => 'attendance_${userId}_$roleId';
+  static String _scope(int userId, int roleId) =>
+      'attendance_${userId}_$roleId';
 
   static String _scopedKey(String scope, String key) => '${scope}_$key';
 }

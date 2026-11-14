@@ -185,7 +185,9 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
         rawDetail['address_detail'],
       ]);
       final payloadProduct = _mapFrom(payload['product']);
-      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+      final payloadServiceProduct = _mapFrom(
+        payload['service_request_product'],
+      );
 
       if (!mounted) return;
 
@@ -210,10 +212,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
               payloadServiceProduct['product_name'],
               payloadProduct['product_name'],
             ], fallback: ''),
-            location: _formatAddress(
-              customerAddress,
-              fallback: order.to,
-            ),
+            location: _formatAddress(customerAddress, fallback: order.to),
             status: order.rawStatus,
             customerName: _joinNonEmpty(<dynamic>[
               customer['first_name'],
@@ -268,7 +267,9 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
         rawDetail['address_detail'],
       ]);
       final payloadProduct = _mapFrom(payload['product']);
-      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+      final payloadServiceProduct = _mapFrom(
+        payload['service_request_product'],
+      );
 
       if (!mounted) return;
 
@@ -293,10 +294,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
               payloadServiceProduct['name'],
               payloadServiceProduct['product_name'],
             ], fallback: ''),
-            location: _formatAddress(
-              customerAddress,
-              fallback: order.to,
-            ),
+            location: _formatAddress(customerAddress, fallback: order.to),
             status: order.rawStatus,
             customerName: _joinNonEmpty(<dynamic>[
               customer['first_name'],
@@ -351,7 +349,9 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
         rawDetail['address_detail'],
       ]);
       final payloadProduct = _mapFrom(payload['product']);
-      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+      final payloadServiceProduct = _mapFrom(
+        payload['service_request_product'],
+      );
 
       if (!mounted) return;
 
@@ -376,10 +376,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
               payloadServiceProduct['product_name'],
               payloadProduct['product_name'],
             ], fallback: ''),
-            location: _formatAddress(
-              customerAddress,
-              fallback: order.to,
-            ),
+            location: _formatAddress(customerAddress, fallback: order.to),
             status: order.rawStatus,
             customerName: _joinNonEmpty(<dynamic>[
               customer['first_name'],
@@ -439,21 +436,20 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
       final firstItem = _firstListMap(payload['order_items']);
       final productDetails = _mapFrom(firstItem['product_details']);
       final payloadProduct = _mapFrom(payload['product']);
-      final payloadServiceProduct = _mapFrom(payload['service_request_product']);
+      final payloadServiceProduct = _mapFrom(
+        payload['service_request_product'],
+      );
 
       if (!mounted) return;
 
       if (useFieldExecutiveScreen) {
-        final requestId = _firstNonEmpty(
-          <dynamic>[
-            serviceRequest['request_id'],
-            payload['request_id'],
-            order.requestId,
-            payload['id'],
-            order.displayId,
-          ],
-          fallback: order.displayId,
-        );
+        final requestId = _firstNonEmpty(<dynamic>[
+          serviceRequest['request_id'],
+          payload['request_id'],
+          order.requestId,
+          payload['id'],
+          order.displayId,
+        ], fallback: order.displayId);
         Navigator.pushNamed(
           context,
           AppRoutes.FieldExecutiveMapTrackingScreen,
@@ -462,25 +458,22 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
             roleName: widget.roleName,
             serviceId: requestId.replaceFirst(RegExp(r'^#'), ''),
             displayServiceId: _normalizeDisplayId(requestId),
-            customerName: _joinNonEmpty(
-              <dynamic>[
-                customer['first_name'],
-                customer['last_name'],
-                customer['name'],
-                customer['full_name'],
-              ],
-              fallback: 'Customer',
+            customerName: _joinNonEmpty(<dynamic>[
+              customer['first_name'],
+              customer['last_name'],
+              customer['name'],
+              customer['full_name'],
+            ], fallback: 'Customer'),
+            customerPhone: _firstNonEmpty(<dynamic>[
+              customer['phone'],
+              customer['phone_number'],
+              customer['mobile'],
+              customer['contact_number'],
+            ], fallback: ''),
+            customerAddress: _formatAddress(
+              shippingAddress,
+              fallback: order.to,
             ),
-            customerPhone: _firstNonEmpty(
-              <dynamic>[
-                customer['phone'],
-                customer['phone_number'],
-                customer['mobile'],
-                customer['contact_number'],
-              ],
-              fallback: '',
-            ),
-            customerAddress: _formatAddress(shippingAddress, fallback: order.to),
           ),
         );
         return;

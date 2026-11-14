@@ -38,4 +38,3 @@ class ProfileProvider extends ChangeNotifier {
     await loadProfile();
   }
 }
-

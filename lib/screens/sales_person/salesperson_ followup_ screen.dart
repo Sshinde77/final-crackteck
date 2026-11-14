@@ -10,7 +10,11 @@ import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 
 class SalesPersonFollowUpScreen extends StatefulWidget {
-  const SalesPersonFollowUpScreen({super.key, required String roleName, required int roleId});
+  const SalesPersonFollowUpScreen({
+    super.key,
+    required String roleName,
+    required int roleId,
+  });
 
   @override
   State<SalesPersonFollowUpScreen> createState() =>
@@ -86,7 +90,10 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
 
     if (!mounted) return;
     if (updated == true) {
-      await Provider.of<FollowUpProvider>(context, listen: false).loadFollowUps();
+      await Provider.of<FollowUpProvider>(
+        context,
+        listen: false,
+      ).loadFollowUps();
     }
   }
 
@@ -266,10 +273,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     }
 
     final uri = Uri.parse('tel:$digits');
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       _snack("Unable to open dialer");
     }
@@ -323,7 +327,8 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
     FollowUpStatus status;
     if (followUpStatusRaw == 'done' || followUpStatusRaw == 'completed') {
       status = FollowUpStatus.confirmed;
-    } else if (followUpStatusRaw == 'cancelled' || followUpStatusRaw == 'canceled') {
+    } else if (followUpStatusRaw == 'cancelled' ||
+        followUpStatusRaw == 'canceled') {
       status = FollowUpStatus.cancelled;
     } else {
       // Treat "Pending", "Rescheduled" and any unknowns as pending.
@@ -809,7 +814,10 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                       bottom: 18,
                       child: InkWell(
                         onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.newfollowupscreen);
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.newfollowupscreen,
+                          );
                         },
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
@@ -860,15 +868,23 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
           // From follow-up screen, treat Home as "back to dashboard".
           Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
         },
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
         onLeads: () {
           Navigator.pushNamed(context, AppRoutes.salespersonLeads);
         },
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }

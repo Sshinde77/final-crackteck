@@ -61,17 +61,18 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFF1E7C10);
-    
+
     // Filtering logic for search and tabs
     final visibleJobs = _jobs.where((j) {
       final matchesTab = j.tab == _activeTab;
       final query = _searchCtrl.text.toLowerCase();
       if (query.isEmpty) return matchesTab;
-      
-      final matchesSearch = j.title.toLowerCase().contains(query) ||
-                            j.serviceId.toLowerCase().contains(query) ||
-                            j.location.toLowerCase().contains(query);
-                            
+
+      final matchesSearch =
+          j.title.toLowerCase().contains(query) ||
+          j.serviceId.toLowerCase().contains(query) ||
+          j.location.toLowerCase().contains(query);
+
       return matchesTab && matchesSearch;
     }).toList();
 
@@ -94,7 +95,10 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                     height: isSmall ? 100 : 120,
                     width: double.infinity,
                     decoration: const BoxDecoration(color: green),
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 15),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: 15,
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -150,11 +154,17 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                         onChanged: (value) => setState(() {}),
                         style: TextStyle(fontSize: isSmall ? 14 : 16),
                         decoration: InputDecoration(
-                          prefixIcon: Icon(Icons.search, color: Colors.grey, size: isSmall ? 20 : 24),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.grey,
+                            size: isSmall ? 20 : 24,
+                          ),
                           hintText: "Search",
                           hintStyle: TextStyle(fontSize: isSmall ? 13 : 15),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: isSmall ? 8 : 12),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isSmall ? 8 : 12,
+                          ),
                         ),
                       ),
                     ),
@@ -257,7 +267,8 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                       icon: Icons.settings,
                       isActive: _activeTab == JobTab.installations,
                       isSmall: isSmall,
-                      onTap: () => setState(() => _activeTab = JobTab.installations),
+                      onTap: () =>
+                          setState(() => _activeTab = JobTab.installations),
                     ),
                     SizedBox(width: isSmall ? 6 : 12),
                     _JobTabButton(
@@ -281,7 +292,8 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                       icon: Icons.bolt,
                       isActive: _activeTab == JobTab.quickService,
                       isSmall: isSmall,
-                      onTap: () => setState(() => _activeTab = JobTab.quickService),
+                      onTap: () =>
+                          setState(() => _activeTab = JobTab.quickService),
                     ),
                   ],
                 ),
@@ -295,7 +307,10 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                 )
               else if (_jobsError != null)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 8,
+                  ),
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -317,7 +332,10 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                         const SizedBox(height: 6),
                         Text(
                           _jobsError!,
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -332,7 +350,10 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                 )
               else if (visibleJobs.isEmpty)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 24,
+                  ),
                   child: const Center(
                     child: Text(
                       'No service requests found',
@@ -347,7 +368,10 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 10,
+                  ),
                   itemCount: visibleJobs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
@@ -356,10 +380,10 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                     String jobTypeStr = job.tab == JobTab.installations
                         ? 'installations'
                         : job.tab == JobTab.repairs
-                            ? 'repairs'
-                            : job.tab == JobTab.amc
-                                ? 'amc'
-                                : 'quick_service';
+                        ? 'repairs'
+                        : job.tab == JobTab.amc
+                        ? 'amc'
+                        : 'quick_service';
 
                     return InkWell(
                       onTap: () {
@@ -377,10 +401,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                           ),
                         );
                       },
-                      child: _JobCard(
-                        job: job,
-                        isSmall: isSmall,
-                      ),
+                      child: _JobCard(job: job, isSmall: isSmall),
                     );
                   },
                 ),
@@ -468,7 +489,11 @@ class _JobTabButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: isSmall ? 14 : 16, color: isActive ? Colors.blue : Colors.grey),
+              Icon(
+                icon,
+                size: isSmall ? 14 : 16,
+                color: isActive ? Colors.blue : Colors.grey,
+              ),
               SizedBox(width: isSmall ? 4 : 6),
               Flexible(
                 child: Text(
@@ -493,10 +518,7 @@ class _JobCard extends StatelessWidget {
   final JobItem job;
   final bool isSmall;
 
-  const _JobCard({
-    required this.job,
-    required this.isSmall,
-  });
+  const _JobCard({required this.job, required this.isSmall});
 
   @override
   Widget build(BuildContext context) {
@@ -521,14 +543,19 @@ class _JobCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: job.imageUrl.isEmpty
-                    ? const Icon(Icons.build_circle_outlined, color: Colors.grey)
+                    ? const Icon(
+                        Icons.build_circle_outlined,
+                        color: Colors.grey,
+                      )
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
                           job.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.build_circle_outlined, color: Colors.grey),
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.build_circle_outlined,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
               ),
@@ -556,7 +583,9 @@ class _JobCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: isSmall ? 10 : 12,
                             fontWeight: FontWeight.bold,
-                            color: job.priority == 'High' ? Colors.red : Colors.green,
+                            color: job.priority == 'High'
+                                ? Colors.red
+                                : Colors.green,
                           ),
                         ),
                       ],
@@ -587,7 +616,10 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text(
                       'Service ID',
-                      style: TextStyle(fontSize: isSmall ? 9 : 10, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: isSmall ? 9 : 10,
+                        color: Colors.grey,
+                      ),
                     ),
                     Text(
                       job.serviceId,
@@ -608,7 +640,10 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text(
                       'Location',
-                      style: TextStyle(fontSize: isSmall ? 9 : 10, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: isSmall ? 9 : 10,
+                        color: Colors.grey,
+                      ),
                     ),
                     Text(
                       job.location,
@@ -658,7 +693,9 @@ class JobItem {
   String get detailServiceId {
     if (id != null) return id!.toString();
     final normalized = requestId.trim().replaceFirst(RegExp(r'^#'), '');
-    return normalized.isEmpty ? serviceId.replaceFirst(RegExp(r'^#'), '') : normalized;
+    return normalized.isEmpty
+        ? serviceId.replaceFirst(RegExp(r'^#'), '')
+        : normalized;
   }
 
   factory JobItem.fromApi(Map<String, dynamic> json) {
@@ -684,43 +721,60 @@ class JobItem {
       return null;
     }
 
-    final title = readStr(
-      const ['title', 'service_name', 'service_title', 'name', 'issue', 'problem'],
-      fallback: 'Service Request',
-    );
+    final title = readStr(const [
+      'title',
+      'service_name',
+      'service_title',
+      'name',
+      'issue',
+      'problem',
+    ], fallback: 'Service Request');
 
     final description = readStr(
       const ['description', 'details', 'notes', 'remark', 'remarks'],
-      fallback: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
+      fallback:
+          'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
     );
 
-    final location = readStr(
-      const ['location', 'address', 'city', 'area'],
-      fallback: '-',
-    );
+    final location = readStr(const [
+      'location',
+      'address',
+      'city',
+      'area',
+    ], fallback: '-');
 
     final id = readInt(const ['id', 'service_request_id']);
 
-    final requestId = readStr(
-      const ['request_id', 'requestId', 'service_id', 'serviceId', 'ticket_no'],
-      fallback: '',
-    );
-    final serviceIdSource = requestId.isNotEmpty ? requestId : (id?.toString() ?? '-');
+    final requestId = readStr(const [
+      'request_id',
+      'requestId',
+      'service_id',
+      'serviceId',
+      'ticket_no',
+    ], fallback: '');
+    final serviceIdSource = requestId.isNotEmpty
+        ? requestId
+        : (id?.toString() ?? '-');
     final serviceId = serviceIdSource == '-' || serviceIdSource.isEmpty
         ? '-'
-        : (serviceIdSource.startsWith('#') ? serviceIdSource : '#$serviceIdSource');
+        : (serviceIdSource.startsWith('#')
+              ? serviceIdSource
+              : '#$serviceIdSource');
 
-    final priority = readStr(
-      const ['priority', 'priority_level', 'urgency'],
-      fallback: 'Medium',
-    );
+    final priority = readStr(const [
+      'priority',
+      'priority_level',
+      'urgency',
+    ], fallback: 'Medium');
 
     final tab = _tabFromServiceType(readStr(const ['service_type']));
 
-    final imageUrl = readStr(
-      const ['image_url', 'image', 'service_image', 'product_image'],
-      fallback: '',
-    );
+    final imageUrl = readStr(const [
+      'image_url',
+      'image',
+      'service_image',
+      'product_image',
+    ], fallback: '');
 
     return JobItem(
       id: id,

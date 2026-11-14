@@ -156,7 +156,9 @@ class SessionManager {
     await _awaitPendingSessionWrite();
 
     for (int attempt = 1; attempt <= _tokenReadAttempts; attempt++) {
-      final token = await SecureStorageService.getAccessToken(forceReload: true);
+      final token = await SecureStorageService.getAccessToken(
+        forceReload: true,
+      );
       if (token != null && token.trim().isNotEmpty) {
         final trimmedToken = token.trim();
         debugPrint(

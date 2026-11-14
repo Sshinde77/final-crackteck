@@ -24,15 +24,22 @@ class DeliveryOtpVerificationScreen extends StatefulWidget {
   });
 
   @override
-  State<DeliveryOtpVerificationScreen> createState() => _DeliveryOtpVerificationScreenState();
+  State<DeliveryOtpVerificationScreen> createState() =>
+      _DeliveryOtpVerificationScreenState();
 }
 
-class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationScreen> {
+class _DeliveryOtpVerificationScreenState
+    extends State<DeliveryOtpVerificationScreen> {
   static const int _otpLength = 4;
   static const int _fieldExecutiveRoleId = 1;
-  final List<TextEditingController> _controllers =
-      List.generate(_otpLength, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(_otpLength, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    _otpLength,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(
+    _otpLength,
+    (_) => FocusNode(),
+  );
 
   Timer? _timer;
   int _secondsRemaining = 80;
@@ -51,7 +58,8 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   }
 
   Future<void> _loadDeliveryDetail() async {
-    if (widget.deliveryType.trim().isEmpty || widget.deliveryId.trim().isEmpty) {
+    if (widget.deliveryType.trim().isEmpty ||
+        widget.deliveryId.trim().isEmpty) {
       return;
     }
 
@@ -100,9 +108,13 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
             _asMap(detail['data']) ??
             detail;
       case DeliveryRequestTypes.pickup:
-        return _asMap(detail['pickup_request']) ?? _asMap(detail['data']) ?? detail;
+        return _asMap(detail['pickup_request']) ??
+            _asMap(detail['data']) ??
+            detail;
       case DeliveryRequestTypes.returnRequest:
-        return _asMap(detail['return_request']) ?? _asMap(detail['data']) ?? detail;
+        return _asMap(detail['return_request']) ??
+            _asMap(detail['data']) ??
+            detail;
       case DeliveryRequestTypes.part:
         return _asMap(detail['data']) ?? detail;
       default:
@@ -148,54 +160,59 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   String get _productName {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['product_name', 'name', 'title', 'service_name', 'sku'],
-    );
+    final value = _readText(product ?? payload, const [
+      'product_name',
+      'name',
+      'title',
+      'service_name',
+      'sku',
+    ]);
     return value.isEmpty ? '--' : value;
   }
 
   String get _modelNo {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['model_no', 'model', 'model_number'],
-    );
+    final value = _readText(product ?? payload, const [
+      'model_no',
+      'model',
+      'model_number',
+    ]);
     return value.isEmpty ? '--' : value;
   }
 
   String get _brand {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['brand'],
-    );
+    final value = _readText(product ?? payload, const ['brand']);
     return value.isEmpty ? '--' : value;
   }
 
   String get _macAddress {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['mac_address', 'macAddress'],
-    );
+    final value = _readText(product ?? payload, const [
+      'mac_address',
+      'macAddress',
+    ]);
     return value.isEmpty ? '--' : value;
   }
 
   String get _quantity {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['requested_quantity', 'quantity', 'total_requested_quantity', 'qty'],
-    );
-    final fallback = _readText(
-      payload ?? product,
-      const ['requested_quantity', 'quantity', 'total_requested_quantity', 'qty'],
-    );
+    final value = _readText(product ?? payload, const [
+      'requested_quantity',
+      'quantity',
+      'total_requested_quantity',
+      'qty',
+    ]);
+    final fallback = _readText(payload ?? product, const [
+      'requested_quantity',
+      'quantity',
+      'total_requested_quantity',
+      'qty',
+    ]);
     final result = value.isNotEmpty ? value : fallback;
     return result.isEmpty ? '--' : result;
   }
@@ -203,14 +220,8 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   String get _installation {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['installation'],
-    );
-    final fallback = _readText(
-      payload ?? product,
-      const ['installation'],
-    );
+    final value = _readText(product ?? payload, const ['installation']);
+    final fallback = _readText(payload ?? product, const ['installation']);
     final result = value.isNotEmpty ? value : fallback;
     return result.isEmpty ? '--' : result;
   }
@@ -218,14 +229,21 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
   String get _price {
     final payload = _resolvedPayload;
     final product = _resolvedProduct;
-    final value = _readText(
-      product ?? payload,
-      const ['line_total', 'unit_price', 'final_price', 'price', 'amount', 'service_charge'],
-    );
-    final fallback = _readText(
-      payload ?? product,
-      const ['final_price', 'selling_price', 'price', 'amount', 'service_charge'],
-    );
+    final value = _readText(product ?? payload, const [
+      'line_total',
+      'unit_price',
+      'final_price',
+      'price',
+      'amount',
+      'service_charge',
+    ]);
+    final fallback = _readText(payload ?? product, const [
+      'final_price',
+      'selling_price',
+      'price',
+      'amount',
+      'service_charge',
+    ]);
     final result = value.isNotEmpty ? value : fallback;
     if (result.isEmpty) return '--';
     if (result.contains('\u20B9')) return result;
@@ -234,10 +252,12 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
 
   String get _paymentStatus {
     final orderOrDetail = _resolvedPayload;
-    final value = _readText(
-      orderOrDetail,
-      const ['payment_status', 'paymentStatus', 'payment_state', 'payment'],
-    );
+    final value = _readText(orderOrDetail, const [
+      'payment_status',
+      'paymentStatus',
+      'payment_state',
+      'payment',
+    ]);
     return value.isEmpty ? '--' : value;
   }
 
@@ -379,10 +399,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF177A14),
-            Color(0xFF0F5E10),
-          ],
+          colors: [Color(0xFF177A14), Color(0xFF0F5E10)],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
@@ -474,28 +491,31 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
 
     if (_detail == null) return const SizedBox.shrink();
 
-    final detailRows = <MapEntry<String, String>>[
-      MapEntry('Product Name', _productName),
-      MapEntry('Model No', _modelNo),
-      MapEntry('Brand', _brand),
-      MapEntry('MAC Address', _macAddress),
-      MapEntry('Quantity', _quantity),
-      MapEntry('Installation', _installation),
-      MapEntry('Price', _price),
-      MapEntry('Payment Status', _paymentStatus),
-    ].where((item) {
-      final value = item.value.trim();
-      return value.isNotEmpty && value != '--' && value.toLowerCase() != 'null';
-    }).toList();
+    final detailRows =
+        <MapEntry<String, String>>[
+          MapEntry('Product Name', _productName),
+          MapEntry('Model No', _modelNo),
+          MapEntry('Brand', _brand),
+          MapEntry('MAC Address', _macAddress),
+          MapEntry('Quantity', _quantity),
+          MapEntry('Installation', _installation),
+          MapEntry('Price', _price),
+          MapEntry('Payment Status', _paymentStatus),
+        ].where((item) {
+          final value = item.value.trim();
+          return value.isNotEmpty &&
+              value != '--' &&
+              value.toLowerCase() != 'null';
+        }).toList();
 
     return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black12),
-        ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -571,10 +591,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF79B36A),
-                  Color(0xFF4D9854),
-                ],
+                colors: [Color(0xFF79B36A), Color(0xFF4D9854)],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: const [
@@ -591,9 +608,9 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
               child: ElevatedButton(
                 onPressed:
                     ((_requiresCashConfirmation && !_cashReceivedConfirmed) ||
-                            _isVerifying)
-                        ? null
-                        : _verifyOtp,
+                        _isVerifying)
+                    ? null
+                    : _verifyOtp,
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   shadowColor: Colors.transparent,
@@ -662,7 +679,10 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(999),
@@ -690,25 +710,25 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B7280),
-                  ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
           ),
         ),
       ],
@@ -749,8 +769,8 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
     final message = responseMessage.isNotEmpty
         ? responseMessage
         : (response.success
-            ? 'Delivery confirmed successfully'
-            : 'Failed to verify OTP');
+              ? 'Delivery confirmed successfully'
+              : 'Failed to verify OTP');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -852,9 +872,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
                   _buildDetailCard(),
                   if (_requiresCashConfirmation) ...[
                     const SizedBox(height: 16),
-                    CashReceivedSlider(
-                      onComplete: _confirmCashReceived,
-                    ),
+                    CashReceivedSlider(onComplete: _confirmCashReceived),
                   ],
                   const SizedBox(height: 20),
                   _buildOtpSection(),
@@ -869,10 +887,7 @@ class _DeliveryOtpVerificationScreenState extends State<DeliveryOtpVerificationS
 }
 
 class CashReceivedSlider extends StatefulWidget {
-  const CashReceivedSlider({
-    super.key,
-    required this.onComplete,
-  });
+  const CashReceivedSlider({super.key, required this.onComplete});
 
   final Future<bool> Function() onComplete;
 
@@ -892,7 +907,10 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
   void _onDragUpdate(DragUpdateDetails details, double maxTravel) {
     if (_isCompleted || _isSubmitting || maxTravel <= 0) return;
     setState(() {
-      _dragFraction = (_dragFraction + (details.delta.dx / maxTravel)).clamp(0.0, 1.0);
+      _dragFraction = (_dragFraction + (details.delta.dx / maxTravel)).clamp(
+        0.0,
+        1.0,
+      );
     });
   }
 
@@ -950,10 +968,7 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                   gradient: const LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    colors: [
-                      Color(0xFF66BB6A),
-                      Color(0xFF1E7C10),
-                    ],
+                    colors: [Color(0xFF66BB6A), Color(0xFF1E7C10)],
                   ),
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -984,8 +999,9 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                   onHorizontalDragUpdate: (_isCompleted || _isSubmitting)
                       ? null
                       : (details) => _onDragUpdate(details, maxTravel),
-                  onHorizontalDragEnd:
-                      (_isCompleted || _isSubmitting) ? null : (_) => _onDragEnd(),
+                  onHorizontalDragEnd: (_isCompleted || _isSubmitting)
+                      ? null
+                      : (_) => _onDragEnd(),
                   child: Container(
                     width: _thumbSize,
                     height: _thumbSize,

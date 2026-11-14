@@ -22,7 +22,8 @@ class DeliverypickupparcelScreen extends StatefulWidget {
       _DeliverypickupparcelScreenState();
 }
 
-class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen> {
+class _DeliverypickupparcelScreenState
+    extends State<DeliverypickupparcelScreen> {
   static const Color green = Color(0xFF1E7C10);
   static const Color lightGreen = Color(0xFFEFF7EE);
 
@@ -35,9 +36,9 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
     final provider = context.read<DeliveryOrderActionProvider>();
     final message = await provider.uploadSelfie(photo);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? 'Selfie upload failed')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message ?? 'Selfie upload failed')));
     if (provider.lastActionSucceeded) {
       Navigator.pushNamed(
         context,
@@ -60,7 +61,11 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
         backgroundColor: green,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -110,7 +115,10 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
                   left: 16,
                   bottom: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
@@ -157,7 +165,10 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
                           SizedBox(height: 4),
                           Text(
                             'Re-locate',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
@@ -182,7 +193,10 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
                 children: [
                   Text(
                     'ID:  ${widget.orderId}',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -190,7 +204,10 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
                       const Expanded(
                         child: Text(
                           'Customer',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                       _CircleAction(icon: Icons.call, onTap: () {}),
@@ -204,7 +221,10 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
                       style: TextStyle(color: Colors.black, fontSize: 14),
                       children: [
                         TextSpan(text: "Let's "),
-                        TextSpan(text: 'Start', style: TextStyle(fontWeight: FontWeight.w800)),
+                        TextSpan(
+                          text: 'Start',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
                         TextSpan(text: ' to pick the parcel!'),
                       ],
                     ),

@@ -28,7 +28,11 @@ class _ComingSoonScreenState extends State<ComingSoonScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -37,15 +41,9 @@ class _ComingSoonScreenState extends State<ComingSoonScreen> {
       body: const Center(
         child: Text(
           "Coming Soon",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
       ),
-
-
-
     );
   }
 }

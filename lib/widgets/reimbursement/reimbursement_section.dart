@@ -11,7 +11,8 @@ class ReimbursementSection extends StatefulWidget {
   const ReimbursementSection({
     super.key,
     this.title = 'Reimbursement',
-    this.subtitle = 'Track submitted expenses and add new reimbursement requests.',
+    this.subtitle =
+        'Track submitted expenses and add new reimbursement requests.',
   });
 
   @override
@@ -46,9 +47,7 @@ class _ReimbursementSectionState extends State<ReimbursementSection> {
   Future<void> _openAddReimbursementForm() async {
     final ReimbursementModel? result = await Navigator.push<ReimbursementModel>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddReimbursementScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddReimbursementScreen()),
     );
 
     if (result == null || !mounted) {
@@ -153,10 +152,7 @@ class _ReimbursementSectionState extends State<ReimbursementSection> {
               icon: const Icon(Icons.add_rounded),
               label: const Text(
                 'Add Reimbursement',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -311,10 +307,7 @@ class _StatusStyle {
   final Color backgroundColor;
   final Color textColor;
 
-  const _StatusStyle({
-    required this.backgroundColor,
-    required this.textColor,
-  });
+  const _StatusStyle({required this.backgroundColor, required this.textColor});
 
   factory _StatusStyle.fromStatus(ReimbursementStatus status) {
     switch (status) {

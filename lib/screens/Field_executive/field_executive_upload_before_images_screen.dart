@@ -171,8 +171,9 @@ class _FieldExecutiveUploadBeforeImagesScreenState
   }
 
   Widget _buildBottomImagePreview() {
-    final capturedItems =
-        _pickedFiles.entries.where((e) => e.value != null).toList();
+    final capturedItems = _pickedFiles.entries
+        .where((e) => e.value != null)
+        .toList();
 
     if (capturedItems.isEmpty) return const SizedBox.shrink();
 
@@ -259,11 +260,7 @@ class _FieldExecutiveUploadBeforeImagesScreenState
     );
   }
 
-  Widget _buildUploadItem(
-    String title,
-    IconData icon, {
-    bool isVideo = false,
-  }) {
+  Widget _buildUploadItem(String title, IconData icon, {bool isVideo = false}) {
     final pickedFile = _pickedFiles[title];
 
     return GestureDetector(

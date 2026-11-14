@@ -73,9 +73,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
 
     try {
       final response = await ApiService.fetchStaffReimbursements();
-      final reimbursements = response
-          .map(ReimbursementModel.fromJson)
-          .toList()
+      final reimbursements = response.map(ReimbursementModel.fromJson).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       if (!mounted) {
@@ -103,9 +101,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
   Future<void> _openAddReimbursementForm() async {
     final ReimbursementModel? result = await Navigator.push<ReimbursementModel>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddReimbursementScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddReimbursementScreen()),
     );
 
     if (result == null || !mounted) {
@@ -124,13 +120,14 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     );
   }
 
-  Future<void> _openReimbursementDetail(ReimbursementModel reimbursement) async {
+  Future<void> _openReimbursementDetail(
+    ReimbursementModel reimbursement,
+  ) async {
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (context) => ReimbursementDetailScreen(
-          reimbursement: reimbursement,
-        ),
+        builder: (context) =>
+            ReimbursementDetailScreen(reimbursement: reimbursement),
       ),
     );
   }
@@ -230,9 +227,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                 ],
               ),
             ),
-            Expanded(
-              child: _buildBody(filteredReimbursements),
-            ),
+            Expanded(child: _buildBody(filteredReimbursements)),
           ],
         ),
       ),
@@ -247,10 +242,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     }
 
     if (_errorMessage != null) {
-      return _ErrorState(
-        message: _errorMessage!,
-        onRetry: _loadReimbursements,
-      );
+      return _ErrorState(message: _errorMessage!, onRetry: _loadReimbursements);
     }
 
     return RefreshIndicator(
@@ -468,8 +460,10 @@ class ReimbursementListCard extends StatelessWidget {
                   reimbursement.receiptImagePath!.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF9FAFB),
                     borderRadius: BorderRadius.circular(12),
@@ -507,10 +501,7 @@ class ReimbursementListCard extends StatelessWidget {
 class StatusBadge extends StatelessWidget {
   final ReimbursementStatus status;
 
-  const StatusBadge({
-    super.key,
-    required this.status,
-  });
+  const StatusBadge({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -571,10 +562,7 @@ class _EmptyState extends StatelessWidget {
             const Text(
               'Try a different filter or add a new reimbursement request.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
+              style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
           ],
         ),
@@ -587,10 +575,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final Future<void> Function() onRetry;
 
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -626,10 +611,7 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -651,10 +633,7 @@ class _StatusStyle {
   final Color backgroundColor;
   final Color textColor;
 
-  const _StatusStyle({
-    required this.backgroundColor,
-    required this.textColor,
-  });
+  const _StatusStyle({required this.backgroundColor, required this.textColor});
 
   factory _StatusStyle.fromStatus(ReimbursementStatus status) {
     switch (status) {

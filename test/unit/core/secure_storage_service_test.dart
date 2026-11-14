@@ -31,7 +31,10 @@ void main() {
       await SecureStorageService.saveAccessToken('   ');
 
       // Assert
-      expect(await SecureStorageService.getAccessToken(forceReload: true), isNull);
+      expect(
+        await SecureStorageService.getAccessToken(forceReload: true),
+        isNull,
+      );
     });
 
     test('markVehicleRegisteredForCurrentUser persists per user', () async {
@@ -44,7 +47,10 @@ void main() {
         isFalse,
       );
       await SecureStorageService.markVehicleRegisteredForCurrentUser();
-      expect(await SecureStorageService.isVehicleRegisteredForCurrentUser(), isTrue);
+      expect(
+        await SecureStorageService.isVehicleRegisteredForCurrentUser(),
+        isTrue,
+      );
     });
 
     test('getOrCreateDeviceId is stable once created', () async {

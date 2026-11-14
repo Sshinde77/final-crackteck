@@ -57,7 +57,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+        _error = e
+            .toString()
+            .replaceFirst(RegExp(r'^Exception:\s*'), '')
+            .trim();
         _isLoading = false;
       });
     }
@@ -101,8 +104,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final relative = value.startsWith('//')
         ? Uri.parse('https:$value')
         : value.startsWith('/')
-            ? Uri.parse(value)
-            : Uri.parse('/$value');
+        ? Uri.parse(value)
+        : Uri.parse('/$value');
 
     return origin.resolveUri(relative).toString();
   }
@@ -152,18 +155,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   _Product _mapProduct(Map<String, dynamic> item) {
     final nestedProduct = _asMap(item['product']) ?? _asMap(item['products']);
-    final id = _readText(
-      nestedProduct ?? item,
-      const ['product_id', 'productId', 'id'],
-    );
-    final name = _readText(
-      nestedProduct ?? item,
-      const ['product_name', 'name', 'title'],
-    );
-    final price = _readText(
-      nestedProduct ?? item,
-      const ['final_price', 'selling_price', 'price', 'amount'],
-    );
+    final id = _readText(nestedProduct ?? item, const [
+      'product_id',
+      'productId',
+      'id',
+    ]);
+    final name = _readText(nestedProduct ?? item, const [
+      'product_name',
+      'name',
+      'title',
+    ]);
+    final price = _readText(nestedProduct ?? item, const [
+      'final_price',
+      'selling_price',
+      'price',
+      'amount',
+    ]);
     final image = _readImage(
       nestedProduct?['main_product_image'] ??
           nestedProduct?['product_image'] ??
@@ -218,10 +225,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     children: [
                       Icon(Icons.search, color: Colors.black54),
                       SizedBox(width: 8),
-                      Text(
-                        'Search',
-                        style: TextStyle(color: Colors.black54),
-                      ),
+                      Text('Search', style: TextStyle(color: Colors.black54)),
                     ],
                   ),
                 ),
@@ -232,61 +236,61 @@ class _AddProductScreenState extends State<AddProductScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _error!,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.black54),
-                                ),
-                                const SizedBox(height: 12),
-                                ElevatedButton(
-                                  onPressed: _loadProducts,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AddProductScreen.primaryGreen,
-                                  ),
-                                  child: const Text(
-                                    'Retry',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.black54),
                             ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _loadProducts,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AddProductScreen.primaryGreen,
+                              ),
+                              child: const Text(
+                                'Retry',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _products.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No products available',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _products.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.68,
                           ),
-                        )
-                      : _products.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No products available',
-                                style: TextStyle(color: Colors.black54),
-                              ),
-                            )
-                          : GridView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: _products.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: 0.68,
-                              ),
-                              itemBuilder: (context, index) {
-                                final product = _products[index];
-                                return _ProductCard(
-                                  product: product,
-                                  roleId: widget.roleId,
-                                  roleName: widget.roleName,
-                                  selectionMode: widget.selectionMode,
-                                  diagnosisName: widget.diagnosisName,
-                                  initialSelectedPart: widget.initialSelectedPart,
-                                );
-                              },
-                            ),
+                      itemBuilder: (context, index) {
+                        final product = _products[index];
+                        return _ProductCard(
+                          product: product,
+                          roleId: widget.roleId,
+                          roleName: widget.roleName,
+                          selectionMode: widget.selectionMode,
+                          diagnosisName: widget.diagnosisName,
+                          initialSelectedPart: widget.initialSelectedPart,
+                        );
+                      },
+                    ),
             ),
           ],
         ),

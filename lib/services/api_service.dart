@@ -1079,7 +1079,9 @@ class ApiService {
     _isHandlingAuthFailure = true;
     try {
       final storedRoleId = await SecureStorageService.getRoleId();
-      await SessionManager.logSessionState('apiService.authFailure.beforeClear');
+      await SessionManager.logSessionState(
+        'apiService.authFailure.beforeClear',
+      );
       await SessionManager.clearSession();
       await NavigationService.navigateToAuthRoot(roleId: storedRoleId);
     } finally {
@@ -1196,11 +1198,10 @@ class ApiService {
           .get(url, headers: headers)
           .timeout(ApiConstants.requestTimeout);
 
-      if (
-          !_isUnauthorizedResponse(
-            response,
-            treatHtmlAsUnauthorized: treatHtmlAsUnauthorized,
-          )) {
+      if (!_isUnauthorizedResponse(
+        response,
+        treatHtmlAsUnauthorized: treatHtmlAsUnauthorized,
+      )) {
         return response;
       }
 
@@ -1931,10 +1932,7 @@ class ApiService {
         'return_requests',
         'returnRequests',
       ],
-      DeliveryRequestTypes.returnOrder: const [
-        'return_orders',
-        'returnOrders',
-      ],
+      DeliveryRequestTypes.returnOrder: const ['return_orders', 'returnOrders'],
       DeliveryRequestTypes.part: const ['part_requests', 'partRequests'],
       DeliveryRequestTypes.productDelivery: const [
         'orders',

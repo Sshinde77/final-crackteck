@@ -76,10 +76,8 @@ class _fieldexecutiveFeedbackScreenState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _FeedbackDetailSheet(
-        roleId: widget.roleId,
-        feedback: item,
-      ),
+      builder: (_) =>
+          _FeedbackDetailSheet(roleId: widget.roleId, feedback: item),
     );
   }
 
@@ -96,23 +94,16 @@ class _fieldexecutiveFeedbackScreenState
         ),
         title: const Text(
           "Feedback",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
       ),
-      body: SafeArea(
-        child: _buildBody(),
-      ),
+      body: SafeArea(child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: _darkGreen),
-      );
+      return const Center(child: CircularProgressIndicator(color: _darkGreen));
     }
 
     if (_errorMessage != null) {
@@ -195,10 +186,7 @@ class _FeedbackCard extends StatelessWidget {
   final _FeedbackListItem item;
   final VoidCallback onTap;
 
-  const _FeedbackCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _FeedbackCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -254,10 +242,7 @@ class _FeedbackCard extends StatelessWidget {
               item.message,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
             ),
             const SizedBox(height: 8),
             const Align(
@@ -279,10 +264,7 @@ class _FeedbackDetailSheet extends StatefulWidget {
   final int roleId;
   final _FeedbackListItem feedback;
 
-  const _FeedbackDetailSheet({
-    required this.roleId,
-    required this.feedback,
-  });
+  const _FeedbackDetailSheet({required this.roleId, required this.feedback});
 
   @override
   State<_FeedbackDetailSheet> createState() => _FeedbackDetailSheetState();
@@ -350,38 +332,43 @@ class _FeedbackDetailSheetState extends State<_FeedbackDetailSheet> {
     final merged = Map<String, dynamic>.from(widget.feedback.raw)
       ..addAll(_detail ?? const <String, dynamic>{});
 
-    final name = _firstString(
-      merged,
-      const ['customer_name', 'name', 'user_name', 'username', 'customer'],
-      fallback: widget.feedback.name,
-    );
-    final message = _firstString(
-      merged,
-      const ['message', 'feedback', 'comment', 'description', 'notes'],
-      fallback: widget.feedback.message,
-    );
-    final rating = _firstInt(
-      merged,
-      const ['rating', 'stars', 'star'],
-      fallback: widget.feedback.rating,
-    );
+    final name = _firstString(merged, const [
+      'customer_name',
+      'name',
+      'user_name',
+      'username',
+      'customer',
+    ], fallback: widget.feedback.name);
+    final message = _firstString(merged, const [
+      'message',
+      'feedback',
+      'comment',
+      'description',
+      'notes',
+    ], fallback: widget.feedback.message);
+    final rating = _firstInt(merged, const [
+      'rating',
+      'stars',
+      'star',
+    ], fallback: widget.feedback.rating);
     final date = _formatFeedbackDate(
-      _firstValue(
-        merged,
-        const ['created_at', 'feedback_date', 'date', 'updated_at'],
-      ),
+      _firstValue(merged, const [
+        'created_at',
+        'feedback_date',
+        'date',
+        'updated_at',
+      ]),
       fallback: widget.feedback.date,
     );
-    final feedbackId = _firstString(
-      merged,
-      const ['feedback_id', 'id'],
-      fallback: widget.feedback.id,
-    );
-    final serviceId = _firstString(
-      merged,
-      const ['service_id', 'request_id', 'case_id'],
-      fallback: '-',
-    );
+    final feedbackId = _firstString(merged, const [
+      'feedback_id',
+      'id',
+    ], fallback: widget.feedback.id);
+    final serviceId = _firstString(merged, const [
+      'service_id',
+      'request_id',
+      'case_id',
+    ], fallback: '-');
 
     return SafeArea(
       top: false,
@@ -436,9 +423,7 @@ class _FeedbackDetailSheetState extends State<_FeedbackDetailSheet> {
     required String serviceId,
   }) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: _darkGreen),
-      );
+      return const Center(child: CircularProgressIndicator(color: _darkGreen));
     }
 
     if (_errorMessage != null && (_detail == null || _detail!.isEmpty)) {
@@ -591,31 +576,33 @@ class _FeedbackListItem {
   });
 
   factory _FeedbackListItem.fromJson(Map<String, dynamic> json) {
-    final id = _firstString(
-      json,
-      const ['feedback_id', 'id'],
-      fallback: '',
-    );
-    final name = _firstString(
-      json,
-      const ['customer_name', 'name', 'user_name', 'username', 'customer'],
-      fallback: 'Unknown',
-    );
-    final message = _firstString(
-      json,
-      const ['message', 'feedback', 'comment', 'description', 'notes'],
-      fallback: 'No feedback message',
-    );
-    final rating = _firstInt(
-      json,
-      const ['rating', 'stars', 'star'],
-      fallback: 0,
-    );
+    final id = _firstString(json, const ['feedback_id', 'id'], fallback: '');
+    final name = _firstString(json, const [
+      'customer_name',
+      'name',
+      'user_name',
+      'username',
+      'customer',
+    ], fallback: 'Unknown');
+    final message = _firstString(json, const [
+      'message',
+      'feedback',
+      'comment',
+      'description',
+      'notes',
+    ], fallback: 'No feedback message');
+    final rating = _firstInt(json, const [
+      'rating',
+      'stars',
+      'star',
+    ], fallback: 0);
     final date = _formatFeedbackDate(
-      _firstValue(
-        json,
-        const ['created_at', 'feedback_date', 'date', 'updated_at'],
-      ),
+      _firstValue(json, const [
+        'created_at',
+        'feedback_date',
+        'date',
+        'updated_at',
+      ]),
       fallback: '',
     );
 

@@ -17,11 +17,16 @@ class FieldExecutiveOtpVerificationScreen extends StatefulWidget {
   });
 
   @override
-  State<FieldExecutiveOtpVerificationScreen> createState() => _FieldExecutiveOtpVerificationScreenState();
+  State<FieldExecutiveOtpVerificationScreen> createState() =>
+      _FieldExecutiveOtpVerificationScreenState();
 }
 
-class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpVerificationScreen> {
-  final List<TextEditingController> _controllers = List.generate(4, (_) => TextEditingController());
+class _FieldExecutiveOtpVerificationScreenState
+    extends State<FieldExecutiveOtpVerificationScreen> {
+  final List<TextEditingController> _controllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
 
   Timer? _timer;
@@ -57,7 +62,7 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
     if (_isVerifyingOtp) return;
 
     String otp = _controllers.map((e) => e.text).join();
-    
+
     if (otp.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -93,7 +98,10 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
       return;
     }
 
-    final serviceRequestId = widget.serviceId.trim().replaceFirst(RegExp(r'^#'), '');
+    final serviceRequestId = widget.serviceId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
     if (int.tryParse(serviceRequestId) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -176,7 +184,11 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
         ),
         title: const Text(
           'OTP verification',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: SafeArea(
@@ -185,134 +197,135 @@ class _FieldExecutiveOtpVerificationScreenState extends State<FieldExecutiveOtpV
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            const SizedBox(height: 32),
-            const Text(
-              "We've sent your verification code to",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+              const SizedBox(height: 32),
+              const Text(
+                "We've sent your verification code to",
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-            ),
-            const Text(
-              "+91 **** ** ****",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+              const Text(
+                "+91 **** ** ****",
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              "Enter code",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(4, (index) {
-                return SizedBox(
-                  width: 58,
-                  height: 58,
-                  child: TextField(
-                    controller: _controllers[index],
-                    focusNode: _focusNodes[index],
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    maxLength: 1,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    decoration: InputDecoration(
-                      counterText: "",
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryGreen, width: 2),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      if (value.isNotEmpty && index < 3) {
-                        _focusNodes[index + 1].requestFocus();
-                      } else if (value.isEmpty && index > 0) {
-                        _focusNodes[index - 1].requestFocus();
-                      }
-                    },
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isVerifyingOtp ? null : _verifyOtp,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              const SizedBox(height: 32),
+              const Text(
+                "Enter code",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
                 ),
-                child: _isVerifyingOtp
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(4, (index) {
+                  return SizedBox(
+                    width: 58,
+                    height: 58,
+                    child: TextField(
+                      controller: _controllers[index],
+                      focusNode: _focusNodes[index],
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      maxLength: 1,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      decoration: InputDecoration(
+                        counterText: "",
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
-                      )
-                    : const Text(
-                        "Verify",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: primaryGreen,
+                            width: 2,
+                          ),
                         ),
                       ),
+                      onChanged: (value) {
+                        if (value.isNotEmpty && index < 3) {
+                          _focusNodes[index + 1].requestFocus();
+                        } else if (value.isEmpty && index > 0) {
+                          _focusNodes[index - 1].requestFocus();
+                        }
+                      },
+                    ),
+                  );
+                }),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: _secondsRemaining == 0 ? () {
-                    setState(() {
-                      _secondsRemaining = 80;
-                      _startTimer();
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('OTP Resent!'),
-                        backgroundColor: Colors.black87,
-                      ),
-                    );
-                  } : null,
-                  child: Text(
-                    "Resend code",
-                    style: TextStyle(
-                      color: _secondsRemaining == 0 ? Colors.black : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryGreen,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: _isVerifyingOtp
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Verify",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
-                Text(
-                  "${_formatTime(_secondsRemaining)} left",
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: _secondsRemaining == 0
+                        ? () {
+                            setState(() {
+                              _secondsRemaining = 80;
+                              _startTimer();
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('OTP Resent!'),
+                                backgroundColor: Colors.black87,
+                              ),
+                            );
+                          }
+                        : null,
+                    child: Text(
+                      "Resend code",
+                      style: TextStyle(
+                        color: _secondsRemaining == 0
+                            ? Colors.black
+                            : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  Text(
+                    "${_formatTime(_secondsRemaining)} left",
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

@@ -30,7 +30,6 @@ class ApiConstants {
   static const task = "$baseUrl/task";
   static const notifications = "$baseUrl/notifications";
   static const updateTaskStatus = "$baseUrl/update-task-status";
-  
 
   //Leads Tab endpoints
   static const lead_page = "$baseUrl/leads";
@@ -67,7 +66,8 @@ class ApiConstants {
 
   // Delivery Person Endpoints
   static const String registervehicle = "$baseUrl/vehicle-registration";
-  static const String deliveryPersonDashboard = "$baseUrl/delivery-person-dashboard";
+  static const String deliveryPersonDashboard =
+      "$baseUrl/delivery-person-dashboard";
   static const String deliveryManOrders = "$baseUrl/orders";
   static const String deliveryManOrderDetail = "$baseUrl/orders/{id}";
   static const String deliveryManAcceptOrder = "$baseUrl/accept-order/{id}";
@@ -88,15 +88,13 @@ class ApiConstants {
   static const String deliveryManStorePanCard = "$baseUrl/store-pan-card";
   static const String deliveryManUpdatePanCard = "$baseUrl/update-pan-card";
   static const String deliveryManAttendance = "$baseUrl/attendance-dm";
-  static const String deliveryManAttendanceLogin =
-      "$baseUrl/attendance-login";
+  static const String deliveryManAttendanceLogin = "$baseUrl/attendance-login";
   static const String deliveryManAttendanceLogout =
       "$baseUrl/attendance-logout";
   static const String deliveryManReturnOrders = "$baseUrl/return-orders";
   static const String deliveryManReturnOrderDetail =
       "$baseUrl/return-orders/{id}";
   static const String deliveryManAcceptReturnOrder =
-  
       "$baseUrl/accept-return-order/{id}";
   static const String fieldExecutiveReturnOrderDetail =
       "$baseUrl/return-orders/{id}";
@@ -108,10 +106,11 @@ class ApiConstants {
       "$baseUrl/return-order/{id}/verify-otp";
   static const String deliveryManReturnOrderPicked =
       "$baseUrl/return-order-picked/{id}";
-  
-  //field executive 
+
+  //field executive
   static const String serviceRequests = "$baseUrl/service-requests";
-  static const String serviceRequestdetails = "$baseUrl/service-request/{service-request_id}";
+  static const String serviceRequestdetails =
+      "$baseUrl/service-request/{service-request_id}";
   static const String serviceRequestdetail =
       "$baseUrl/service-request/{service-request_id}";
   static const String ServiceRequestAccept =
@@ -128,26 +127,16 @@ class ApiConstants {
       "$baseUrl/service-request/{service-request_id}/{product_id}/diagnosis-list";
   static const String ServiceRequestsubmitdiagnosis =
       "$baseUrl/service-request/{service-request_id}/{product_id}/submit-diagnosis";
-  static const String stockinhand =
-      "$baseUrl/stock-in-hand/list";
-  static const String productlistFE =
-      "$baseUrl/products";
-  static const String productlistdetailFE =
-      "$baseUrl/products/{product_id}";
-  static const String Requestnewproduct =
-      "$baseUrl/stock-in-hand/request";
-  static const String deliverypickuprequestlist =
-      "$baseUrl/pickup-requests";
-  static const String deliveryreturnrequestlist =
-      "$baseUrl/return-requests";
-  static const String deliverypartrequestlist =
-      "$baseUrl/part-requests";
-  static const String deliverypickuprequestdetail =
-      "$baseUrl/pickup-request";
-  static const String deliveryreturnrequestdetail =
-      "$baseUrl/return-request";
-  static const String deliverypartrequestdetail =
-      "$baseUrl/part-request";
+  static const String stockinhand = "$baseUrl/stock-in-hand/list";
+  static const String productlistFE = "$baseUrl/products";
+  static const String productlistdetailFE = "$baseUrl/products/{product_id}";
+  static const String Requestnewproduct = "$baseUrl/stock-in-hand/request";
+  static const String deliverypickuprequestlist = "$baseUrl/pickup-requests";
+  static const String deliveryreturnrequestlist = "$baseUrl/return-requests";
+  static const String deliverypartrequestlist = "$baseUrl/part-requests";
+  static const String deliverypickuprequestdetail = "$baseUrl/pickup-request";
+  static const String deliveryreturnrequestdetail = "$baseUrl/return-request";
+  static const String deliverypartrequestdetail = "$baseUrl/part-request";
 
   static const String deliverypickuprequestaccept =
       "$baseUrl/pickup-request/{id}/accept";
@@ -170,26 +159,17 @@ class ApiConstants {
   static const String deliverypartrequestverifyotp =
       "$baseUrl/part-request/{id}/verify-otp";
 
-  static const String fieldexecutiveclockin =
-      "$baseUrl/check-in";
-  static const String fieldexecutiveclockout =
-      "$baseUrl/check-out";
-  static const String fieldexecutiveattendance =
-      "$baseUrl/attendance";
-  static const String fieldexecutivefeedback =
-      "$baseUrl/get-all-feedback";
-  static const String fieldexecutivefeedbackdetail =
+  static const String fieldexecutiveclockin = "$baseUrl/check-in";
+  static const String fieldexecutiveclockout = "$baseUrl/check-out";
+  static const String fieldexecutiveattendance = "$baseUrl/attendance";
+  static const String fieldexecutivefeedback = "$baseUrl/get-all-feedback";
+  static const String fieldexecutivefeedbackdetail = "$baseUrl/get-feedback";
 
-      "$baseUrl/get-feedback";
+  static const String fieldexecutivepersonalinfo = "$baseUrl/profile";
 
-  static const String fieldexecutivepersonalinfo =
-      "$baseUrl/profile";
+  static const String amcplanslist = "$baseUrl/amc-plans";
 
-  static const String amcplanslist =
-      "$baseUrl/amc-plans";
-
-  static const String googlelogin =
-      "$baseUrl/google-login";
+  static const String googlelogin = "$baseUrl/google-login";
   static const String fcmTokenSyncUrl = String.fromEnvironment(
     'FCM_TOKEN_SYNC_URL',
     defaultValue: '',
@@ -199,8 +179,7 @@ class ApiConstants {
     defaultValue: 'fcm_token',
   );
 
-  static const String fieldexecutivedeliveryproductlist =
-      "$baseUrl/orders";
+  static const String fieldexecutivedeliveryproductlist = "$baseUrl/orders";
   static const String fieldexecutivedeliveryproductdetail =
       "$baseUrl/orders/{id}";
   static const String fieldexecutivedeliveryproductacceptorder =
@@ -209,33 +188,20 @@ class ApiConstants {
       "$baseUrl/order/{id}/otp";
   static const String fieldexecutivedeliveryproductverifyotp =
       "$baseUrl/order/{id}/verify-otp";
-  static const String staffreimbursements =
-      "$baseUrl/staff-reimbursements";
+  static const String staffreimbursements = "$baseUrl/staff-reimbursements";
   static const String staffreimbursementdetail =
       "$baseUrl/staff-reimbursements/{id}";
-  static const String addstaffreimbursement =
-      "$baseUrl/staff-reimbursements/";
+  static const String addstaffreimbursement = "$baseUrl/staff-reimbursements/";
 
-  static const String cashrecieved =
-      "$baseUrl/cash-received";
-  static const String cashrecievedlist =
-      "$baseUrl/cash-received";
-  static const String cashrecieveddetailed =
-      "$baseUrl/cash-received";
+  static const String cashrecieved = "$baseUrl/cash-received";
+  static const String cashrecievedlist = "$baseUrl/cash-received";
+  static const String cashrecieveddetailed = "$baseUrl/cash-received";
 
+  static const String FCMtoken = "$baseUrl/device-token";
 
-  static const String FCMtoken =
-      "$baseUrl/device-token";
+  static const String trackyourwork = "$baseUrl/track-your-work";
 
-  static const String trackyourwork =
-      "$baseUrl/track-your-work";
-
-  static const String listreturnorders =
-      "$baseUrl/return-orders";
-
-
-
-
+  static const String listreturnorders = "$baseUrl/return-orders";
 
   // Country Code
   static const String defaultCountryCode = '+91';

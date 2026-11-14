@@ -25,7 +25,12 @@ class LeadsProvider extends ChangeNotifier {
     return raw;
   }
 
-  Future<void> loadLeads(String userId, int roleId, {int page = 1, bool append = false}) async {
+  Future<void> loadLeads(
+    String userId,
+    int roleId, {
+    int page = 1,
+    bool append = false,
+  }) async {
     loading = true;
     error = null;
     if (!append) {

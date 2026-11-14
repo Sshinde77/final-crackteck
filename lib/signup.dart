@@ -8,6 +8,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import 'constants/app_colors.dart';
@@ -141,9 +142,8 @@ class _SignupScreenState extends State<SignupScreen> {
       final parsed = decoded
           .whereType<Map>()
           .map(
-            (e) => csc_picker.StatusModel.fromJson(
-              Map<String, dynamic>.from(e),
-            ),
+            (e) =>
+                csc_picker.StatusModel.fromJson(Map<String, dynamic>.from(e)),
           )
           .toList();
 
@@ -208,6 +208,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _pickFile(_DocumentType type) async {
+    if (!await _requestDocumentPermission()) return;
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['png', 'jpg', 'jpeg', 'pdf'],
@@ -268,6 +270,52 @@ class _SignupScreenState extends State<SignupScreen> {
           break;
       }
     });
+  }
+
+  Future<bool> _requestDocumentPermission() async {
+    if (!Platform.isAndroid) return true;
+
+    var status = await Permission.photos.status;
+    if (!status.isGranted && !status.isLimited) {
+      status = await Permission.photos.request();
+    }
+
+    if (status.isGranted || status.isLimited) return true;
+
+    var storageStatus = await Permission.storage.status;
+    if (!storageStatus.isGranted) {
+      storageStatus = await Permission.storage.request();
+    }
+
+    if (storageStatus.isGranted) return true;
+
+    if (status.isPermanentlyDenied || storageStatus.isPermanentlyDenied) {
+      if (!mounted) return false;
+      final openSettings = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Permission required'),
+          content: const Text(
+            'Allow photo and file access in Settings to upload your document.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+      if (openSettings == true) await openAppSettings();
+    } else {
+      _snack('Photo and file permission is required to upload documents.');
+    }
+
+    return false;
   }
 
   Future<void> _goToDocumentsStep() async {
@@ -359,8 +407,8 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    final fullName =
-        '${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}'.trim();
+    final fullName = '${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}'
+        .trim();
     final fullAddress = <String>[
       addressLine1Ctrl.text.trim(),
       addressLine2Ctrl.text.trim(),
@@ -838,8 +886,9 @@ class _SignupScreenState extends State<SignupScreen> {
     required void Function(String?) onChanged,
     String? Function(String?)? validator,
   }) {
-    final normalizedValue =
-        (value != null && items.contains(value)) ? value : null;
+    final normalizedValue = (value != null && items.contains(value))
+        ? value
+        : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -860,10 +909,7 @@ class _SignupScreenState extends State<SignupScreen> {
             .map(
               (item) => DropdownMenuItem<String>(
                 value: item,
-                child: Text(
-                  item,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(item, overflow: TextOverflow.ellipsis),
               ),
             )
             .toList(),
@@ -910,7 +956,9 @@ class _SignupScreenState extends State<SignupScreen> {
             panCtrl,
             textCapitalization: TextCapitalization.characters,
             maxLength: 10,
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]'))],
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]')),
+            ],
             validator: (v) {
               final value = (v ?? '').trim().toUpperCase();
               if (value.isEmpty) return 'Required';
@@ -950,9 +998,11 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 10),
             _dropdown(
               hint: 'Vehicle Type',
-              value: const ['two_wheeler', 'four_wheeler'].contains(
-                vehicleTypeCtrl.text.trim(),
-              )
+              value:
+                  const [
+                    'two_wheeler',
+                    'four_wheeler',
+                  ].contains(vehicleTypeCtrl.text.trim())
                   ? vehicleTypeCtrl.text.trim()
                   : null,
               items: const ['two_wheeler', 'four_wheeler'],
@@ -961,8 +1011,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   vehicleTypeCtrl.text = value ?? '';
                 });
               },
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Select vehicle type' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Select vehicle type'
+                  : null,
             ),
             _input(
               'Vehicle Number',
@@ -989,7 +1040,7 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Checkbox(
                 value: agree,
-                  onChanged: (v) => setState(() => agree = v ?? false),
+                onChanged: (v) => setState(() => agree = v ?? false),
                 activeColor: AppColors.primary,
               ),
               const Expanded(
@@ -1043,7 +1094,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                       : const Text(
+                      : const Text(
                           'Next',
                           style: TextStyle(
                             fontSize: 16,
@@ -1068,7 +1119,8 @@ class _SignupScreenState extends State<SignupScreen> {
       'post-graduation',
     ];
 
-    final selectedEducation = educationOptions.contains(educationCtrl.text.trim())
+    final selectedEducation =
+        educationOptions.contains(educationCtrl.text.trim())
         ? educationCtrl.text.trim()
         : null;
 
@@ -1172,7 +1224,9 @@ class _SignupScreenState extends State<SignupScreen> {
         maxLength: maxLength,
         inputFormatters: inputFormatters,
         textCapitalization: textCapitalization,
-        validator: validator ?? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+        validator:
+            validator ??
+            (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
         decoration: InputDecoration(
           hintText: hint,
           prefixText: prefix,

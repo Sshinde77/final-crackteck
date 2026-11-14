@@ -287,7 +287,11 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
       int lastPage = 1;
 
       do {
-        final result = await ApiService.fetchLeads('', widget.roleId, page: page);
+        final result = await ApiService.fetchLeads(
+          '',
+          widget.roleId,
+          page: page,
+        );
         final data = result['data'];
         if (data is List) {
           for (final item in data) {
@@ -433,13 +437,17 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
     final userId = await SecureStorageService.getUserId();
     if (userId == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text("Authentication error. Please log in again.")),
+        const SnackBar(
+          content: Text("Authentication error. Please log in again."),
+        ),
       );
       return;
     }
     if (_selectedMeetingDate == null || _selectedStartTime == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text("Please select start date and start time.")),
+        const SnackBar(
+          content: Text("Please select start date and start time."),
+        ),
       );
       return;
     }
@@ -478,14 +486,11 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
               widget.initialMeetingId.toString(),
               body,
             )
-          : await ApiService.createMeeting(
-              body,
-            );
+          : await ApiService.createMeeting(body);
 
-      String message = response.message ??
-          (_isEditMode
-              ? "Meeting updated successfully"
-              : "Meeting submitted");
+      String message =
+          response.message ??
+          (_isEditMode ? "Meeting updated successfully" : "Meeting submitted");
       final bool success = response.success;
 
       messenger.showSnackBar(SnackBar(content: Text(message)));
@@ -666,7 +671,8 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
       );
     }).toList();
 
-    final hasSelected = selectedLeadId != null &&
+    final hasSelected =
+        selectedLeadId != null &&
         items.any((item) => item.value == selectedLeadId);
     if (selectedLeadId != null && !hasSelected) {
       final name = widget.initialClientLeadName?.trim();
@@ -707,7 +713,9 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
           ),
           dropdownColor: const Color(0xFFEFEFEF),
           items: items,
-          onChanged: (leadsLoading || _isPrimaryLocked) ? null : _onLeadSelected,
+          onChanged: (leadsLoading || _isPrimaryLocked)
+              ? null
+              : _onLeadSelected,
           validator: (v) {
             if (_isPrimaryLocked) return null;
             return v == null ? "Please select lead" : null;
@@ -735,7 +743,10 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
                     ),
                   ),
                 ),
-                TextButton(onPressed: _loadLeadOptions, child: const Text("Retry")),
+                TextButton(
+                  onPressed: _loadLeadOptions,
+                  child: const Text("Retry"),
+                ),
               ],
             ),
           ),
@@ -773,7 +784,10 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
                 ),
                 child: const Text(
                   "Add",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -854,8 +868,9 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
                   label: "Client / Lead Name *",
                   controller: clientNameCtrl,
                   readOnly: true,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? "Select lead first" : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? "Select lead first"
+                      : null,
                 ),
                 _textField(
                   label: "Meeting Title",
@@ -886,8 +901,9 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
                     Icons.access_time_rounded,
                     color: Colors.black45,
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? "Select start time" : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? "Select start time"
+                      : null,
                 ),
                 if (_isEditMode)
                   _textField(
@@ -975,14 +991,26 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
         currentIndex: _navIndex,
         roleId: widget.roleId,
         roleName: widget.roleName,
-        onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }

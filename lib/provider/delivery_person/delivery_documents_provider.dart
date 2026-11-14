@@ -110,11 +110,7 @@ class DeliveryDocumentsProvider extends ChangeNotifier {
       'document_no',
       'document_number',
     ]);
-    _copyIfMissing(map, 'vehicle_type', const [
-      'vehicleType',
-      'brand',
-      'type',
-    ]);
+    _copyIfMissing(map, 'vehicle_type', const ['vehicleType', 'brand', 'type']);
     _copyIfMissing(map, 'vehicle_number', const [
       'vehicleNumber',
       'registration_number',

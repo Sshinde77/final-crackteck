@@ -13,9 +13,7 @@ class DeliveryDocumentsService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryDocuments Aadhar API Request: GET $uri');
-    final response = await performAuthenticatedGet(
-      uri,
-    );
+    final response = await performAuthenticatedGet(uri);
     debugPrint(
       'DeliveryDocuments Aadhar API Response: ${response.statusCode} ${response.body}',
     );
@@ -31,9 +29,7 @@ class DeliveryDocumentsService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryDocuments PAN API Request: GET $uri');
-    final response = await performAuthenticatedGet(
-      uri,
-    );
+    final response = await performAuthenticatedGet(uri);
     debugPrint(
       'DeliveryDocuments PAN API Response: ${response.statusCode} ${response.body}',
     );
@@ -49,9 +45,7 @@ class DeliveryDocumentsService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryDocuments Vehicle API Request: GET $uri');
-    final response = await performAuthenticatedGet(
-      uri,
-    );
+    final response = await performAuthenticatedGet(uri);
     debugPrint(
       'DeliveryDocuments Vehicle API Response: ${response.statusCode} ${response.body}',
     );
@@ -92,7 +86,9 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         backFile.path,
       ),
     );
-    debugPrint('DeliveryDocuments Vehicle Register API Request: POST ${request.url}');
+    debugPrint(
+      'DeliveryDocuments Vehicle Register API Request: POST ${request.url}',
+    );
     debugPrint('DeliveryDocuments Vehicle Register Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
     debugPrint(
@@ -115,10 +111,7 @@ class DeliveryDocumentsService extends DeliveryApiClient {
     final endpoint = isUpdate
         ? ApiConstants.deliveryManUpdateAadhar
         : ApiConstants.deliveryManStoreAadhar;
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(endpoint),
-    );
+    final request = http.MultipartRequest('POST', Uri.parse(endpoint));
     request.fields.addAll(<String, String>{
       'role_id': query['role_id']!,
       'user_id': query['user_id']!,
@@ -135,7 +128,9 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         await http.MultipartFile.fromPath('aadhar_back_path', backFile.path),
       );
     }
-    debugPrint('DeliveryDocuments Aadhar Save API Request: POST ${request.url}');
+    debugPrint(
+      'DeliveryDocuments Aadhar Save API Request: POST ${request.url}',
+    );
     debugPrint('DeliveryDocuments Aadhar Save Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
     debugPrint(
@@ -186,7 +181,9 @@ class DeliveryDocumentsService extends DeliveryApiClient {
           ),
         );
       }
-      debugPrint('DeliveryDocuments PAN Update API Request: POST ${request.url}');
+      debugPrint(
+        'DeliveryDocuments PAN Update API Request: POST ${request.url}',
+      );
       debugPrint('DeliveryDocuments PAN Update Fields: ${request.fields}');
       final response = await performAuthenticatedMultipart(request);
       debugPrint(
@@ -219,10 +216,7 @@ class DeliveryDocumentsService extends DeliveryApiClient {
     }
     if (backFile != null) {
       request.files.add(
-        await http.MultipartFile.fromPath(
-          'pan_card_back_path',
-          backFile.path,
-        ),
+        await http.MultipartFile.fromPath('pan_card_back_path', backFile.path),
       );
     }
     debugPrint('DeliveryDocuments PAN Save API Request: POST ${request.url}');
@@ -274,7 +268,9 @@ class DeliveryDocumentsService extends DeliveryApiClient {
         ),
       );
     }
-    debugPrint('DeliveryDocuments Vehicle Update API Request: POST ${request.url}');
+    debugPrint(
+      'DeliveryDocuments Vehicle Update API Request: POST ${request.url}',
+    );
     debugPrint('DeliveryDocuments Vehicle Update Fields: ${request.fields}');
     final response = await performAuthenticatedMultipart(request);
     debugPrint(

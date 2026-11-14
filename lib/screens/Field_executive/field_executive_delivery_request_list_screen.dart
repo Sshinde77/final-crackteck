@@ -52,19 +52,22 @@ class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
         roleId: widget.roleId,
       );
 
-      final parsedRequests =
-          rawRequests.map(DeliveryRequestModel.fromJson).toList();
-      final normalizedType = DeliveryRequestTypes.normalize(widget.deliveryType);
+      final parsedRequests = rawRequests
+          .map(DeliveryRequestModel.fromJson)
+          .toList();
+      final normalizedType = DeliveryRequestTypes.normalize(
+        widget.deliveryType,
+      );
       final isPickupType = normalizedType == DeliveryRequestTypes.pickup;
       final visibleRequests = widget.showCompletedOnly
           ? parsedRequests
-              .where((request) => _isCompletedStatus(request.status))
-              .toList()
+                .where((request) => _isCompletedStatus(request.status))
+                .toList()
           : isPickupType
-              ? parsedRequests
-                  .where((request) => !_isCompletedStatus(request.status))
-                  .toList()
-              : parsedRequests;
+          ? parsedRequests
+                .where((request) => !_isCompletedStatus(request.status))
+                .toList()
+          : parsedRequests;
 
       if (!mounted) return;
       setState(() {
@@ -112,9 +115,7 @@ class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: _buildBody(context),
-      ),
+      body: SafeArea(child: _buildBody(context)),
     );
   }
 
@@ -133,13 +134,15 @@ class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
     }
 
     if (_requests.isEmpty) {
-      final normalizedType = DeliveryRequestTypes.normalize(widget.deliveryType);
+      final normalizedType = DeliveryRequestTypes.normalize(
+        widget.deliveryType,
+      );
       final isPickupType = normalizedType == DeliveryRequestTypes.pickup;
       final emptyMessage = widget.showCompletedOnly
           ? 'No completed ${_requestTypeLabel.toLowerCase()} requests found'
           : isPickupType
-              ? 'No pending pickup requests found'
-              : 'No delivery requests found';
+          ? 'No pending pickup requests found'
+          : 'No delivery requests found';
       return Center(
         child: Text(
           emptyMessage,
@@ -242,10 +245,7 @@ class _DeliveryRequestCard extends StatelessWidget {
   final DeliveryRequestModel request;
   final VoidCallback onTap;
 
-  const _DeliveryRequestCard({
-    required this.request,
-    required this.onTap,
-  });
+  const _DeliveryRequestCard({required this.request, required this.onTap});
 
   static const Color _primaryGreen = Color(0xFF1E7C10);
 
@@ -286,11 +286,7 @@ class _DeliveryRequestCard extends StatelessWidget {
     );
   }
 
-  Widget _line(
-    String label,
-    String value, {
-    bool isBold = false,
-  }) {
+  Widget _line(String label, String value, {bool isBold = false}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -11,9 +11,7 @@ class DeliveryAttendanceService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryAttendance API Request: GET $uri');
-    final response = await performAuthenticatedGet(
-      uri,
-    );
+    final response = await performAuthenticatedGet(uri);
     debugPrint(
       'DeliveryAttendance API Response: ${response.statusCode} ${response.body}',
     );
@@ -29,9 +27,7 @@ class DeliveryAttendanceService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryAttendance Logs API Request: GET $uri');
-    final response = await performAuthenticatedGet(
-      uri,
-    );
+    final response = await performAuthenticatedGet(uri);
     debugPrint(
       'DeliveryAttendance Logs API Response: ${response.statusCode} ${response.body}',
     );
@@ -65,9 +61,7 @@ class DeliveryAttendanceService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryAttendance Login API Request: POST $uri');
-    final response = await performAuthenticatedPost(
-      uri,
-    );
+    final response = await performAuthenticatedPost(uri);
     debugPrint(
       'DeliveryAttendance Login API Response: ${response.statusCode} ${response.body}',
     );
@@ -84,9 +78,7 @@ class DeliveryAttendanceService extends DeliveryApiClient {
       await requiredQuery(roleId: 2),
     );
     debugPrint('DeliveryAttendance Logout API Request: POST $uri');
-    final response = await performAuthenticatedPost(
-      uri,
-    );
+    final response = await performAuthenticatedPost(uri);
     debugPrint(
       'DeliveryAttendance Logout API Response: ${response.statusCode} ${response.body}',
     );

@@ -62,7 +62,9 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
       type: FileType.custom,
       allowedExtensions: const ['png', 'jpg', 'jpeg', 'pdf'],
     );
-    if (result == null || result.files.isEmpty || result.files.single.path == null) {
+    if (result == null ||
+        result.files.isEmpty ||
+        result.files.single.path == null) {
       return;
     }
     setState(() => _selectedFile = File(result.files.single.path!));
@@ -87,9 +89,9 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
       documentFile: _selectedFile!,
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(response)));
   }
 
   @override
@@ -99,7 +101,8 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
     final status = provider.status;
     if (!provider.isLoading && _nameCtrl.text.isEmpty && profile.isNotEmpty) {
       _nameCtrl.text =
-          '${_read(profile, 'first_name')} ${_read(profile, 'last_name')}'.trim();
+          '${_read(profile, 'first_name')} ${_read(profile, 'last_name')}'
+              .trim();
       if (_nameCtrl.text.isEmpty) {
         _nameCtrl.text = _read(profile, 'name');
       }
@@ -108,7 +111,10 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
       _dobCtrl.text = _read(profile, 'dob');
     }
     final statusText =
-        (status['status'] ?? status['kyc_status'] ?? status['state'] ?? 'Not submitted')
+        (status['status'] ??
+                status['kyc_status'] ??
+                status['state'] ??
+                'Not submitted')
             .toString();
     return Scaffold(
       backgroundColor: Colors.white,
@@ -120,43 +126,59 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null
-              ? _KycError(message: provider.error!, onRetry: provider.load)
-              : SafeArea(
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF2F7F1),
-                            borderRadius: BorderRadius.circular(12),
+          ? _KycError(message: provider.error!, onRetry: provider.load)
+          : SafeArea(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF2F7F1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.verified_user_outlined,
+                            color: green,
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.verified_user_outlined, color: green),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Current status: $statusText',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Current status: $statusText',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        _field('Name', _nameCtrl),
-                        _field('Email', _emailCtrl, keyboardType: TextInputType.emailAddress),
-                        _field('Phone', _phoneCtrl, keyboardType: TextInputType.phone),
-                        _field('DOB (YYYY-MM-DD)', _dobCtrl, keyboardType: TextInputType.datetime),
-                        DropdownButtonFormField<String>(
-                          initialValue: _documentType,
-                          decoration: _decoration('Document Type'),
-                          items: const ['Aadhar', 'PAN', 'Driving Licence', 'Passport']
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _field('Name', _nameCtrl),
+                    _field(
+                      'Email',
+                      _emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    _field(
+                      'Phone',
+                      _phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    _field(
+                      'DOB (YYYY-MM-DD)',
+                      _dobCtrl,
+                      keyboardType: TextInputType.datetime,
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue: _documentType,
+                      decoration: _decoration('Document Type'),
+                      items:
+                          const ['Aadhar', 'PAN', 'Driving Licence', 'Passport']
                               .map(
                                 (value) => DropdownMenuItem<String>(
                                   value: value,
@@ -164,49 +186,49 @@ class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
                                 ),
                               )
                               .toList(),
-                          validator: (value) =>
-                              value == null || value.isEmpty ? 'Select document type' : null,
-                          onChanged: (value) => setState(() => _documentType = value),
-                        ),
-                        const SizedBox(height: 12),
-                        _field('Document Number', _documentNoCtrl),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: _pickDocument,
-                          icon: const Icon(Icons.upload_file),
-                          label: Text(
-                            _selectedFile == null
-                                ? 'Upload Document'
-                                : _selectedFile!.path.split(RegExp(r'[\\/]')).last,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: provider.isSubmitting ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: green,
-                            ),
-                            child: provider.isSubmitting
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Submit KYC',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                          ),
-                        ),
-                      ],
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Select document type'
+                          : null,
+                      onChanged: (value) =>
+                          setState(() => _documentType = value),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    _field('Document Number', _documentNoCtrl),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _pickDocument,
+                      icon: const Icon(Icons.upload_file),
+                      label: Text(
+                        _selectedFile == null
+                            ? 'Upload Document'
+                            : _selectedFile!.path.split(RegExp(r'[\\/]')).last,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: provider.isSubmitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(backgroundColor: green),
+                        child: provider.isSubmitting
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Submit KYC',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            ),
     );
   }
 

@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 class PickupMaterialsScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
-  const PickupMaterialsScreen({super.key, required this.roleId, required this.roleName});
+  const PickupMaterialsScreen({
+    super.key,
+    required this.roleId,
+    required this.roleName,
+  });
 
   @override
   State<PickupMaterialsScreen> createState() => _PickupMaterialsScreenState();
@@ -26,7 +30,8 @@ class _PickupMaterialsScreenState extends State<PickupMaterialsScreen> {
       pickupTime: "11:00 AM",
       type: "Interested in Mac",
       address: "Borivali (West)",
-      timelineIndex: 1, // 0=Sent to Warehouse, 1=Sent to Engineer, 2=Repair Done
+      timelineIndex:
+          1, // 0=Sent to Warehouse, 1=Sent to Engineer, 2=Repair Done
       attachments: const ["IMAGE", "IMAGE"],
     ),
     PickupItem(
@@ -115,9 +120,7 @@ class _PickupMaterialsScreenState extends State<PickupMaterialsScreen> {
             // ✅ Bottom Done button (like screenshot)
             Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF3F4F6),
-              ),
+              decoration: const BoxDecoration(color: Color(0xFFF3F4F6)),
               child: SizedBox(
                 width: double.infinity,
                 height: 54,
@@ -134,7 +137,11 @@ class _PickupMaterialsScreenState extends State<PickupMaterialsScreen> {
                   },
                   child: const Text(
                     "Done",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -151,8 +158,13 @@ class _PickupMaterialsScreenState extends State<PickupMaterialsScreen> {
       barrierDismissible: true,
       builder: (_) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: _PickupDetailsPopup(
             item: item,
             onCall: () {
@@ -218,10 +230,7 @@ class _PickupCard extends StatelessWidget {
   final PickupItem item;
   final VoidCallback onTap;
 
-  const _PickupCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _PickupCard({required this.item, required this.onTap});
 
   static const Color brandGreen = Color(0xFF1B6E1B);
 
@@ -250,7 +259,11 @@ class _PickupCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE6E7EA)),
               ),
-              child: const Icon(Icons.memory, size: 34, color: Color(0xFF555555)),
+              child: const Icon(
+                Icons.memory,
+                size: 34,
+                color: Color(0xFF555555),
+              ),
             ),
 
             const SizedBox(width: 12),
@@ -262,15 +275,28 @@ class _PickupCard extends StatelessWidget {
                 children: [
                   _rowLabelValue("Lead ID", item.leadId, valueBold: true),
                   const SizedBox(height: 4),
-                  _rowLabelValue("Service ID", item.serviceId, valueColor: brandGreen, valueBold: true),
+                  _rowLabelValue(
+                    "Service ID",
+                    item.serviceId,
+                    valueColor: brandGreen,
+                    valueBold: true,
+                  ),
                   const SizedBox(height: 4),
-                  _rowLabelValue("Location", item.location, valueColor: brandGreen),
+                  _rowLabelValue(
+                    "Location",
+                    item.location,
+                    valueColor: brandGreen,
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       const Text(
                         "Request :",
-                        style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -287,11 +313,19 @@ class _PickupCard extends StatelessWidget {
                         children: [
                           const Text(
                             "Qty",
-                            style: TextStyle(fontSize: 12.5, color: brandGreen, fontWeight: FontWeight.w800),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: brandGreen,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           Text(
                             "${item.qty}",
-                            style: const TextStyle(fontSize: 16, color: brandGreen, fontWeight: FontWeight.w900),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: brandGreen,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ],
                       ),
@@ -299,7 +333,7 @@ class _PickupCard extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -307,16 +341,20 @@ class _PickupCard extends StatelessWidget {
   }
 
   Widget _rowLabelValue(
-      String label,
-      String value, {
-        bool valueBold = false,
-        Color? valueColor,
-      }) {
+    String label,
+    String value, {
+    bool valueBold = false,
+    Color? valueColor,
+  }) {
     return Row(
       children: [
         Text(
           "$label : ",
-          style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 12.5,
+            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w600,
+          ),
         ),
         Expanded(
           child: Text(
@@ -396,7 +434,10 @@ class _PickupDetailsPopup extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               "Attachments",
-              style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF374151)),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF374151),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -406,22 +447,27 @@ class _PickupDetailsPopup extends StatelessWidget {
                 .take(2)
                 .map(
                   (a) => Expanded(
-                child: Container(
-                  height: 70,
-                  margin: EdgeInsets.only(right: a == item.attachments.first ? 10 : 0),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      a,
-                      style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF4B5563)),
+                    child: Container(
+                      height: 70,
+                      margin: EdgeInsets.only(
+                        right: a == item.attachments.first ? 10 : 0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5E7EB),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          a,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF4B5563),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            )
+                )
                 .toList(),
           ),
 
@@ -436,11 +482,19 @@ class _PickupDetailsPopup extends StatelessWidget {
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: onCall,
                     icon: const Icon(Icons.call, color: Colors.white, size: 18),
-                    label: const Text("Call", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    label: const Text(
+                      "Call",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -451,11 +505,23 @@ class _PickupDetailsPopup extends StatelessWidget {
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: onChat,
-                    icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 18),
-                    label: const Text("Chat", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      "Chat",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -475,7 +541,10 @@ class _PickupDetailsPopup extends StatelessWidget {
             width: 110,
             child: Text(
               k,
-              style: const TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Expanded(
@@ -527,9 +596,29 @@ class _Timeline extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
-            SizedBox(width: 70, child: Text("Sent to\nWarehouse", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-            SizedBox(width: 70, child: Text("Sent to\nEngineer", textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-            SizedBox(width: 70, child: Text("Repair\nDone", textAlign: TextAlign.right, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
+            SizedBox(
+              width: 70,
+              child: Text(
+                "Sent to\nWarehouse",
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
+            SizedBox(
+              width: 70,
+              child: Text(
+                "Sent to\nEngineer",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
+            SizedBox(
+              width: 70,
+              child: Text(
+                "Repair\nDone",
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
       ],
@@ -555,7 +644,8 @@ class _Timeline extends StatelessWidget {
       builder: (context, constraints) {
         final dashWidth = 6.0;
         final dashSpace = 4.0;
-        final dashCount = (constraints.maxWidth / (dashWidth + dashSpace)).floor();
+        final dashCount = (constraints.maxWidth / (dashWidth + dashSpace))
+            .floor();
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

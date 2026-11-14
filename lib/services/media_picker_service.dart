@@ -24,10 +24,7 @@ class MediaPickerService {
     }
 
     try {
-      return await picker.pickImage(
-        source: source,
-        imageQuality: imageQuality,
-      );
+      return await picker.pickImage(source: source, imageQuality: imageQuality);
     } on PlatformException catch (error) {
       await _showPickerErrorDialog(
         context,
@@ -77,11 +74,7 @@ class MediaPickerService {
         title: source == ImageSource.camera
             ? 'Camera unavailable'
             : 'Videos unavailable',
-        message: _messageForPlatformError(
-          error,
-          source: source,
-          isVideo: true,
-        ),
+        message: _messageForPlatformError(error, source: source, isVideo: true),
       );
       return null;
     } catch (_) {

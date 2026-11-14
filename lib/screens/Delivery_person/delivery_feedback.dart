@@ -16,15 +16,15 @@ class FeedbackScreen extends StatelessWidget {
         backgroundColor: darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Feedback’s",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
         ),
       ),
 
@@ -135,7 +135,7 @@ class _Stars extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(
         5,
-            (index) => Icon(
+        (index) => Icon(
           Icons.star,
           size: 16,
           color: index < rating ? FeedbackScreen.starColor : Colors.black12,
@@ -168,34 +168,34 @@ final List<_FeedbackData> _feedbackList = [
     date: "22 Jul",
     rating: 5,
     message:
-    "KaiB was amazing with our cats!! 🐾🐾 This was our first time using a pet-sitting service, so we were naturally quite anxious. We took a chance on Kai and completely lucked out! We booked Kai to come twice a day for three days.",
+        "KaiB was amazing with our cats!! 🐾🐾 This was our first time using a pet-sitting service, so we were naturally quite anxious. We took a chance on Kai and completely lucked out! We booked Kai to come twice a day for three days.",
   ),
   _FeedbackData(
     name: "KaiB",
     date: "22 Jul",
     rating: 5,
     message:
-    "KaiB was phenomenal with our dog, Max! We were first-time users of a pet-sitting service and were quite nervous. Kai’s professionalism and warmth immediately put us at ease.",
+        "KaiB was phenomenal with our dog, Max! We were first-time users of a pet-sitting service and were quite nervous. Kai’s professionalism and warmth immediately put us at ease.",
   ),
   _FeedbackData(
     name: "PetParent7",
     date: "22 Jul",
     rating: 5,
     message:
-    "KaiB was phenomenal with our dog, Max! We were first-time users of a pet-sitting service and were quite nervous. Kai’s professionalism and warmth immediately put us at ease.",
+        "KaiB was phenomenal with our dog, Max! We were first-time users of a pet-sitting service and were quite nervous. Kai’s professionalism and warmth immediately put us at ease.",
   ),
   _FeedbackData(
     name: "HappyPetMom",
     date: "22 Jul",
     rating: 5,
     message:
-    "Absolutely fantastic service from Kai! As first-time Pet Backer users, we were unsure what to expect. Kai’s attentive care and detailed updates put us at ease.",
+        "Absolutely fantastic service from Kai! As first-time Pet Backer users, we were unsure what to expect. Kai’s attentive care and detailed updates put us at ease.",
   ),
   _FeedbackData(
     name: "FurBabyFan",
     date: "22 Jul",
     rating: 5,
     message:
-    "KaiB did an outstanding job looking after our bunny, Thumper! 🐰🐰 We were worried about leaving him alone, but Kai’s attentive care made all the difference.",
+        "KaiB did an outstanding job looking after our bunny, Thumper! 🐰🐰 We were worried about leaving him alone, but Kai’s attentive care made all the difference.",
   ),
 ];

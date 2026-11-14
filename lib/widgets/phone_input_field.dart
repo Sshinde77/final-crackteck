@@ -5,7 +5,6 @@ import '../constants/api_constants.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_spacing.dart';
 
-
 /// Reusable phone number input field widget
 class PhoneInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -44,9 +43,7 @@ class PhoneInputField extends StatelessWidget {
             color: AppColors.inputBackground,
             borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
             border: Border.all(
-              color: errorText != null
-                  ? Colors.red
-                  : AppColors.inputBorder,
+              color: errorText != null ? Colors.red : AppColors.inputBorder,
               width: AppSpacing.inputBorderWidth,
             ),
           ),
@@ -68,11 +65,7 @@ class PhoneInputField extends StatelessWidget {
               ),
 
               // Divider
-              Container(
-                width: 1,
-                height: 30,
-                color: AppColors.inputBorder,
-              ),
+              Container(width: 1, height: 30, color: AppColors.inputBorder),
 
               // Phone Number Input
               Expanded(
@@ -112,14 +105,10 @@ class PhoneInputField extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6, left: 4),
             child: Text(
               errorText!,
-              style: const TextStyle(
-                color: Colors.red,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ),
       ],
     );
   }
 }
-

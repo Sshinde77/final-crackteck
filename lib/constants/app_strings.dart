@@ -70,7 +70,6 @@ class AppStrings {
   static const String inclTaxes = 'Incl. Shipping & all Taxes';
   static const String addButton = 'Add';
 
-
   // Product Payment Screen
   static const String productPaymentTitle = 'Product payment';
   static const String offers = 'Offers';
@@ -83,9 +82,6 @@ class AppStrings {
   static const String amount = 'Amount';
   static const String done = 'Done';
 }
-
-
-
 
 /// Helper function to generate dynamic subtitle
 String getLoginSubtitle(String roleName) {

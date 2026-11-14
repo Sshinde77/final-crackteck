@@ -91,10 +91,12 @@ class _FieldExecutiveProductItemDetailScreenState
     ];
 
     for (final map in candidates) {
-      final value = _readFromMap(
-        map,
-        const ['request_id', 'requestId', 'service_id', 'ticket_no'],
-      );
+      final value = _readFromMap(map, const [
+        'request_id',
+        'requestId',
+        'service_id',
+        'ticket_no',
+      ]);
       if (value.isNotEmpty) {
         return value;
       }
@@ -109,7 +111,8 @@ class _FieldExecutiveProductItemDetailScreenState
       final rootStatus = _readFromMap(raw, const ['service_status', 'status']);
       if (rootStatus.isNotEmpty) return rootStatus;
 
-      final requestMap = _asMap(raw['service_request']) ??
+      final requestMap =
+          _asMap(raw['service_request']) ??
           _asMap(raw['request']) ??
           _asMap(raw['service']);
       return _readFromMap(requestMap, const ['service_status', 'status']);
@@ -255,8 +258,8 @@ class _FieldExecutiveProductItemDetailScreenState
     final relative = value.startsWith('//')
         ? Uri.parse('https:$value')
         : value.startsWith('/')
-            ? Uri.parse(value)
-            : Uri.parse('/$value');
+        ? Uri.parse(value)
+        : Uri.parse('/$value');
 
     return origin.resolveUri(relative).toString();
   }
@@ -390,7 +393,9 @@ class _FieldExecutiveProductItemDetailScreenState
         _requestId = _extractRequestId(detail);
         _serviceRequestStatus = _extractServiceRequestStatus(detail);
         _isLoading = false;
-        _error = selected == null ? 'Product details not found in API response.' : null;
+        _error = selected == null
+            ? 'Product details not found in API response.'
+            : null;
       });
     } catch (error, stackTrace) {
       developer.log(
@@ -409,16 +414,19 @@ class _FieldExecutiveProductItemDetailScreenState
   }
 
   String get _productName {
-    final name = _readFromMap(
-      _productMap,
-      const ['name', 'product_name', 'title', 'service_name'],
-    );
+    final name = _readFromMap(_productMap, const [
+      'name',
+      'product_name',
+      'title',
+      'service_name',
+    ]);
     return name.isEmpty ? widget.title : name;
   }
 
   String get _serviceIdForDisplay {
     if (_requestId.trim().isNotEmpty) return _requestId.trim();
-    if (widget.displayServiceId.trim().isNotEmpty) return widget.displayServiceId.trim();
+    if (widget.displayServiceId.trim().isNotEmpty)
+      return widget.displayServiceId.trim();
     return widget.serviceId;
   }
 
@@ -440,25 +448,25 @@ class _FieldExecutiveProductItemDetailScreenState
 
   String get _serviceRequestIdForDiagnosisApi {
     return _firstResolvedId([
-      _readFromMap(
-        _productMap,
-        const [
-          'service_requests_id',
-          'service_request_id',
-          'serviceRequestId',
-          'request_service_id',
-        ],
-      ),
+      _readFromMap(_productMap, const [
+        'service_requests_id',
+        'service_request_id',
+        'serviceRequestId',
+        'request_service_id',
+      ]),
       widget.serviceRequestId,
     ]);
   }
 
   String get _productIdForDiagnosisApi {
     return _firstResolvedId([
-      _readFromMap(
-        _productMap,
-        const ['id', 'product_id', 'productId', 'item_code_id', 'itemCodeId'],
-      ),
+      _readFromMap(_productMap, const [
+        'id',
+        'product_id',
+        'productId',
+        'item_code_id',
+        'itemCodeId',
+      ]),
       widget.serviceId,
     ]);
   }
@@ -490,14 +498,16 @@ class _FieldExecutiveProductItemDetailScreenState
   }
 
   String get _productStatus {
-    return _readFromMap(
-      _productMap,
-      const ['service_status', 'product_status', 'status'],
-    );
+    return _readFromMap(_productMap, const [
+      'service_status',
+      'product_status',
+      'status',
+    ]);
   }
 
   bool get _canStartInstallation {
-    return widget.flow == FieldExecutiveProductItemDetailFlow.afterOtpVerification ||
+    return widget.flow ==
+            FieldExecutiveProductItemDetailFlow.afterOtpVerification ||
         _isInProgressStatus(_serviceRequestStatus);
   }
 
@@ -586,13 +596,17 @@ class _FieldExecutiveProductItemDetailScreenState
                           : Image.network(
                               imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildImageFallback(),
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return _buildImageFallback(icon: Icons.image);
-                              },
+                              errorBuilder: (_, __, ___) =>
+                                  _buildImageFallback(),
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                    if (loadingProgress == null) {
+                                      return child;
+                                    }
+                                    return _buildImageFallback(
+                                      icon: Icons.image,
+                                    );
+                                  },
                             ),
                     ),
                     Padding(
@@ -608,7 +622,9 @@ class _FieldExecutiveProductItemDetailScreenState
                               decoration: BoxDecoration(
                                 color: Colors.orange.shade50,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.orange.shade200),
+                                border: Border.all(
+                                  color: Colors.orange.shade200,
+                                ),
                               ),
                               child: Text(
                                 _error!,
@@ -638,7 +654,9 @@ class _FieldExecutiveProductItemDetailScreenState
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade50,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.red.shade200),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                  ),
                                 ),
                                 child: Text(
                                   widget.priority,
@@ -655,7 +673,8 @@ class _FieldExecutiveProductItemDetailScreenState
                           Text(
                             'Service ID: $_serviceIdForDisplay',
                             style: const TextStyle(
-                              color: FieldExecutiveProductItemDetailScreen.primaryGreen,
+                              color: FieldExecutiveProductItemDetailScreen
+                                  .primaryGreen,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -700,36 +719,35 @@ class _FieldExecutiveProductItemDetailScreenState
                 ),
               ),
       ),
-      bottomNavigationBar:
-          _canStartInstallation
-              ? SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _openInstallationChecklist,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              FieldExecutiveProductItemDetailScreen.primaryGreen,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          _installationActionLabel,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+      bottomNavigationBar: _canStartInstallation
+          ? SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _openInstallationChecklist,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          FieldExecutiveProductItemDetailScreen.primaryGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      _installationActionLabel,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                )
-              : null,
+                ),
+              ),
+            )
+          : null,
     );
   }
 

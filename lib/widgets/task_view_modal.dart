@@ -26,11 +26,11 @@ class _TaskViewModalState extends State<TaskViewModal> {
   Future<void> updateStatus() async {
     final res = await _httpClient.post(
       Uri.parse(ApiConstants.updateTaskStatus),
-      headers: {"Content-Type": "application/json", "Accept": "application/json"},
-      body: jsonEncode({
-        "task_id": widget.task.id,
-        "status": selectedStatus,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: jsonEncode({"task_id": widget.task.id, "status": selectedStatus}),
     );
 
     if (res.statusCode == 200) {
@@ -51,8 +51,10 @@ class _TaskViewModalState extends State<TaskViewModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.task.title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            widget.task.title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
 
           const SizedBox(height: 12),
 

@@ -14,7 +14,8 @@ class FieldExecutiveDeliveryDetailBaseScreen extends StatefulWidget {
     String requestId,
     int roleId,
     int? userId,
-  ) loadDetail;
+  )
+  loadDetail;
 
   const FieldExecutiveDeliveryDetailBaseScreen({
     super.key,
@@ -99,7 +100,8 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
   _ParsedDetailResponse _parseApiResponse(Map<String, dynamic> response) {
     final success = response['success'];
     if (success is bool && !success) {
-      final message = _readText(response['message']) ??
+      final message =
+          _readText(response['message']) ??
           _readText(response['error']) ??
           'Failed to load request details.';
       return _ParsedDetailResponse(error: message);
@@ -114,7 +116,8 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
     final customer = _asMap(serviceRequest?['customer']);
     final product = _asMap(data['product']);
     final requestProduct = _asMap(data['service_request_product']);
-    final customerAddress = _asMap(serviceRequest?['customer_address']) ??
+    final customerAddress =
+        _asMap(serviceRequest?['customer_address']) ??
         _asMap(data['customer_address']);
 
     final firstName = _readFromMap(customer, const ['first_name']);
@@ -123,8 +126,10 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
     return _ParsedDetailResponse(
       data: _DeliveryDetailData(
         headerProductName: _readFromMap(product, const ['product_name']),
-        requestId: _readFromMap(data, const ['request_id']) ?? _normalizedRequestId,
-        requestType: _readFromMap(data, const ['request_type']) ??
+        requestId:
+            _readFromMap(data, const ['request_id']) ?? _normalizedRequestId,
+        requestType:
+            _readFromMap(data, const ['request_type']) ??
             FieldExecutiveDeliveryTypes.label(widget.deliveryType),
         status: _readFromMap(data, const ['status']),
         customerName: _joinName(firstName, lastName),
@@ -133,8 +138,9 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
         productId: _readFromMap(data, const ['product_id']),
         requestedQuantity: _readFromMap(data, const ['requested_quantity']),
         priority: _readFromMap(data, const ['priority']),
-        customerAddressId:
-            _readFromMap(serviceRequest, const ['customer_address_id']),
+        customerAddressId: _readFromMap(serviceRequest, const [
+          'customer_address_id',
+        ]),
         customerAddressText: _formatAddress(customerAddress),
       ),
     );
@@ -173,8 +179,16 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
 
   String? _formatAddress(Map<String, dynamic> address) {
     if (address.isEmpty) return null;
-    final line1 = _readFromMap(address, const ['address_1', 'address1', 'address_line_1']);
-    final line2 = _readFromMap(address, const ['address_2', 'address2', 'address_line_2']);
+    final line1 = _readFromMap(address, const [
+      'address_1',
+      'address1',
+      'address_line_1',
+    ]);
+    final line2 = _readFromMap(address, const [
+      'address_2',
+      'address2',
+      'address_line_2',
+    ]);
     final city = _readFromMap(address, const ['city']);
     final state = _readFromMap(address, const ['state']);
     final pincode = _readFromMap(address, const ['pincode']);
@@ -182,9 +196,11 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
       if (line1 != null) line1,
       if (line2 != null) line2,
       if (city != null || state != null || pincode != null)
-        [city, state, pincode]
-            .where((item) => item != null && item.isNotEmpty)
-            .join(', '),
+        [
+          city,
+          state,
+          pincode,
+        ].where((item) => item != null && item.isNotEmpty).join(', '),
     ].where((item) => item.isNotEmpty).join(', ');
     return formatted.isEmpty ? null : formatted;
   }
@@ -249,10 +265,7 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_error != null)
-                      _ErrorBanner(
-                        message: _error!,
-                        onRetry: _loadDetail,
-                      ),
+                      _ErrorBanner(message: _error!, onRetry: _loadDetail),
                     if (_error == null && detail != null) ...[
                       _SectionCard(
                         title: 'Header',
@@ -262,7 +275,10 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
                               label: 'Product Name',
                               value: detail.headerProductName!,
                             ),
-                          _DetailRow(label: 'Request ID', value: detail.requestId),
+                          _DetailRow(
+                            label: 'Request ID',
+                            value: detail.requestId,
+                          ),
                           _DetailRow(
                             label: 'Request Type',
                             value: detail.requestType,
@@ -276,9 +292,15 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
                         title: 'Customer Info',
                         children: [
                           if (detail.customerName != null)
-                            _DetailRow(label: 'Name', value: detail.customerName!),
+                            _DetailRow(
+                              label: 'Name',
+                              value: detail.customerName!,
+                            ),
                           if (detail.customerPhone != null)
-                            _DetailRow(label: 'Phone', value: detail.customerPhone!),
+                            _DetailRow(
+                              label: 'Phone',
+                              value: detail.customerPhone!,
+                            ),
                           if (detail.status != null)
                             _DetailRow(label: 'Status', value: detail.status!),
                         ],
@@ -288,16 +310,25 @@ class _FieldExecutiveDeliveryDetailBaseScreenState
                         title: 'Product Info',
                         children: [
                           if (detail.productName != null)
-                            _DetailRow(label: 'Product Name', value: detail.productName!),
+                            _DetailRow(
+                              label: 'Product Name',
+                              value: detail.productName!,
+                            ),
                           if (detail.productId != null)
-                            _DetailRow(label: 'Product ID', value: detail.productId!),
+                            _DetailRow(
+                              label: 'Product ID',
+                              value: detail.productId!,
+                            ),
                           if (detail.requestedQuantity != null)
                             _DetailRow(
                               label: 'Requested Quantity',
                               value: detail.requestedQuantity!,
                             ),
                           if (detail.priority != null)
-                            _DetailRow(label: 'Priority', value: detail.priority!),
+                            _DetailRow(
+                              label: 'Priority',
+                              value: detail.priority!,
+                            ),
                         ],
                       ),
                       if (showLocationSection) ...[
@@ -390,20 +421,14 @@ class _ParsedDetailResponse {
   final _DeliveryDetailData? data;
   final String? error;
 
-  const _ParsedDetailResponse({
-    this.data,
-    this.error,
-  });
+  const _ParsedDetailResponse({this.data, this.error});
 }
 
 class _ErrorBanner extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorBanner({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorBanner({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -418,25 +443,15 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 18,
-            color: Colors.red.shade700,
-          ),
+          Icon(Icons.error_outline, size: 18, color: Colors.red.shade700),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('Retry'),
-          ),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );
@@ -447,10 +462,7 @@ class _SectionCard extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SectionCard({
-    required this.title,
-    required this.children,
-  });
+  const _SectionCard({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -469,10 +481,7 @@ class _SectionCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           ...children,
@@ -486,10 +495,7 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -502,19 +508,13 @@ class _DetailRow extends StatelessWidget {
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],

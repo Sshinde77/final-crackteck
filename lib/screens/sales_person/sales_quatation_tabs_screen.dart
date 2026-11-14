@@ -1072,8 +1072,12 @@ class _SalesPersonQuotationScreenState
                                       ),
                                     ),
                                   OutlinedButton.icon(
-                                    onPressed: () => Navigator.maybePop(context),
-                                    icon: const Icon(Icons.arrow_back, size: 18),
+                                    onPressed: () =>
+                                        Navigator.maybePop(context),
+                                    icon: const Icon(
+                                      Icons.arrow_back,
+                                      size: 18,
+                                    ),
                                     label: const Text('Go Back'),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: darkGreen,
@@ -1101,7 +1105,10 @@ class _SalesPersonQuotationScreenState
                       bottom: 18,
                       child: InkWell(
                         onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.salespersonNewQuotation);
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.salespersonNewQuotation,
+                          );
                         },
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
@@ -1147,14 +1154,26 @@ class _SalesPersonQuotationScreenState
         currentIndex: _navIndex,
         roleId: widget.roleId,
         roleName: widget.roleName,
-               onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }

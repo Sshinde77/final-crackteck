@@ -99,7 +99,9 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
       setState(() => _isLoggingOut = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong during logout. Please try again.'),
+          content: Text(
+            'Something went wrong during logout. Please try again.',
+          ),
         ),
       );
     }
@@ -162,7 +164,10 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 profile.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -182,7 +187,10 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
                   child: CircularProgressIndicator(),
                 ),
               if (provider.error != null)
-                _ErrorBanner(message: provider.error!, onRetry: provider.loadProfile),
+                _ErrorBanner(
+                  message: provider.error!,
+                  onRetry: provider.loadProfile,
+                ),
               _ProfileTile(
                 icon: Icons.person_outline,
                 label: 'Personal info',
@@ -376,10 +384,7 @@ class _RatingRow extends StatelessWidget {
 }
 
 class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorBanner({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

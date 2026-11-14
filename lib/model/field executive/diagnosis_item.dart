@@ -75,10 +75,7 @@ class DiagnosisItem {
       'working',
     ]);
 
-    final rawPartStatus = readRaw(const [
-      'part_status',
-      'partStatus',
-    ]);
+    final rawPartStatus = readRaw(const ['part_status', 'partStatus']);
     final partId = readString(const [
       'part_id',
       'partId',

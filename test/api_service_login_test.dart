@@ -23,8 +23,10 @@ void main() {
     ApiHttpClient.overrideForTesting(
       MockClient((http.Request request) async {
         expect(request.method, 'POST');
-        expect(request.headers['content-type'] ?? request.headers['Content-Type'],
-            isNotNull);
+        expect(
+          request.headers['content-type'] ?? request.headers['Content-Type'],
+          isNotNull,
+        );
 
         return http.Response(
           jsonEncode(<String, Object?>{
@@ -63,4 +65,3 @@ void main() {
     expect(response.message?.toLowerCase(), contains('html'));
   });
 }
-

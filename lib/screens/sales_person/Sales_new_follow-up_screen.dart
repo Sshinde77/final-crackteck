@@ -6,7 +6,6 @@ import '../../widgets/bottom_navigation.dart';
 import '../../model/sales_person/lead_model.dart';
 import '../../services/api_service.dart';
 
-
 class NewFollowUpScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
@@ -179,13 +178,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   }
 
   DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
   bool _isPastFollowUpSelection(DateTime date, TimeOfDay time) {
@@ -254,7 +247,11 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       int lastPage = 1;
 
       do {
-        final result = await ApiService.fetchLeads('', widget.roleId, page: page);
+        final result = await ApiService.fetchLeads(
+          '',
+          widget.roleId,
+          page: page,
+        );
         final data = result['data'];
 
         if (data is List) {
@@ -339,17 +336,13 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   }
 
   String _sanitizePhone(String value) {
-    return value
-        .replaceAll('+91', '')
-        .replaceAll('+', '')
-        .trim();
+    return value.replaceAll('+91', '').replaceAll('+', '').trim();
   }
 
   Future<void> _pickDate() async {
     final today = _todayOnly();
     final initialDate =
-        _selectedFollowUpDate != null &&
-            !_selectedFollowUpDate!.isBefore(today)
+        _selectedFollowUpDate != null && !_selectedFollowUpDate!.isBefore(today)
         ? _selectedFollowUpDate!
         : today;
     final picked = await showDatePicker(
@@ -363,7 +356,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       final mm = picked.month.toString().padLeft(2, "0");
       final yyyy = picked.year.toString();
 
-      final shouldClearTime = _selectedFollowUpTime != null &&
+      final shouldClearTime =
+          _selectedFollowUpTime != null &&
           _isPastFollowUpSelection(picked, _selectedFollowUpTime!);
       setState(() {
         _selectedFollowUpDate = picked;
@@ -445,7 +439,9 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
 
     if (userId == null || accessToken == null || accessToken.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text("Authentication error. Please log in again.")),
+        const SnackBar(
+          content: Text("Authentication error. Please log in again."),
+        ),
       );
       return;
     }
@@ -453,11 +449,16 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     if (!_isEditMode) {
       if (_selectedFollowUpDate == null || _selectedFollowUpTime == null) {
         messenger.showSnackBar(
-          const SnackBar(content: Text("Please select follow-up date and time.")),
+          const SnackBar(
+            content: Text("Please select follow-up date and time."),
+          ),
         );
         return;
       }
-      if (_isPastFollowUpSelection(_selectedFollowUpDate!, _selectedFollowUpTime!)) {
+      if (_isPastFollowUpSelection(
+        _selectedFollowUpDate!,
+        _selectedFollowUpTime!,
+      )) {
         messenger.showSnackBar(
           const SnackBar(
             content: Text("Please select a current or future follow-up time."),
@@ -475,7 +476,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
 
     setState(() => submitLoading = true);
     try {
-      if (_isEditMode && (widget.followUpId == null || widget.followUpId!.trim().isEmpty)) {
+      if (_isEditMode &&
+          (widget.followUpId == null || widget.followUpId!.trim().isEmpty)) {
         messenger.showSnackBar(
           const SnackBar(content: Text("Follow-up ID is missing for edit.")),
         );
@@ -494,18 +496,14 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
       };
 
       final response = _isEditMode
-          ? await ApiService.updateFollowUp(
-              widget.followUpId!,
-              body,
-            )
-          : await ApiService.createFollowUp(
-              body,
-            );
+          ? await ApiService.updateFollowUp(widget.followUpId!, body)
+          : await ApiService.createFollowUp(body);
 
-      String message = response.message ??
+      String message =
+          response.message ??
           (_isEditMode
-          ? "Follow-up updated successfully"
-          : "Follow-up submitted");
+              ? "Follow-up updated successfully"
+              : "Follow-up submitted");
       final bool success = response.success;
 
       messenger.showSnackBar(SnackBar(content: Text(message)));
@@ -525,7 +523,11 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
     }
   }
 
-  InputDecoration _decor(String hint, {Widget? suffixIcon, Widget? prefixIcon}) {
+  InputDecoration _decor(
+    String hint, {
+    Widget? suffixIcon,
+    Widget? prefixIcon,
+  }) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
@@ -591,7 +593,11 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
           readOnly: readOnly,
           onTap: onTap,
           maxLines: maxLines,
-          decoration: _decor(hint ?? "", suffixIcon: suffixIcon, prefixIcon: prefixIcon),
+          decoration: _decor(
+            hint ?? "",
+            suffixIcon: suffixIcon,
+            prefixIcon: prefixIcon,
+          ),
           validator: validator,
         ),
         const SizedBox(height: 12),
@@ -723,7 +729,10 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -736,7 +745,7 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: (){
+            onPressed: () {
               // Navigator.pushNamed(
               //   context,
               //   AppRoutes.NotificationScreen,
@@ -764,8 +773,9 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                     label: "Lead ID",
                     controller: leadIdCtrl,
                     readOnly: true,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? "Lead ID missing" : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? "Lead ID missing"
+                        : null,
                   )
                 else
                   _leadDropdown(),
@@ -775,7 +785,9 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   controller: clientNameCtrl,
                   hint: "",
                   readOnly: true,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Select lead ID first" : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? "Select lead ID first"
+                      : null,
                 ),
 
                 _textField(
@@ -789,11 +801,16 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                     child: Center(
                       child: Text(
                         "+91",
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? "Select lead ID first" : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? "Select lead ID first"
+                      : null,
                 ),
 
                 _textField(
@@ -805,7 +822,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   validator: (v) {
                     final value = (v ?? "").trim();
                     if (value.isEmpty) return "Select lead ID first";
-                    if (!value.contains("@") || !value.contains(".")) return "Invalid email in lead data";
+                    if (!value.contains("@") || !value.contains("."))
+                      return "Invalid email in lead data";
                     return null;
                   },
                 ),
@@ -817,10 +835,15 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   onTap: _isEditMode ? null : _pickDate,
                   suffixIcon: _isEditMode
                       ? null
-                      : const Icon(Icons.calendar_month_outlined, color: Colors.black45),
+                      : const Icon(
+                          Icons.calendar_month_outlined,
+                          color: Colors.black45,
+                        ),
                   validator: _isEditMode
                       ? null
-                      : (v) => (v == null || v.trim().isEmpty) ? "Select date" : null,
+                      : (v) => (v == null || v.trim().isEmpty)
+                            ? "Select date"
+                            : null,
                 ),
 
                 _textField(
@@ -830,10 +853,15 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   onTap: _isEditMode ? null : _pickTime,
                   suffixIcon: _isEditMode
                       ? null
-                      : const Icon(Icons.access_time_rounded, color: Colors.black45),
+                      : const Icon(
+                          Icons.access_time_rounded,
+                          color: Colors.black45,
+                        ),
                   validator: _isEditMode
                       ? null
-                      : (v) => (v == null || v.trim().isEmpty) ? "Select time" : null,
+                      : (v) => (v == null || v.trim().isEmpty)
+                            ? "Select time"
+                            : null,
                 ),
 
                 _textField(

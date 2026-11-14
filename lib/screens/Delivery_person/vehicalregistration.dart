@@ -47,7 +47,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
               title: const Text('Camera'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.camera);
+                final file = await _picker.pickImage(
+                  source: ImageSource.camera,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (front) {
@@ -66,7 +68,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
               title: const Text('Gallery'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await _picker.pickImage(source: ImageSource.gallery);
+                final file = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
                 if (file != null && mounted) {
                   setState(() {
                     if (front) {
@@ -152,7 +156,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     } finally {
       if (mounted) {
@@ -184,7 +190,10 @@ class _VehicleScreenState extends State<VehicleScreen> {
         hintText: hint,
         filled: true,
         fillColor: const Color(0xFFF7F7F7),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

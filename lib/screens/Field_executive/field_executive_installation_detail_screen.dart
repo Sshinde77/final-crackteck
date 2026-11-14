@@ -28,10 +28,12 @@ class FieldExecutiveInstallationDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<FieldExecutiveInstallationDetailScreen> createState() => _FieldExecutiveInstallationDetailScreenState();
+  State<FieldExecutiveInstallationDetailScreen> createState() =>
+      _FieldExecutiveInstallationDetailScreenState();
 }
 
-class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveInstallationDetailScreen> {
+class _FieldExecutiveInstallationDetailScreenState
+    extends State<FieldExecutiveInstallationDetailScreen> {
   bool isAccepted = false;
   bool _isAccepting = false;
   bool _isRescheduling = false;
@@ -87,10 +89,10 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   }
 
   String _serviceRequestDbIdForApi() {
-    final fromDetail = _readFromMap(
-      _detailData,
-      const ['id', 'service_request_id'],
-    );
+    final fromDetail = _readFromMap(_detailData, const [
+      'id',
+      'service_request_id',
+    ]);
     if (fromDetail.isNotEmpty) {
       return fromDetail.replaceFirst(RegExp(r'^#'), '').trim();
     }
@@ -137,7 +139,8 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     final rootStatus = _readFromMap(raw, const ['service_status', 'status']);
     if (rootStatus.isNotEmpty) return rootStatus;
 
-    final requestMap = _asMap(raw['service_request']) ??
+    final requestMap =
+        _asMap(raw['service_request']) ??
         _asMap(raw['request']) ??
         _asMap(raw['service']);
     return _readFromMap(requestMap, const ['service_status', 'status']);
@@ -206,7 +209,8 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     final direct = _readFromMap(_detailData, keys);
     if (direct.isNotEmpty) return direct;
 
-    final customer = _asMap(_detailData?['customer']) ??
+    final customer =
+        _asMap(_detailData?['customer']) ??
         _asMap(_detailData?['customer_details']) ??
         _asMap(_detailData?['user']);
     final customerValue = _readFromMap(customer, keys);
@@ -240,9 +244,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   String _normalizeServiceType(String raw) {
     final value = raw.trim().toLowerCase();
     if (value.isEmpty) return '';
-    if (value == '1' ||
-        value == 'installation' ||
-        value == 'installations') {
+    if (value == '1' || value == 'installation' || value == 'installations') {
       return 'Installation';
     }
     if (value == '2' || value == 'repair' || value == 'repairs') {
@@ -328,8 +330,8 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     final relative = value.startsWith('//')
         ? Uri.parse('https:$value')
         : value.startsWith('/')
-            ? Uri.parse(value)
-            : Uri.parse('/$value');
+        ? Uri.parse(value)
+        : Uri.parse('/$value');
 
     return origin.resolveUri(relative).toString();
   }
@@ -394,7 +396,8 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
       _asMap(_detailData?['user']) ??
       _asMap(_detailData?['lead_details']);
 
-  Map<String, dynamic>? get _productMap => _productMaps.isEmpty ? null : _productMaps.first;
+  Map<String, dynamic>? get _productMap =>
+      _productMaps.isEmpty ? null : _productMaps.first;
 
   String _readProductField(List<String> keys, {String fallback = ''}) {
     final productValue = _readFromMap(_productMap, keys);
@@ -409,26 +412,37 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
     return '${parsed.day.toString().padLeft(2, '0')} ${_getMonthName(parsed.month)}';
   }
 
-  String get _title => _field(
-        const ['title', 'service_name', 'service_title', 'name', 'issue', 'problem'],
-        fallback: widget.title,
-      );
+  String get _title => _field(const [
+    'title',
+    'service_name',
+    'service_title',
+    'name',
+    'issue',
+    'problem',
+  ], fallback: widget.title);
   String get _description => _field(
-        const ['description', 'details', 'notes', 'remark', 'remarks'],
-        fallback: widget.jobType == 'repairs'
-            ? 'Visit charge of Rs 159 waived in final bill; spare part / repair cost extra. Technician will diagnose and provide repair estimate.'
-            : 'Visit charge of Rs 159 waived in final bill; spare part / repair cost extra',
-      );
-  String get _requestId => _field(
-        const ['request_id', 'requestId', 'service_id', 'serviceId', 'ticket_no', 'id'],
-        fallback: widget.serviceId,
-      );
+    const ['description', 'details', 'notes', 'remark', 'remarks'],
+    fallback: widget.jobType == 'repairs'
+        ? 'Visit charge of Rs 159 waived in final bill; spare part / repair cost extra. Technician will diagnose and provide repair estimate.'
+        : 'Visit charge of Rs 159 waived in final bill; spare part / repair cost extra',
+  );
+  String get _requestId => _field(const [
+    'request_id',
+    'requestId',
+    'service_id',
+    'serviceId',
+    'ticket_no',
+    'id',
+  ], fallback: widget.serviceId);
   String get _serviceId => _normalizeServiceId(
-        _field(
-          const ['service_id', 'serviceId', 'request_id', 'id', 'ticket_no'],
-          fallback: widget.serviceId,
-        ),
-      );
+    _field(const [
+      'service_id',
+      'serviceId',
+      'request_id',
+      'id',
+      'ticket_no',
+    ], fallback: widget.serviceId),
+  );
   String get _location =>
       _field(const ['location', 'city', 'area'], fallback: widget.location);
   FieldExecutiveServiceRequestDetail? get _detailModel {
@@ -458,77 +472,100 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   }
 
   String get _priority => _normalizePriority(
-        _field(
-          const ['priority', 'priority_level', 'urgency'],
-          fallback: widget.priority,
-        ),
-      );
-  String get _imageUrl => _field(
-        const ['image_url', 'image', 'service_image', 'product_image'],
-        fallback: '',
-      );
+    _field(const [
+      'priority',
+      'priority_level',
+      'urgency',
+    ], fallback: widget.priority),
+  );
+  String get _imageUrl => _field(const [
+    'image_url',
+    'image',
+    'service_image',
+    'product_image',
+  ], fallback: '');
   String get _customerName {
-    final firstName = _readFromMap(
-      _customerMap,
-      const ['first_name', 'firstName', 'firstname'],
-    );
-    final lastName = _readFromMap(
-      _customerMap,
-      const ['last_name', 'lastName', 'lastname'],
-    );
+    final firstName = _readFromMap(_customerMap, const [
+      'first_name',
+      'firstName',
+      'firstname',
+    ]);
+    final lastName = _readFromMap(_customerMap, const [
+      'last_name',
+      'lastName',
+      'lastname',
+    ]);
 
-    final fullName = [firstName, lastName]
-        .where((part) => part.trim().isNotEmpty)
-        .join(' ')
-        .trim();
+    final fullName = [
+      firstName,
+      lastName,
+    ].where((part) => part.trim().isNotEmpty).join(' ').trim();
     if (fullName.isNotEmpty) return fullName;
 
-    final rootFirstName = _readFromMap(
-      _detailData,
-      const ['first_name', 'firstName', 'firstname'],
-    );
-    final rootLastName = _readFromMap(
-      _detailData,
-      const ['last_name', 'lastName', 'lastname'],
-    );
-    final rootFullName = [rootFirstName, rootLastName]
-        .where((part) => part.trim().isNotEmpty)
-        .join(' ')
-        .trim();
+    final rootFirstName = _readFromMap(_detailData, const [
+      'first_name',
+      'firstName',
+      'firstname',
+    ]);
+    final rootLastName = _readFromMap(_detailData, const [
+      'last_name',
+      'lastName',
+      'lastname',
+    ]);
+    final rootFullName = [
+      rootFirstName,
+      rootLastName,
+    ].where((part) => part.trim().isNotEmpty).join(' ').trim();
     if (rootFullName.isNotEmpty) return rootFullName;
 
-    final fallback = _field(
-      const ['customer_name', 'full_name', 'name'],
-      fallback: '-',
-    );
+    final fallback = _field(const [
+      'customer_name',
+      'full_name',
+      'name',
+    ], fallback: '-');
     return fallback.trim().isEmpty ? '-' : fallback;
   }
-  String get _customerNumber => _field(
-        const ['customer_phone', 'customer_number', 'phone', 'mobile', 'phone_number', 'contact_number'],
-        fallback: '-',
-      );
+
+  String get _customerNumber => _field(const [
+    'customer_phone',
+    'customer_number',
+    'phone',
+    'mobile',
+    'phone_number',
+    'contact_number',
+  ], fallback: '-');
   String get _customerNumberForDisplay =>
       _isRequestAccepted ? _customerNumber : _maskPhoneNumber(_customerNumber);
-  String get _serviceType =>
-      _normalizeServiceType(
-        _field(
-          const ['service_type', 'serviceType', 'service_type_name', 'type'],
-          fallback: widget.jobType,
-        ),
-      );
-  String get _productTitle => _readProductField(
-        const ['product_name', 'name', 'title', 'service_name'],
-        fallback: _title,
-      );
+  String get _serviceType => _normalizeServiceType(
+    _field(const [
+      'service_type',
+      'serviceType',
+      'service_type_name',
+      'type',
+    ], fallback: widget.jobType),
+  );
+  String get _productTitle => _readProductField(const [
+    'product_name',
+    'name',
+    'title',
+    'service_name',
+  ], fallback: _title);
   String get _productBrand =>
       _readProductField(const ['brand', 'brand_name', 'company', 'make']);
   String get _productModel =>
       _readProductField(const ['model', 'model_name', 'variant']);
-  String get _productCode => _readProductField(
-        const ['product_code', 'sku', 'serial_number', 'product_id', 'id'],
-      );
-  String get _productLocation =>
-      _readProductField(const ['location', 'city', 'area'], fallback: _location);
+  String get _productCode => _readProductField(const [
+    'product_code',
+    'sku',
+    'serial_number',
+    'product_id',
+    'id',
+  ]);
+  String get _productLocation => _readProductField(const [
+    'location',
+    'city',
+    'area',
+  ], fallback: _location);
   bool get _hasMultipleProducts => _productMaps.length > 1;
   List<String> get _productImageUrls {
     final urls = <String>[];
@@ -579,12 +616,15 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
   String get _productImage {
     if (_productImageUrls.isNotEmpty) return _productImageUrls.first;
     return _normalizeImageSource(
-      _readProductField(
-      const ['product_image', 'image_url', 'image', 'thumbnail'],
-      fallback: _imageUrl,
-      ),
+      _readProductField(const [
+        'product_image',
+        'image_url',
+        'image',
+        'thumbnail',
+      ], fallback: _imageUrl),
     );
   }
+
   String get _productDetailText {
     final parts = <String>[
       if (_productBrand.isNotEmpty) _productBrand,
@@ -592,26 +632,33 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
       if (_productCode.isNotEmpty) 'Code: $_productCode',
     ];
     if (parts.isNotEmpty) return parts.join(' | ');
-    return _readProductField(
-      const ['description', 'details', 'product_description'],
-      fallback: _description,
-    );
+    return _readProductField(const [
+      'description',
+      'details',
+      'product_description',
+    ], fallback: _description);
   }
 
   String get _schedule {
-    final raw = _field(
-      const ['schedule', 'scheduled_at', 'appointment', 'appointment_date_time'],
-      fallback: '',
-    );
+    final raw = _field(const [
+      'schedule',
+      'scheduled_at',
+      'appointment',
+      'appointment_date_time',
+    ], fallback: '');
     if (raw.isNotEmpty) return raw;
-    final date = _field(
-      const ['schedule_date', 'scheduled_date', 'date', 'visit_date'],
-      fallback: '',
-    );
-    final time = _field(
-      const ['schedule_time', 'scheduled_time', 'time', 'visit_time'],
-      fallback: '',
-    );
+    final date = _field(const [
+      'schedule_date',
+      'scheduled_date',
+      'date',
+      'visit_date',
+    ], fallback: '');
+    final time = _field(const [
+      'schedule_time',
+      'scheduled_time',
+      'time',
+      'visit_time',
+    ], fallback: '');
     final dateText = _formatDateMaybe(date);
     if (dateText.isEmpty && time.isEmpty) return 'Not scheduled';
     if (dateText.isEmpty) return time;
@@ -649,9 +696,7 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
               onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: primaryGreen,
-              ),
+              style: TextButton.styleFrom(foregroundColor: primaryGreen),
             ),
           ),
           child: child!,
@@ -709,8 +754,18 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
 
   String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   }
@@ -724,7 +779,11 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
           Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -752,7 +811,10 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
           Container(
             width: 60,
             height: 60,
-            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: normalizedImage.isEmpty
                 ? _buildImageFallback(icon: Icons.desktop_windows, iconSize: 26)
                 : ClipRRect(
@@ -760,8 +822,10 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                     child: Image.network(
                       normalizedImage,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          _buildImageFallback(icon: Icons.desktop_windows, iconSize: 26),
+                      errorBuilder: (_, __, ___) => _buildImageFallback(
+                        icon: Icons.desktop_windows,
+                        iconSize: 26,
+                      ),
                     ),
                   ),
           ),
@@ -770,9 +834,17 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4),
-                Text(desc, style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  desc,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -780,8 +852,17 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(codeOrId, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-              Text(location, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                codeOrId,
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                location,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
           ),
         ],
@@ -849,7 +930,11 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
         ),
         title: Text(
           _serviceType.isEmpty ? 'Service details' : _serviceType,
-          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: SafeArea(
@@ -861,205 +946,259 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                if (_detailError != null)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade100),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 18,
-                          color: Colors.red.shade700,
-                        ),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Could not load latest details. Showing fallback data.',
-                            style: TextStyle(fontSize: 12, color: Colors.black87),
+                      if (_detailError != null)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red.shade100),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 18,
+                                color: Colors.red.shade700,
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Could not load latest details. Showing fallback data.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _loadDetail,
+                                child: const Text('Retry'),
+                              ),
+                            ],
                           ),
                         ),
-                        TextButton(
-                          onPressed: _loadDetail,
-                          child: const Text('Retry'),
+                      // Product Image
+                      Center(
+                        child: Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: _buildHeroImage(),
                         ),
-                      ],
-                    ),
-                  ),
-                // Product Image
-                Center(
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: _buildHeroImage(),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                      ),
+                      const SizedBox(height: 20),
 
-                // Title and Description
-                Text(
-                  _serviceType.isEmpty ? _title : _serviceType,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Request ID: $_requestId',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
+                      // Title and Description
+                      Text(
+                        _serviceType.isEmpty ? _title : _serviceType,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Request ID: $_requestId',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(),
 
-                // Customer Details
-                _buildDetailRow('Customer Name', _customerName),
-                _buildDetailRow('Customer Number', _customerNumberForDisplay),
-                _buildDetailRow(
-                  'Schedule',
-                  selectedDate == null
-                      ? _schedule
-                      : '${selectedDate!.day.toString().padLeft(2, '0')} ${_getMonthName(selectedDate!.month)} / 10:00 AM',
-                ),
-                _buildDetailRow('Service Type', _serviceType),
-                _buildDetailRow('Service ID', _serviceId),
-                const Divider(),
+                      // Customer Details
+                      _buildDetailRow('Customer Name', _customerName),
+                      _buildDetailRow(
+                        'Customer Number',
+                        _customerNumberForDisplay,
+                      ),
+                      _buildDetailRow(
+                        'Schedule',
+                        selectedDate == null
+                            ? _schedule
+                            : '${selectedDate!.day.toString().padLeft(2, '0')} ${_getMonthName(selectedDate!.month)} / 10:00 AM',
+                      ),
+                      _buildDetailRow('Service Type', _serviceType),
+                      _buildDetailRow('Service ID', _serviceId),
+                      const Divider(),
 
-                // Product Section with View All
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Product',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    if (_hasMultipleProducts)
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.FieldExecutiveAllProductsScreen,
-                            arguments: fieldexecutiveallproductsArguments(
-                              roleId: widget.roleId,
-                              roleName: widget.roleName,
-                              serviceRequestId: _serviceRequestDbIdForApi(),
-                              controller: FieldExecutiveProductServicesController.withDefaults(),
+                      // Product Section with View All
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Product',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                        },
-                        label: const Text('View all product', style: TextStyle(color: primaryGreen)),
-                        icon: const Icon(Icons.arrow_forward, color: primaryGreen, size: 16),
-                        iconAlignment: IconAlignment.end,
+                          ),
+                          if (_hasMultipleProducts)
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.FieldExecutiveAllProductsScreen,
+                                  arguments: fieldexecutiveallproductsArguments(
+                                    roleId: widget.roleId,
+                                    roleName: widget.roleName,
+                                    serviceRequestId:
+                                        _serviceRequestDbIdForApi(),
+                                    controller:
+                                        FieldExecutiveProductServicesController.withDefaults(),
+                                  ),
+                                );
+                              },
+                              label: const Text(
+                                'View all product',
+                                style: TextStyle(color: primaryGreen),
+                              ),
+                              icon: const Icon(
+                                Icons.arrow_forward,
+                                color: primaryGreen,
+                                size: 16,
+                              ),
+                              iconAlignment: IconAlignment.end,
+                            ),
+                        ],
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _buildProductCard(
-                  _productTitle,
-                  _productDetailText,
-                  _productCode.isEmpty ? _serviceId : _productCode,
-                  _productLocation,
-                  _productImage,
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
+                      const SizedBox(height: 8),
+                      _buildProductCard(
+                        _productTitle,
+                        _productDetailText,
+                        _productCode.isEmpty ? _serviceId : _productCode,
+                        _productLocation,
+                        _productImage,
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(),
 
-                // Photo's & Video
-                if (_showMediaSection) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+                      // Photo's & Video
+                      if (_showMediaSection) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Photo\'s & Video',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: () {},
+                              label: const Text(
+                                'View All',
+                                style: TextStyle(color: primaryGreen),
+                              ),
+                              icon: const Icon(
+                                Icons.arrow_forward,
+                                color: primaryGreen,
+                                size: 16,
+                              ),
+                              iconAlignment: IconAlignment.end,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 100,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: _mediaUrls.map(_buildImageThumb).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                      ],
+
+                      // Location
                       const Text(
-                        'Photo\'s & Video',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        'Location',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      TextButton.icon(
-                        onPressed: () {},
-                        label: const Text('View All', style: TextStyle(color: primaryGreen)),
-                        icon: const Icon(Icons.arrow_forward, color: primaryGreen, size: 16),
-                        iconAlignment: IconAlignment.end,
+                      const SizedBox(height: 8),
+                      if (_location.trim().isNotEmpty &&
+                          _location.trim() != '-')
+                        Text(
+                          _location,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formattedCustomerAddress,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // Go to location button (same for all job types)
+                      if (_isRequestAccepted) ...[
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.FieldExecutiveMapTrackingScreen,
+                              arguments: fieldexecutivemaptrackingArguments(
+                                roleId: widget.roleId,
+                                roleName: widget.roleName,
+                                serviceId: _serviceRequestDbIdForApi(),
+                                customerName: _customerName == '-'
+                                    ? ''
+                                    : _customerName,
+                                customerAddress:
+                                    _formattedCustomerAddress ==
+                                        'Address Not Available'
+                                    ? ''
+                                    : _formattedCustomerAddress,
+                                customerPhone: _customerNumber == '-'
+                                    ? ''
+                                    : _customerNumber,
+                                displayServiceId: _serviceId,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.near_me_outlined,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Go to location',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      const SizedBox(height: 32),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 100,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: _mediaUrls.map(_buildImageThumb).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                ],
-
-                // Location
-                const Text(
-                  'Location',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                if (_location.trim().isNotEmpty && _location.trim() != '-')
-                  Text(
-                    _location,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                const SizedBox(height: 4),
-                Text(
-                  _formattedCustomerAddress,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Go to location button (same for all job types)
-                if (_isRequestAccepted) ...[
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.FieldExecutiveMapTrackingScreen,
-                        arguments: fieldexecutivemaptrackingArguments(
-                          roleId: widget.roleId,
-                          roleName: widget.roleName,
-                          serviceId: _serviceRequestDbIdForApi(),
-                          customerName: _customerName == '-' ? '' : _customerName,
-                          customerAddress:
-                              _formattedCustomerAddress == 'Address Not Available'
-                                  ? ''
-                                  : _formattedCustomerAddress,
-                          customerPhone: _customerNumber == '-' ? '' : _customerNumber,
-                          displayServiceId: _serviceId,
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    icon: const Icon(Icons.near_me_outlined, color: Colors.white),
-                    label: const Text('Go to location', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
@@ -1071,118 +1210,152 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                 color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 4,
                 offset: const Offset(0, -2),
-              )
+              ),
             ],
           ),
           // same accept / reschedule / case-transfer actions for all job types
           child: _isRequestAccepted
               ? (
-                  // If pending, show only the pending container (no buttons)
-                  caseTransferStatus == CaseTransferStatus.pending
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.orange.shade200),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.info_outline, color: Colors.orange, size: 20),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Case transfer is pending. You will be notified once it is accepted by another executive.',
-                                      style: const TextStyle(fontSize: 14, color: Colors.orange),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                // If pending, show only the pending container (no buttons)
+                caseTransferStatus == CaseTransferStatus.pending
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange.shade200),
                             ),
-                          ],
-                        )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                            child: Row(
                               children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: _isRescheduling ? null : () => _selectDate(context),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: selectedDate == null ? Colors.grey.shade100 : primaryGreen,
-                                      minimumSize: const Size(double.infinity, 50),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      elevation: 0,
-                                    ),
-                                    child: _isRescheduling
-                                        ? SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              color: selectedDate == null ? primaryGreen : Colors.white,
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : Text(
-                                            'Rescheduled',
-                                            style: TextStyle(
-                                              color: selectedDate == null ? primaryGreen : Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                  ),
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: Colors.orange,
+                                  size: 20,
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 8),
                                 Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      // Navigate to Case Transfer screen and await result
-                                      final result = await Navigator.pushNamed(
-                                        context,
-                                        AppRoutes.FieldExecutiveCaseTransferScreen,
-                                        arguments: fieldexecutivecasetransferArguments(
-                                          roleId: widget.roleId,
-                                          roleName: widget.roleName,
-                                          serviceId: _serviceRequestDbIdForApi(),
-                                        ),
-                                      );
-
-                                      // If the case transfer screen returned true, mark as pending
-                                      if (result == true) {
-                                        setState(() {
-                                          caseTransferStatus = CaseTransferStatus.pending;
-                                        });
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryGreen,
-                                      minimumSize: const Size(double.infinity, 50),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    child: const Text(
-                                      'Case Transfer',
-                                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  child: Text(
+                                    'Case transfer is pending. You will be notified once it is accepted by another executive.',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.orange,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        )
-                )
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _isRescheduling
+                                      ? null
+                                      : () => _selectDate(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: selectedDate == null
+                                        ? Colors.grey.shade100
+                                        : primaryGreen,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: _isRescheduling
+                                      ? SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            color: selectedDate == null
+                                                ? primaryGreen
+                                                : Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(
+                                          'Rescheduled',
+                                          style: TextStyle(
+                                            color: selectedDate == null
+                                                ? primaryGreen
+                                                : Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    // Navigate to Case Transfer screen and await result
+                                    final result = await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes
+                                          .FieldExecutiveCaseTransferScreen,
+                                      arguments:
+                                          fieldexecutivecasetransferArguments(
+                                            roleId: widget.roleId,
+                                            roleName: widget.roleName,
+                                            serviceId:
+                                                _serviceRequestDbIdForApi(),
+                                          ),
+                                    );
+
+                                    // If the case transfer screen returned true, mark as pending
+                                    if (result == true) {
+                                      setState(() {
+                                        caseTransferStatus =
+                                            CaseTransferStatus.pending;
+                                      });
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryGreen,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Case Transfer',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ))
               : ElevatedButton(
                   onPressed: _isAccepting ? null : _acceptServiceRequest,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryGreen,
                     minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: _isAccepting
                       ? const SizedBox(
@@ -1195,11 +1368,15 @@ class _FieldExecutiveInstallationDetailScreenState extends State<FieldExecutiveI
                         )
                       : const Text(
                           'Accept',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                 ),
-                ),
-              ),
-            );
+        ),
+      ),
+    );
   }
 }

@@ -40,9 +40,7 @@ class AuthService {
       final Map<String, dynamic> jsonResponse = _decodeJson(response.body);
       final bool apiSuccess = _readSuccess(jsonResponse);
       final bool isSuccess =
-          response.statusCode >= 200 &&
-          response.statusCode < 300 &&
-          apiSuccess;
+          response.statusCode >= 200 && response.statusCode < 300 && apiSuccess;
 
       if (!isSuccess) {
         return <String, dynamic>{
@@ -136,9 +134,7 @@ class AuthService {
       debugPrint('API Response: ${response.body}');
       final bool apiSuccess = _readSuccess(jsonResponse);
       final bool isSuccess =
-          response.statusCode >= 200 &&
-          response.statusCode < 300 &&
-          apiSuccess;
+          response.statusCode >= 200 && response.statusCode < 300 && apiSuccess;
 
       if (!isSuccess) {
         return <String, dynamic>{
@@ -218,7 +214,9 @@ class AuthService {
     }
     if (directSuccess is String) {
       final String normalized = directSuccess.trim().toLowerCase();
-      return normalized == 'true' || normalized == '1' || normalized == 'success';
+      return normalized == 'true' ||
+          normalized == '1' ||
+          normalized == 'success';
     }
 
     final dynamic data = source['data'];
@@ -232,7 +230,9 @@ class AuthService {
       }
       if (nestedSuccess is String) {
         final String normalized = nestedSuccess.trim().toLowerCase();
-        return normalized == 'true' || normalized == '1' || normalized == 'success';
+        return normalized == 'true' ||
+            normalized == '1' ||
+            normalized == 'success';
       }
     }
 

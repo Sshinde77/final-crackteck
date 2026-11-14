@@ -28,10 +28,7 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
         ),
         title: const Text(
           'Delivery',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
       ),
       body: SafeArea(

@@ -10,11 +10,12 @@ Widget buildTestApp({
 }) {
   return MaterialApp(
     navigatorKey: NavigationService.navigatorKey,
-    navigatorObservers: <NavigatorObserver>[NavigationService.navigatorObserver],
+    navigatorObservers: <NavigatorObserver>[
+      NavigationService.navigatorObserver,
+    ],
     home: home,
     initialRoute: initialRoute,
     routes: routes ?? const <String, WidgetBuilder>{},
     onGenerateRoute: RouteGenerator.generateRoute,
   );
 }
-

@@ -13,10 +13,12 @@ class FieldExecutivePaymentDoneScreen extends StatefulWidget {
   });
 
   @override
-  State<FieldExecutivePaymentDoneScreen> createState() => _FieldExecutivePaymentDoneScreenState();
+  State<FieldExecutivePaymentDoneScreen> createState() =>
+      _FieldExecutivePaymentDoneScreenState();
 }
 
-class _FieldExecutivePaymentDoneScreenState extends State<FieldExecutivePaymentDoneScreen> {
+class _FieldExecutivePaymentDoneScreenState
+    extends State<FieldExecutivePaymentDoneScreen> {
   static const Color darkGreen = Color(0xFF145A00);
   static const Color lightGreen = Color(0xFFD8E6D2);
   Timer? _timer;
@@ -75,10 +77,7 @@ class _FieldExecutivePaymentDoneScreenState extends State<FieldExecutivePaymentD
                       height: 110,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: lightGreen,
-                          width: 12,
-                        ),
+                        border: Border.all(color: lightGreen, width: 12),
                       ),
                     ),
 
@@ -93,11 +92,7 @@ class _FieldExecutivePaymentDoneScreenState extends State<FieldExecutivePaymentD
                     ),
 
                     // Check icon
-                    const Icon(
-                      Icons.check_rounded,
-                      size: 40,
-                      color: darkGreen,
-                    ),
+                    const Icon(Icons.check_rounded, size: 40, color: darkGreen),
                   ],
                 ),
 

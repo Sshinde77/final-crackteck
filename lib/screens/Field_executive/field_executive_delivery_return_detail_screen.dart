@@ -30,10 +30,10 @@ class FieldExecutiveDeliveryReturnDetailScreen extends StatelessWidget {
       appBarTitle: 'Return Request Detail',
       loadDetail: (selectedRequestId, selectedRoleId, selectedUserId) =>
           ApiService.fetchDeliveryRequestDetail(
-        deliveryType: DeliveryRequestTypes.returnRequest,
-        deliveryId: selectedRequestId,
-        roleId: selectedRoleId,
-      ),
+            deliveryType: DeliveryRequestTypes.returnRequest,
+            deliveryId: selectedRequestId,
+            roleId: selectedRoleId,
+          ),
     );
   }
 }

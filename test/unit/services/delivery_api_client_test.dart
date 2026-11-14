@@ -37,4 +37,3 @@ void main() {
     expect(decoded['success'], false);
   });
 }
-

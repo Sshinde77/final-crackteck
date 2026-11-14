@@ -25,7 +25,7 @@ class rolesccreen extends StatelessWidget {
                   width: 107,
                   height: 109,
                   child: Image.asset(
-                    'assets/logo.png',   // <-- put your logo here
+                    'assets/logo.png', // <-- put your logo here
                     fit: BoxFit.contain,
                   ),
                 ),

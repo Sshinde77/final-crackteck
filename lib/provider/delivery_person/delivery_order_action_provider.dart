@@ -9,8 +9,8 @@ class DeliveryOrderActionProvider extends ChangeNotifier {
   DeliveryOrderActionProvider({
     required String orderId,
     DeliveryOrdersService? ordersService,
-  })  : orderId = orderId.startsWith('#') ? orderId : '#$orderId',
-        _ordersService = ordersService ?? DeliveryOrdersService();
+  }) : orderId = orderId.startsWith('#') ? orderId : '#$orderId',
+       _ordersService = ordersService ?? DeliveryOrdersService();
 
   final String orderId;
   final DeliveryOrdersService _ordersService;
@@ -91,7 +91,8 @@ class DeliveryOrderActionProvider extends ChangeNotifier {
       if (response.success) {
         startOtpTimer();
       }
-      return response.message ?? (response.success ? 'OTP sent' : 'Failed to send OTP');
+      return response.message ??
+          (response.success ? 'OTP sent' : 'Failed to send OTP');
     } catch (error) {
       _lastActionSucceeded = false;
       return error.toString().replaceFirst('Exception: ', '');
@@ -112,7 +113,9 @@ class DeliveryOrderActionProvider extends ChangeNotifier {
         return verifyResponse.message ?? 'OTP verification failed';
       }
 
-      final deliveredResponse = await _ordersService.markOrderDelivered(orderId);
+      final deliveredResponse = await _ordersService.markOrderDelivered(
+        orderId,
+      );
       _lastActionSucceeded = deliveredResponse.success;
       return deliveredResponse.message ?? 'Order delivered successfully.';
     } catch (error) {

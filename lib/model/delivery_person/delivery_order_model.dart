@@ -268,8 +268,7 @@ class DeliveryOrderModel {
     if (_hasValue(json['cancelled_at'])) {
       return true;
     }
-    return compactStatus.contains('cancel') ||
-        compactStatus.contains('reject');
+    return compactStatus.contains('cancel') || compactStatus.contains('reject');
   }
 
   static bool _isDelivered(Map<String, dynamic> json, String compactStatus) {
@@ -292,7 +291,10 @@ class DeliveryOrderModel {
     if (orderItems is List && orderItems.isNotEmpty) {
       final itemStatuses = orderItems
           .whereType<Map>()
-          .map((item) => (item['item_status'] ?? '').toString().trim().toLowerCase())
+          .map(
+            (item) =>
+                (item['item_status'] ?? '').toString().trim().toLowerCase(),
+          )
           .where((status) => status.isNotEmpty)
           .toList();
       if (itemStatuses.isNotEmpty &&
@@ -431,7 +433,13 @@ class DeliveryOrderModel {
 
     return _readAddress(
       json,
-      const ['to_address', 'delivery_address', 'customer_address', 'address', 'to'],
+      const [
+        'to_address',
+        'delivery_address',
+        'customer_address',
+        'address',
+        'to',
+      ],
       fallback:
           _formatNestedAddress(json['shipping_address']) ??
           'Customer address not available',

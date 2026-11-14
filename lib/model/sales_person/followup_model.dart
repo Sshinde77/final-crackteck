@@ -84,4 +84,3 @@ class FollowUpModel {
     return model;
   }
 }
-

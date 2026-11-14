@@ -96,7 +96,9 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
       setState(() => _isLoggingOut = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong during logout. Please try again.'),
+          content: Text(
+            'Something went wrong during logout. Please try again.',
+          ),
         ),
       );
     }
@@ -404,7 +406,6 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
 
 //   SalespersonalinfoArguments({required this.roleId, required this.roleName});
 // }
-
 
 class _OptionTile extends StatelessWidget {
   final IconData icon;

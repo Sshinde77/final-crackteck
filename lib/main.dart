@@ -21,7 +21,7 @@ Future<void> main() async {
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
-  runApp(const CrackTechApp()); 
+  runApp(const CrackTechApp());
 }
 
 class CrackTechApp extends StatefulWidget {
@@ -73,7 +73,9 @@ class _CrackTechAppState extends State<CrackTechApp>
     _isHandlingResume = true;
     try {
       await SecureStorageService.refreshSessionCache(reason: 'app_resumed');
-      final token = await SecureStorageService.getAccessToken(forceReload: true);
+      final token = await SecureStorageService.getAccessToken(
+        forceReload: true,
+      );
       final roleId = await SecureStorageService.getRoleId(forceReload: true);
       final hasToken = token != null && token.trim().isNotEmpty;
 
@@ -99,7 +101,9 @@ class _CrackTechAppState extends State<CrackTechApp>
 
   Future<void> _initializeNotifications() async {
     if (_notificationsDisabled) {
-      debugPrint('Notification initialization skipped (disabled for this build).');
+      debugPrint(
+        'Notification initialization skipped (disabled for this build).',
+      );
       return;
     }
     try {
@@ -128,7 +132,7 @@ class _CrackTechAppState extends State<CrackTechApp>
         ],
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
-        theme: ThemeData (
+        theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),

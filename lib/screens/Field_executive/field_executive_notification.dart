@@ -20,10 +20,7 @@ class EnigneerNotificationScreen extends StatelessWidget {
         ),
         title: const Text(
           'Notification',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         centerTitle: false,
       ),
@@ -35,26 +32,26 @@ class EnigneerNotificationScreen extends StatelessWidget {
             NotificationCard(
               title: 'New Call',
               description:
-              'How did we do? Let us know by rating your recent order and sharing your feedback.',
+                  'How did we do? Let us know by rating your recent order and sharing your feedback.',
               time: '15 minutes ago',
               isUnread: true,
             ),
             NotificationCard(
               title: 'Service Rating',
               description:
-              'How did we do? Let us know by rating your recent order and sharing your feedback.',
+                  'How did we do? Let us know by rating your recent order and sharing your feedback.',
               time: '1 day ago',
             ),
             NotificationCard(
               title: 'Hungry? Try Our New Pizza Specials!',
               description:
-              'Check out the latest additions to our menu and satisfy your cravings!',
+                  'Check out the latest additions to our menu and satisfy your cravings!',
               time: '2 days ago',
             ),
             NotificationCard(
               title: "Don't Miss Out: Special Offer Just for You!",
               description:
-              'Get 10% off your next order with code SAVE10. Limited time only!',
+                  'Get 10% off your next order with code SAVE10. Limited time only!',
               time: '2 hours ago',
             ),
           ],
@@ -139,10 +136,7 @@ class NotificationCard extends StatelessWidget {
                 // Time
                 Text(
                   time,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),

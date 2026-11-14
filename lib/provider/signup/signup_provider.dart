@@ -43,7 +43,8 @@ class SignupProvider extends ChangeNotifier {
       _lastSubmitSucceeded = response.success;
       _lastErrors = response.errors;
       _lastMessage =
-          response.message ?? (response.success ? 'Signup successful' : 'Signup failed');
+          response.message ??
+          (response.success ? 'Signup successful' : 'Signup failed');
     } catch (error) {
       _lastSubmitSucceeded = false;
       _lastMessage = error.toString().replaceFirst('Exception: ', '');

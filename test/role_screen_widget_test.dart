@@ -51,8 +51,9 @@ void main() {
     SecureStorageMock.reset();
   });
 
-  testWidgets('tapping Field Executive redirects to login when logged out',
-      (tester) async {
+  testWidgets('tapping Field Executive redirects to login when logged out', (
+    tester,
+  ) async {
     await tester.pumpWidget(_testApp());
     expect(find.text('Field Executive'), findsOneWidget);
 

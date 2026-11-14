@@ -18,7 +18,9 @@ void main() {
   });
 
   group('P0 Auth Flow', () {
-    testWidgets('Sales OTP login navigates to dashboard (mock HTTP)', (tester) async {
+    testWidgets('Sales OTP login navigates to dashboard (mock HTTP)', (
+      tester,
+    ) async {
       // Arrange
       await SessionManager.clearSession();
 
@@ -34,7 +36,9 @@ void main() {
                 'data': <String, Object?>{'ok': true},
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -50,7 +54,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -72,7 +78,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -94,7 +102,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 
@@ -110,7 +120,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
 

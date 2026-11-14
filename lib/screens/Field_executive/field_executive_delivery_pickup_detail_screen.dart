@@ -30,10 +30,10 @@ class FieldExecutiveDeliveryPickupDetailScreen extends StatelessWidget {
       appBarTitle: 'Pickup Request Detail',
       loadDetail: (selectedRequestId, selectedRoleId, selectedUserId) =>
           ApiService.fetchDeliveryRequestDetail(
-        deliveryType: DeliveryRequestTypes.pickup,
-        deliveryId: selectedRequestId,
-        roleId: selectedRoleId,
-      ),
+            deliveryType: DeliveryRequestTypes.pickup,
+            deliveryId: selectedRequestId,
+            roleId: selectedRoleId,
+          ),
     );
   }
 }

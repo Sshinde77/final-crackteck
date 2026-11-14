@@ -109,8 +109,9 @@ class _FieldExecutivePaymentReceiptsScreenState
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            selectedAccountant == null ? navyBlue : Colors.white,
+                        color: selectedAccountant == null
+                            ? navyBlue
+                            : Colors.white,
                         borderRadius: isDropdownOpen
                             ? const BorderRadius.vertical(
                                 top: Radius.circular(12),
@@ -201,8 +202,10 @@ class _FieldExecutivePaymentReceiptsScreenState
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   prefixText: 'Rs ',
-                  prefixStyle:
-                      const TextStyle(color: Colors.black, fontSize: 18),
+                  prefixStyle: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
@@ -242,8 +245,9 @@ class _FieldExecutivePaymentReceiptsScreenState
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       else

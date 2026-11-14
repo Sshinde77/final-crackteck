@@ -73,10 +73,7 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Choose a source for the expense receipt image.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                  ),
+                  style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
                 ),
                 const SizedBox(height: 20),
                 _PickerOptionTile(
@@ -148,8 +145,7 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
       return;
     }
 
-    final reimbursement =
-        response.data != null && response.data!.isNotEmpty
+    final reimbursement = response.data != null && response.data!.isNotEmpty
         ? ReimbursementModel.fromJson(response.data!)
         : ReimbursementModel(
             amount: double.tryParse(_amountController.text.trim()) ?? 0,
@@ -233,7 +229,9 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _amountController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: _inputDecoration(
                           hintText: 'Enter amount',
                           prefixText: '\u20B9 ',
@@ -330,7 +328,8 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Expanded(
                                       child: Text(
@@ -344,7 +343,10 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                                     ),
                                     TextButton.icon(
                                       onPressed: _showReceiptPickerOptions,
-                                      icon: const Icon(Icons.edit_outlined, size: 18),
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                      ),
                                       label: const Text('Change'),
                                       style: TextButton.styleFrom(
                                         foregroundColor: _primaryColor,
@@ -390,10 +392,7 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                   )
                 : const Text(
                     'Submit',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
           ),
         ),

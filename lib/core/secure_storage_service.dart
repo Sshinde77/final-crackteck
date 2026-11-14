@@ -91,9 +91,7 @@ class SecureStorageService {
       }
 
       if (attempt < maxAttempts) {
-        await Future<void>.delayed(
-          Duration(milliseconds: 100 * attempt),
-        );
+        await Future<void>.delayed(Duration(milliseconds: 100 * attempt));
       }
     }
     return value;
@@ -242,10 +240,7 @@ class SecureStorageService {
     required int userId,
     required int roleId,
   }) async {
-    await Future.wait<void>([
-      saveUserId(userId),
-      saveRoleId(roleId),
-    ]);
+    await Future.wait<void>([saveUserId(userId), saveRoleId(roleId)]);
   }
 
   /// Clear the current user id while keeping tokens unchanged.
@@ -417,7 +412,9 @@ class SecureStorageService {
     await clearTokens();
   }
 
-  static Future<void> refreshSessionCache({String reason = 'unspecified'}) async {
+  static Future<void> refreshSessionCache({
+    String reason = 'unspecified',
+  }) async {
     await _awaitPendingWrite(_pendingAccessTokenWrite);
     await _awaitPendingWrite(_pendingRoleIdWrite);
     await _awaitPendingWrite(_pendingUserIdWrite);

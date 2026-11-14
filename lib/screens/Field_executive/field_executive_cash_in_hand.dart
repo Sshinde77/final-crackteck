@@ -14,10 +14,6 @@ class FieldExecutiveCashInHandScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WalletScreen(
-      roleId: roleId,
-      roleName: roleName,
-      title: 'Wallet',
-    );
+    return WalletScreen(roleId: roleId, roleName: roleName, title: 'Wallet');
   }
 }

@@ -560,7 +560,9 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                   kv(
                     "Lead Number",
                     apiValue(
-                      lead.leadNumber.isNotEmpty ? lead.leadNumber : lead.leadId,
+                      lead.leadNumber.isNotEmpty
+                          ? lead.leadNumber
+                          : lead.leadId,
                     ),
                   ),
                   kv("Name", apiValue(lead.name)),
@@ -655,10 +657,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
     }
 
     final uri = Uri.parse('tel:$digits');
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       _snack(context, "Unable to open dialer");
     }
@@ -916,14 +915,26 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
         currentIndex: _navIndex,
         roleId: _roleId,
         roleName: _roleName,
-                onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }
@@ -936,7 +947,7 @@ class _LeadCard extends StatelessWidget {
   final _LeadItem lead;
   final VoidCallback onView;
   final VoidCallback onEdit;
-  final VoidCallback onStatusTap; 
+  final VoidCallback onStatusTap;
 
   const _LeadCard({
     required this.lead,

@@ -257,13 +257,13 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     final list = baseItems.where((x) {
       final matchesSearch =
           q.isEmpty ||
-              x.leadId.toLowerCase().contains(q) ||
-              x.meetingId.toLowerCase().contains(q) ||
-              x.title.toLowerCase().contains(q) ||
-              x.dateTime.toLowerCase().contains(q) ||
-              x.location.toLowerCase().contains(q) ||
-              x.status.toLowerCase().contains(q) ||
-              x.pillStatus.toLowerCase().contains(q);
+          x.leadId.toLowerCase().contains(q) ||
+          x.meetingId.toLowerCase().contains(q) ||
+          x.title.toLowerCase().contains(q) ||
+          x.dateTime.toLowerCase().contains(q) ||
+          x.location.toLowerCase().contains(q) ||
+          x.status.toLowerCase().contains(q) ||
+          x.pillStatus.toLowerCase().contains(q);
 
       final matchesStatus =
           _statusFilters.isEmpty || _statusFilters.contains(x.pillStatus);
@@ -271,10 +271,10 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
       final matchesDate = _selectedDate == null
           ? true
           : (() {
-        final d = _parseMeetingDate(x.dateTime);
-        if (d == null) return false;
-        return _isSameDay(d, _selectedDate!);
-      })();
+              final d = _parseMeetingDate(x.dateTime);
+              if (d == null) return false;
+              return _isSameDay(d, _selectedDate!);
+            })();
 
       return matchesSearch && matchesStatus && matchesDate;
     }).toList();
@@ -591,7 +591,9 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     final fallback = item.contactEmailOrPhone.contains('@')
         ? ''
         : item.contactEmailOrPhone;
-    final raw = item.phone.trim().isNotEmpty ? item.phone.trim() : fallback.trim();
+    final raw = item.phone.trim().isNotEmpty
+        ? item.phone.trim()
+        : fallback.trim();
     if (raw.isEmpty || raw == '--') {
       _snack('Meeting phone number not available');
       return;
@@ -604,10 +606,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     }
 
     final uri = Uri.parse('tel:$digits');
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       _snack('Unable to open dialer');
     }
@@ -617,10 +616,8 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
     final created = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => NewMeetingScreen(
-          roleId: widget.roleId,
-          roleName: widget.roleName,
-        ),
+        builder: (_) =>
+            NewMeetingScreen(roleId: widget.roleId, roleName: widget.roleName),
       ),
     );
 
@@ -688,10 +685,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text(
-                'Delete',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -704,10 +698,9 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
       final result = await ApiService.deleteMeeting(item.meetingId);
       if (!mounted) return;
 
-      final message =
-          (result['message']?.toString().trim().isNotEmpty ?? false)
-              ? result['message'].toString()
-              : 'Meeting deleted successfully';
+      final message = (result['message']?.toString().trim().isNotEmpty ?? false)
+          ? result['message'].toString()
+          : 'Meeting deleted successfully';
       _snack(message);
       await Provider.of<MeetingsProvider>(
         context,
@@ -903,11 +896,10 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                               ),
                               const SizedBox(height: 12),
                               ElevatedButton(
-                                onPressed: () =>
-                                    meetingsProvider.loadMeetings(
-                                      '',
-                                      widget.roleId,
-                                    ),
+                                onPressed: () => meetingsProvider.loadMeetings(
+                                  '',
+                                  widget.roleId,
+                                ),
                                 child: const Text('Retry'),
                               ),
                             ],
@@ -975,14 +967,26 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
         currentIndex: _navIndex,
         roleId: widget.roleId,
         roleName: widget.roleName,
-        onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }
@@ -1268,8 +1272,8 @@ class _MeetingCenterDialog extends StatelessWidget {
     final popupTime = item.rawTime.isNotEmpty
         ? item.rawTime
         : (item.dateTime.split('–').length > 1
-        ? item.dateTime.split('–')[1].trim()
-        : '');
+              ? item.dateTime.split('–')[1].trim()
+              : '');
     final parsedRange = _splitTimeRange(popupTime);
     final startTime = item.rawStartTime.trim().isNotEmpty
         ? item.rawStartTime.trim()
@@ -1324,7 +1328,10 @@ class _MeetingCenterDialog extends StatelessWidget {
                   label: "Meeting Type",
                   value: meetingType.isNotEmpty ? meetingType : '--',
                 ),
-                _KVRow(label: "Date", value: popupDate.isNotEmpty ? popupDate : '--'),
+                _KVRow(
+                  label: "Date",
+                  value: popupDate.isNotEmpty ? popupDate : '--',
+                ),
                 _KVRow(
                   label: "Start Time",
                   value: startTime.isNotEmpty ? startTime : '--',
@@ -1387,7 +1394,6 @@ class _MeetingCenterDialog extends StatelessWidget {
                 //     ),
                 //   ],
                 // ),
-
                 const SizedBox(height: 16),
 
                 // Row(
@@ -1409,7 +1415,6 @@ class _MeetingCenterDialog extends StatelessWidget {
                 //     ),
                 //   ],
                 // ),
-
                 const SizedBox(height: 12),
 
                 Row(

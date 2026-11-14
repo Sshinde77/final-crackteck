@@ -77,29 +77,35 @@ class FieldExecutiveDeliveryRequest {
     Map<String, dynamic> json, {
     String fallbackType = '',
   }) {
-    final customer = _asMap(json['customer']) ??
+    final customer =
+        _asMap(json['customer']) ??
         _asMap(json['customer_details']) ??
         _asMap(json['user']) ??
         <String, dynamic>{};
-    final product = _asMap(json['product']) ??
+    final product =
+        _asMap(json['product']) ??
         _asMap(json['product_detail']) ??
         _asMap(json['service_request_product']) ??
         _asMap(json['service']) ??
         <String, dynamic>{};
 
-    final id = _readInt(
-      json,
-      const ['id', 'request_id', 'return_request_id', 'pickup_request_id', 'part_request_id'],
-    );
+    final id = _readInt(json, const [
+      'id',
+      'request_id',
+      'return_request_id',
+      'pickup_request_id',
+      'part_request_id',
+    ]);
     final normalizedFallbackType = FieldExecutiveDeliveryTypes.normalize(
       fallbackType,
     );
     final requestType = FieldExecutiveDeliveryTypes.normalize(
-      _readString(
-        json,
-        const ['delivery_type', 'request_type', 'type', 'service_type'],
-        fallback: normalizedFallbackType,
-      ),
+      _readString(json, const [
+        'delivery_type',
+        'request_type',
+        'type',
+        'service_type',
+      ], fallback: normalizedFallbackType),
     );
     final requestIdKeys = _requestIdKeysForType(requestType);
     final rawRequestId = _readString(
@@ -112,55 +118,82 @@ class FieldExecutiveDeliveryRequest {
 
     final customerName = _fullName(customer);
     final fallbackCustomerName = _fullName(json);
-    final resolvedCustomerName =
-        customerName.isEmpty ? fallbackCustomerName : customerName;
+    final resolvedCustomerName = customerName.isEmpty
+        ? fallbackCustomerName
+        : customerName;
 
     final customerAddress = _readAddress(json, customer);
 
-    final title = _readString(
-      json,
-      const ['title', 'service_name', 'service_title', 'name', 'issue', 'problem'],
-      fallback: _readString(product, const ['product_name', 'name']),
-    );
+    final title = _readString(json, const [
+      'title',
+      'service_name',
+      'service_title',
+      'name',
+      'issue',
+      'problem',
+    ], fallback: _readString(product, const ['product_name', 'name']));
 
-    final description = _readString(
-      json,
-      const ['description', 'details', 'notes', 'remark', 'remarks'],
-    );
+    final description = _readString(json, const [
+      'description',
+      'details',
+      'notes',
+      'remark',
+      'remarks',
+    ]);
 
-    final location = _readString(
-      json,
-      const ['location', 'city', 'area'],
-      fallback: _readString(customer, const ['city', 'area'], fallback: '-'),
-    );
+    final location = _readString(json, const [
+      'location',
+      'city',
+      'area',
+    ], fallback: _readString(customer, const ['city', 'area'], fallback: '-'));
 
     final priority = _normalizePriority(
-      _readString(json, const ['priority', 'priority_level', 'urgency'], fallback: 'Medium'),
+      _readString(json, const [
+        'priority',
+        'priority_level',
+        'urgency',
+      ], fallback: 'Medium'),
     );
 
-    final status = _readString(
-      json,
-      const ['delivery_status', 'request_status', 'service_status', 'status'],
-    );
+    final status = _readString(json, const [
+      'delivery_status',
+      'request_status',
+      'service_status',
+      'status',
+    ]);
 
     final customerPhone = _readString(
       customer,
-      const ['phone', 'mobile', 'phone_number', 'contact_number', 'customer_phone'],
-      fallback: _readString(
-        json,
-        const ['customer_phone', 'customer_number', 'phone', 'mobile', 'phone_number'],
-      ),
+      const [
+        'phone',
+        'mobile',
+        'phone_number',
+        'contact_number',
+        'customer_phone',
+      ],
+      fallback: _readString(json, const [
+        'customer_phone',
+        'customer_number',
+        'phone',
+        'mobile',
+        'phone_number',
+      ]),
     );
 
-    final productName = _readString(
-      product,
-      const ['product_name', 'name', 'title'],
-    );
+    final productName = _readString(product, const [
+      'product_name',
+      'name',
+      'title',
+    ]);
 
     final imageUrl = _readString(
       product,
       const ['product_image', 'image_url', 'image', 'thumbnail'],
-      fallback: _readString(json, const ['image_url', 'image', 'service_image'], fallback: ''),
+      fallback: _readString(json, const [
+        'image_url',
+        'image',
+        'service_image',
+      ], fallback: ''),
     );
 
     return FieldExecutiveDeliveryRequest(
@@ -187,19 +220,24 @@ class FieldExecutiveDeliveryRequest {
       raw: raw.isNotEmpty ? raw : other.raw,
       id: id ?? other.id,
       requestId: requestId.isNotEmpty ? requestId : other.requestId,
-      displayRequestId:
-          displayRequestId != '-' ? displayRequestId : other.displayRequestId,
+      displayRequestId: displayRequestId != '-'
+          ? displayRequestId
+          : other.displayRequestId,
       deliveryType: deliveryType.isNotEmpty ? deliveryType : other.deliveryType,
       title: title.isNotEmpty ? title : other.title,
       description: description.isNotEmpty ? description : other.description,
-      location: location.isNotEmpty && location != '-' ? location : other.location,
+      location: location.isNotEmpty && location != '-'
+          ? location
+          : other.location,
       priority: priority.isNotEmpty ? priority : other.priority,
       status: status.isNotEmpty ? status : other.status,
       customerName: customerName.isNotEmpty ? customerName : other.customerName,
       customerPhone: customerPhone.isNotEmpty && customerPhone != '-'
           ? customerPhone
           : other.customerPhone,
-      customerAddress: customerAddress.isNotEmpty && customerAddress != 'Address Not Available'
+      customerAddress:
+          customerAddress.isNotEmpty &&
+              customerAddress != 'Address Not Available'
           ? customerAddress
           : other.customerAddress,
       productName: productName.isNotEmpty ? productName : other.productName,
@@ -243,24 +281,26 @@ class FieldExecutiveDeliveryRequest {
   }
 
   static String _fullName(Map<String, dynamic> source) {
-    final first = _readString(
-      source,
-      const ['first_name', 'firstName', 'firstname'],
-    );
-    final last = _readString(
-      source,
-      const ['last_name', 'lastName', 'lastname'],
-    );
-    final full = [first, last]
-        .where((part) => part.trim().isNotEmpty)
-        .join(' ')
-        .trim();
+    final first = _readString(source, const [
+      'first_name',
+      'firstName',
+      'firstname',
+    ]);
+    final last = _readString(source, const [
+      'last_name',
+      'lastName',
+      'lastname',
+    ]);
+    final full = [
+      first,
+      last,
+    ].where((part) => part.trim().isNotEmpty).join(' ').trim();
     if (full.isNotEmpty) return full;
-    return _readString(
-      source,
-      const ['customer_name', 'full_name', 'name'],
-      fallback: '',
-    );
+    return _readString(source, const [
+      'customer_name',
+      'full_name',
+      'name',
+    ], fallback: '');
   }
 
   static String _normalizeId(String raw) {
@@ -359,27 +399,36 @@ class FieldExecutiveDeliveryRequest {
     if (map == null) return '';
 
     final branch = _readString(map, const ['branch_name', 'branchName']);
-    final line1 = _readString(
-      map,
-      const ['address1', 'address_1', 'address_line_1', 'line1'],
-    );
-    final line2 = _readString(
-      map,
-      const ['address2', 'address_2', 'address_line_2', 'line2'],
-    );
+    final line1 = _readString(map, const [
+      'address1',
+      'address_1',
+      'address_line_1',
+      'line1',
+    ]);
+    final line2 = _readString(map, const [
+      'address2',
+      'address_2',
+      'address_line_2',
+      'line2',
+    ]);
     final city = _readString(map, const ['city', 'city_name']);
     final state = _readString(map, const ['state', 'state_name']);
     final country = _readString(map, const ['country', 'country_name']);
-    final pincode = _readString(
-      map,
-      const ['pincode', 'pin_code', 'postal_code', 'zip'],
-    );
+    final pincode = _readString(map, const [
+      'pincode',
+      'pin_code',
+      'postal_code',
+      'zip',
+    ]);
 
     final lines = <String>[
       if (branch.isNotEmpty) branch,
       if (line1.isNotEmpty || line2.isNotEmpty)
         [line1, line2].where((part) => part.isNotEmpty).join(', '),
-      if (city.isNotEmpty || state.isNotEmpty || country.isNotEmpty || pincode.isNotEmpty)
+      if (city.isNotEmpty ||
+          state.isNotEmpty ||
+          country.isNotEmpty ||
+          pincode.isNotEmpty)
         [
           [city, state, country].where((part) => part.isNotEmpty).join(', '),
           pincode,
@@ -390,10 +439,11 @@ class FieldExecutiveDeliveryRequest {
       return lines.join('\n').trim();
     }
 
-    return _readString(
-      map,
-      const ['full_address', 'formatted_address', 'address', 'location'],
-      fallback: '',
-    );
+    return _readString(map, const [
+      'full_address',
+      'formatted_address',
+      'address',
+      'location',
+    ], fallback: '');
   }
 }

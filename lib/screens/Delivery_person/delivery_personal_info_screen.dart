@@ -18,7 +18,8 @@ class DeliveryPersonalInfoScreen extends StatefulWidget {
       _DeliveryPersonalInfoScreenState();
 }
 
-class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen> {
+class _DeliveryPersonalInfoScreenState
+    extends State<DeliveryPersonalInfoScreen> {
   static const Color green = Color(0xFF1E7C10);
 
   @override
@@ -45,46 +46,25 @@ class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen>
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null
-              ? _ErrorState(message: provider.error!, onRetry: provider.load)
-              : SafeArea(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _InfoCard(
-                        label: 'First Name',
-                        value: info.firstName,
-                      ),
-                      _InfoCard(
-                        label: 'Last Name',
-                        value: info.lastName,
-                      ),
-                      _InfoCard(
-                        label: 'DOB',
-                        value: info.dob,
-                      ),
-                      _InfoCard(
-                        label: 'Gender',
-                        value: _formatGender(info.gender),
-                      ),
-                      _InfoCard(
-                        label: 'Marital Status',
-                        value: info.maritalStatus,
-                      ),
-                      _InfoCard(
-                        label: 'Employment Type',
-                        value: info.employmentType,
-                      ),
-                      _InfoCard(
-                        label: 'Joining Date',
-                        value: info.joiningDate,
-                      ),
-                      _InfoCard(
-                        label: 'Assigned Area',
-                        value: info.assignedArea,
-                      ),
-                    ],
+          ? _ErrorState(message: provider.error!, onRetry: provider.load)
+          : SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _InfoCard(label: 'First Name', value: info.firstName),
+                  _InfoCard(label: 'Last Name', value: info.lastName),
+                  _InfoCard(label: 'DOB', value: info.dob),
+                  _InfoCard(label: 'Gender', value: _formatGender(info.gender)),
+                  _InfoCard(label: 'Marital Status', value: info.maritalStatus),
+                  _InfoCard(
+                    label: 'Employment Type',
+                    value: info.employmentType,
                   ),
-                ),
+                  _InfoCard(label: 'Joining Date', value: info.joiningDate),
+                  _InfoCard(label: 'Assigned Area', value: info.assignedArea),
+                ],
+              ),
+            ),
     );
   }
 
@@ -96,10 +76,7 @@ class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen>
 }
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.label,
-    required this.value,
-  });
+  const _InfoCard({required this.label, required this.value});
 
   final String label;
   final String value;

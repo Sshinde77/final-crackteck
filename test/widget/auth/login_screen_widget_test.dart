@@ -24,10 +24,8 @@ Widget _testApp() {
         }
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const LoginScreen(
-            roleId: 3,
-            roleName: 'Sales Person',
-          ),
+          builder: (_) =>
+              const LoginScreen(roleId: 3, roleName: 'Sales Person'),
         );
       },
     ),
@@ -57,7 +55,9 @@ void main() {
                 'data': <String, Object?>{'ok': true},
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
           return http.Response('{"message":"unhandled"}', 500);

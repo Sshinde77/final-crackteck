@@ -131,9 +131,7 @@ class _FieldExecutiveDeliveryRequestListBaseState
 
     Navigator.push(
       context,
-      MaterialPageRoute<void>(
-        builder: (_) => destination,
-      ),
+      MaterialPageRoute<void>(builder: (_) => destination),
     );
   }
 
@@ -163,85 +161,82 @@ class _FieldExecutiveDeliveryRequestListBaseState
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        _ErrorCard(
-                          message: _error!,
-                          onRetry: _loadRequests,
+              ? ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _ErrorCard(message: _error!, onRetry: _loadRequests),
+                  ],
+                )
+              : _requests.isEmpty
+              ? ListView(
+                  children: const [
+                    SizedBox(height: 150),
+                    Center(
+                      child: Text(
+                        'No delivery requests found',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
                         ),
-                      ],
-                    )
-                  : _requests.isEmpty
-                      ? ListView(
-                          children: const [
-                            SizedBox(height: 150),
-                            Center(
-                              child: Text(
-                                'No delivery requests found',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-                          itemCount: _requests.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final request = _requests[index];
-                            final requestTypeLabel = FieldExecutiveDeliveryTypes.label(
-                              request.deliveryType.isNotEmpty
-                                  ? request.deliveryType
-                                  : widget.deliveryType,
-                            );
+                      ),
+                    ),
+                  ],
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                  itemCount: _requests.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final request = _requests[index];
+                    final requestTypeLabel = FieldExecutiveDeliveryTypes.label(
+                      request.deliveryType.isNotEmpty
+                          ? request.deliveryType
+                          : widget.deliveryType,
+                    );
 
-                            return InkWell(
-                              onTap: () => _openDetail(request),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade200),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _InfoRow(
-                                      label: 'Request ID',
-                                      value: request.displayRequestId,
-                                    ),
-                                    _InfoRow(
-                                      label: 'Request Type',
-                                      value: requestTypeLabel,
-                                    ),
-                                    _InfoRow(
-                                      label: 'Status',
-                                      value: request.status.isEmpty
-                                          ? '-'
-                                          : request.status,
-                                    ),
-                                    if (request.customerName.isNotEmpty)
-                                      _InfoRow(
-                                        label: 'Customer Name',
-                                        value: request.customerName,
-                                      ),
-                                    if (request.productName.isNotEmpty)
-                                      _InfoRow(
-                                        label: 'Product Name',
-                                        value: request.productName,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+                    return InkWell(
+                      onTap: () => _openDetail(request),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _InfoRow(
+                              label: 'Request ID',
+                              value: request.displayRequestId,
+                            ),
+                            _InfoRow(
+                              label: 'Request Type',
+                              value: requestTypeLabel,
+                            ),
+                            _InfoRow(
+                              label: 'Status',
+                              value: request.status.isEmpty
+                                  ? '-'
+                                  : request.status,
+                            ),
+                            if (request.customerName.isNotEmpty)
+                              _InfoRow(
+                                label: 'Customer Name',
+                                value: request.customerName,
+                              ),
+                            if (request.productName.isNotEmpty)
+                              _InfoRow(
+                                label: 'Product Name',
+                                value: request.productName,
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ),
     );
@@ -252,10 +247,7 @@ class _ErrorCard extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorCard({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorCard({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -277,10 +269,7 @@ class _ErrorCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('Retry'),
-          ),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );
@@ -291,10 +280,7 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -307,19 +293,13 @@ class _InfoRow extends StatelessWidget {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],

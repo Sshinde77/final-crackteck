@@ -33,9 +33,17 @@ class PaymentDetailScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _detailRow(context, 'Amount', _asString(paymentData['amount'], fallback: 'Rs. 0')),
+                _detailRow(
+                  context,
+                  'Amount',
+                  _asString(paymentData['amount'], fallback: 'Rs. 0'),
+                ),
                 _divider(),
-                _detailRow(context, 'Name', _asString(paymentData['name'], fallback: 'N/A')),
+                _detailRow(
+                  context,
+                  'Name',
+                  _asString(paymentData['name'], fallback: 'N/A'),
+                ),
                 _divider(),
                 _detailRow(
                   context,
@@ -43,24 +51,41 @@ class PaymentDetailScreen extends StatelessWidget {
                   _asString(paymentData['bankAccount'], fallback: '846735629'),
                 ),
                 _divider(),
-                _detailRow(context, 'Category', _asString(paymentData['category'], fallback: 'CCTV')),
+                _detailRow(
+                  context,
+                  'Category',
+                  _asString(paymentData['category'], fallback: 'CCTV'),
+                ),
                 _divider(),
-                _detailRow(context, 'Method', _asString(paymentData['mode'], fallback: 'Online')),
+                _detailRow(
+                  context,
+                  'Method',
+                  _asString(paymentData['mode'], fallback: 'Online'),
+                ),
                 _divider(),
                 _detailRow(
                   context,
                   'Transaction Date',
-                  _asString(paymentData['date'], fallback: 'Dec 24, 2024 | 07:24 PM')
-                      .replaceAll(' | ', '\n'),
+                  _asString(
+                    paymentData['date'],
+                    fallback: 'Dec 24, 2024 | 07:24 PM',
+                  ).replaceAll(' | ', '\n'),
                 ),
                 _divider(),
                 _detailRow(
                   context,
                   'Transaction ID',
-                  _asString(paymentData['transactionId'], fallback: '372638263769'),
+                  _asString(
+                    paymentData['transactionId'],
+                    fallback: '372638263769',
+                  ),
                 ),
                 _divider(),
-                _detailRow(context, 'Status', _asString(paymentData['status'], fallback: 'Completed')),
+                _detailRow(
+                  context,
+                  'Status',
+                  _asString(paymentData['status'], fallback: 'Completed'),
+                ),
                 const SizedBox(height: 20),
 
                 SizedBox(
@@ -106,9 +131,9 @@ class PaymentDetailScreen extends StatelessWidget {
   Widget _detailRow(BuildContext context, String title, String value) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$title clicked')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$title clicked')));
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -118,10 +143,7 @@ class PaymentDetailScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               ),
             ),
             const SizedBox(width: 10),
@@ -145,5 +167,3 @@ class PaymentDetailScreen extends StatelessWidget {
     return Divider(color: Colors.grey.shade300, height: 1);
   }
 }
-
-

@@ -91,10 +91,12 @@ class _FieldExecutiveAllProductsScreenState
 
     for (final map in candidates) {
       if (map == null) continue;
-      final requestId = _readFromProduct(
-        map,
-        const ['request_id', 'requestId', 'service_id', 'ticket_no'],
-      );
+      final requestId = _readFromProduct(map, const [
+        'request_id',
+        'requestId',
+        'service_id',
+        'ticket_no',
+      ]);
       if (requestId.isNotEmpty) {
         return requestId;
       }
@@ -106,14 +108,22 @@ class _FieldExecutiveAllProductsScreenState
   String _extractServiceRequestStatus(Map<String, dynamic>? raw) {
     if (raw == null) return '';
 
-    final rootStatus = _readFromProduct(raw, const ['service_status', 'status']);
+    final rootStatus = _readFromProduct(raw, const [
+      'service_status',
+      'status',
+    ]);
     if (rootStatus.isNotEmpty) {
       return rootStatus;
     }
 
     final requestMap =
-        _asMap(raw['service_request']) ?? _asMap(raw['request']) ?? _asMap(raw['service']);
-    return _readFromProduct(requestMap ?? const {}, const ['service_status', 'status']);
+        _asMap(raw['service_request']) ??
+        _asMap(raw['request']) ??
+        _asMap(raw['service']);
+    return _readFromProduct(requestMap ?? const {}, const [
+      'service_status',
+      'status',
+    ]);
   }
 
   bool _isCompletedStatus(String rawStatus) {
@@ -138,7 +148,10 @@ class _FieldExecutiveAllProductsScreenState
     return value
         .split(RegExp(r'\s+'))
         .where((word) => word.isNotEmpty)
-        .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+        .map(
+          (word) =>
+              '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 
@@ -181,8 +194,8 @@ class _FieldExecutiveAllProductsScreenState
     final relative = value.startsWith('//')
         ? Uri.parse('https:$value')
         : value.startsWith('/')
-            ? Uri.parse(value)
-            : Uri.parse('/$value');
+        ? Uri.parse(value)
+        : Uri.parse('/$value');
 
     return origin.resolveUri(relative).toString();
   }
@@ -344,17 +357,21 @@ class _FieldExecutiveAllProductsScreenState
       final index = entry.key;
       final product = entry.value;
 
-      final name = _readFromProduct(
-        product,
-        const ['name', 'product_name', 'title', 'service_name'],
-      );
+      final name = _readFromProduct(product, const [
+        'name',
+        'product_name',
+        'title',
+        'service_name',
+      ]);
       final fallbackName = 'Product ${index + 1}';
       final productName = name.isEmpty ? fallbackName : name;
 
-      final productId = _readFromProduct(
-        product,
-        const ['id', 'product_id', 'item_code_id', 'sku'],
-      );
+      final productId = _readFromProduct(product, const [
+        'id',
+        'product_id',
+        'item_code_id',
+        'sku',
+      ]);
       final idValue = productId.isEmpty ? '${index + 1}' : productId;
       final serviceId = idValue.startsWith('#') ? idValue : '#$idValue';
 
@@ -392,7 +409,8 @@ class _FieldExecutiveAllProductsScreenState
 
   Future<void> _loadProductsFromApi({bool force = false}) async {
     final normalizedServiceId = _normalizeRequestId(widget.serviceRequestId);
-    if (normalizedServiceId.isEmpty || int.tryParse(normalizedServiceId) == null) {
+    if (normalizedServiceId.isEmpty ||
+        int.tryParse(normalizedServiceId) == null) {
       return;
     }
     if (_didLoadFromApi && !force) {
@@ -497,7 +515,11 @@ class _FieldExecutiveAllProductsScreenState
         ),
         title: const Text(
           'All Products',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: SafeArea(
@@ -522,11 +544,16 @@ class _FieldExecutiveAllProductsScreenState
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        _apiError ?? 'No products available for this service request.',
+                        _apiError ??
+                            'No products available for this service request.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14, color: Colors.black54),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
                       ),
-                      if (_didLoadFromApi && widget.serviceRequestId.trim().isNotEmpty) ...[
+                      if (_didLoadFromApi &&
+                          widget.serviceRequestId.trim().isNotEmpty) ...[
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: () => _loadProductsFromApi(force: true),
@@ -570,7 +597,9 @@ class _FieldExecutiveAllProductsScreenState
                     itemBuilder: (context, index) {
                       final item = items[index];
                       return Padding(
-                        padding: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 12),
+                        padding: EdgeInsets.only(
+                          bottom: index == items.length - 1 ? 0 : 12,
+                        ),
                         child: _buildProductCard(
                           context,
                           item,
@@ -601,13 +630,18 @@ class _FieldExecutiveAllProductsScreenState
                         child: ElevatedButton(
                           onPressed: _goToHomeTab,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: FieldExecutiveAllProductsScreen.primaryGreen,
+                            backgroundColor:
+                                FieldExecutiveAllProductsScreen.primaryGreen,
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Icon(Icons.home, color: Colors.white, size: 26),
+                          child: const Icon(
+                            Icons.home,
+                            color: Colors.white,
+                            size: 26,
+                          ),
                         ),
                       ),
                     ],
@@ -636,8 +670,9 @@ class _FieldExecutiveAllProductsScreenState
             title: item.title,
             serviceId: item.serviceId,
             serviceRequestId: _normalizeRequestId(widget.serviceRequestId),
-            displayServiceId:
-                item.requestId.trim().isEmpty ? item.serviceId : item.requestId,
+            displayServiceId: item.requestId.trim().isEmpty
+                ? item.serviceId
+                : item.requestId,
             location: item.location,
             priority: item.priority,
             flow: widget.flow,
@@ -690,12 +725,18 @@ class _FieldExecutiveAllProductsScreenState
                       children: [
                         Text(
                           item.title,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
-                          style: const TextStyle(fontSize: 10, color: Colors.black54),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.black54,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -704,7 +745,13 @@ class _FieldExecutiveAllProductsScreenState
                           children: [
                             const SizedBox(
                               width: 70,
-                              child: Text('Service ID:', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                              child: Text(
+                                'Service ID:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
                             ),
                             Text(
                               item.requestId.trim().isEmpty
@@ -712,7 +759,8 @@ class _FieldExecutiveAllProductsScreenState
                                   : item.requestId,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: FieldExecutiveAllProductsScreen.primaryGreen,
+                                color: FieldExecutiveAllProductsScreen
+                                    .primaryGreen,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -723,19 +771,40 @@ class _FieldExecutiveAllProductsScreenState
                           children: [
                             const SizedBox(
                               width: 70,
-                              child: Text('Location:', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                              child: Text(
+                                'Location:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
                             ),
-                            Text(item.location, style: const TextStyle(fontSize: 12, color: FieldExecutiveAllProductsScreen.primaryGreen, fontWeight: FontWeight.bold)),
+                            Text(
+                              item.location,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: FieldExecutiveAllProductsScreen
+                                    .primaryGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: isCompleted ? Colors.green.shade50 : Colors.red.shade50,
+                            color: isCompleted
+                                ? Colors.green.shade50
+                                : Colors.red.shade50,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isCompleted ? Colors.green.shade200 : Colors.red.shade200,
+                              color: isCompleted
+                                  ? Colors.green.shade200
+                                  : Colors.red.shade200,
                             ),
                           ),
                           child: Text(
@@ -758,14 +827,23 @@ class _FieldExecutiveAllProductsScreenState
               top: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
-                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12)),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                  ),
                 ),
                 child: Text(
                   item.priority,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
                 ),
               ),
             ),

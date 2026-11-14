@@ -16,7 +16,8 @@ Widget _app({required OtpArguments args}) {
     routes: <String, WidgetBuilder>{
       AppRoutes.salespersonDashboard: (_) =>
           const Scaffold(body: Text('Sales Dashboard')),
-      AppRoutes.roleSelection: (_) => const Scaffold(body: Text('Role Selection')),
+      AppRoutes.roleSelection: (_) =>
+          const Scaffold(body: Text('Role Selection')),
     },
     home: OtpVerificationScreen(args: args),
   );
@@ -61,8 +62,9 @@ void main() {
       expect(find.text('Please enter valid OTP'), findsOneWidget);
     });
 
-    testWidgets('verifies OTP and navigates to dashboard on success',
-        (tester) async {
+    testWidgets('verifies OTP and navigates to dashboard on success', (
+      tester,
+    ) async {
       // Arrange
       ApiHttpClient.overrideForTesting(
         MockClient((http.Request request) async {
@@ -79,7 +81,9 @@ void main() {
                 },
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
           return http.Response('{"message":"unhandled"}', 500);
@@ -120,7 +124,9 @@ void main() {
                 'data': <String, Object?>{'ok': true},
               }),
               200,
-              headers: const <String, String>{'content-type': 'application/json'},
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
             );
           }
           return http.Response('{"message":"unhandled"}', 500);
@@ -156,4 +162,3 @@ void main() {
     });
   });
 }
-

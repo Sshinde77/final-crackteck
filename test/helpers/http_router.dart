@@ -25,4 +25,3 @@ MockClient buildMockClient(Map<String, RequestHandler> routes) {
     return handler(request);
   });
 }
-

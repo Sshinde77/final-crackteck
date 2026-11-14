@@ -80,7 +80,8 @@ class ReimbursementModel {
         'total_amount',
         'claim_amount',
       ]),
-      reason: _readString(json, const [
+      reason:
+          _readString(json, const [
             'reason',
             'description',
             'remarks',
@@ -100,7 +101,8 @@ class ReimbursementModel {
         'attachment',
         'bill_image',
       ]),
-      createdAt: _readDateTime(json, const [
+      createdAt:
+          _readDateTime(json, const [
             'created_at',
             'date',
             'submitted_at',

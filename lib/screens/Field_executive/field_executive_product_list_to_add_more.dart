@@ -38,10 +38,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
-              'Product',
-              style: TextStyle(color: Colors.white),
-            ),
+            title: const Text('Product', style: TextStyle(color: Colors.white)),
           ),
           body: SafeArea(
             child: Column(
@@ -220,7 +217,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   Widget _productImage(String imagePathOrUrl) {
     final isNetwork =
-        imagePathOrUrl.startsWith('http://') || imagePathOrUrl.startsWith('https://');
+        imagePathOrUrl.startsWith('http://') ||
+        imagePathOrUrl.startsWith('https://');
 
     if (isNetwork) {
       return Image.network(
@@ -239,10 +237,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _qtyButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _qtyButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

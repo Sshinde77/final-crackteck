@@ -28,9 +28,7 @@ class DeliveryApiClient {
 
   Future<ApiResponse?> validateAuthState() async {
     final state = await authState(forceReload: true);
-    final hasToken = state.accessToken
-        ?.trim()
-        .isNotEmpty == true;
+    final hasToken = state.accessToken?.trim().isNotEmpty == true;
     if (state.userId != null && state.roleId != null) {
       return null;
     }
@@ -47,7 +45,9 @@ class DeliveryApiClient {
       );
     }
     await SecureStorageService.clearTokens();
-    await NavigationService.navigateToAuthRoot(source: 'delivery_validateAuthState');
+    await NavigationService.navigateToAuthRoot(
+      source: 'delivery_validateAuthState',
+    );
     return ApiResponse(
       success: false,
       message: 'Authentication error. Please log in again.',
@@ -82,7 +82,9 @@ class DeliveryApiClient {
 
   Future<void> handleAuthFailure() async {
     await SecureStorageService.clearTokens();
-    await NavigationService.navigateToAuthRoot(source: 'delivery_handleAuthFailure');
+    await NavigationService.navigateToAuthRoot(
+      source: 'delivery_handleAuthFailure',
+    );
   }
 
   Map<String, String> headers({String? token, bool json = false}) {

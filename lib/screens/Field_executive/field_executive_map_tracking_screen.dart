@@ -22,7 +22,7 @@ class FieldExecutiveMapTrackingScreen extends StatefulWidget {
     required this.serviceId,
     this.deliveryType = '',
     this.requestId = '',
-    this.customerName = '', 
+    this.customerName = '',
     this.customerAddress = '',
     this.customerPhone = '',
     this.displayServiceId = '',
@@ -56,12 +56,15 @@ class _FieldExecutiveMapTrackingScreenState
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool get _usesDeliveryOtpFlow => widget.deliveryType.trim().isNotEmpty;
 
-  String get _actionLabel => _usesDeliveryOtpFlow ? 'Send OTP' : 'Start Installation';
+  String get _actionLabel =>
+      _usesDeliveryOtpFlow ? 'Send OTP' : 'Start Installation';
 
   String _buildDestinationText(String fullAddress) {
     final raw = fullAddress.trim();
@@ -101,10 +104,7 @@ class _FieldExecutiveMapTrackingScreenState
       'https://www.google.com/maps/dir/?api=1&destination=$encodedAddress',
     );
 
-    final launched = await launchUrl(
-      url,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!launched) {
       _snack('Unable to open Google Maps');
     }
@@ -114,9 +114,10 @@ class _FieldExecutiveMapTrackingScreenState
     if (_isSendingOtp) return;
     debugPrint('Tracking action clicked');
 
-    final serviceRequestId = widget.serviceId
-        .trim()
-        .replaceFirst(RegExp(r'^#'), '');
+    final serviceRequestId = widget.serviceId.trim().replaceFirst(
+      RegExp(r'^#'),
+      '',
+    );
 
     if (mounted) {
       setState(() {
@@ -185,7 +186,9 @@ class _FieldExecutiveMapTrackingScreenState
           deliveryId: serviceRequestId,
           requestId: widget.requestId.trim().isNotEmpty
               ? widget.requestId
-              : (_displayServiceId.isNotEmpty ? _displayServiceId : widget.serviceId),
+              : (_displayServiceId.isNotEmpty
+                    ? _displayServiceId
+                    : widget.serviceId),
         ),
       );
       return;
@@ -217,10 +220,7 @@ class _FieldExecutiveMapTrackingScreenState
       return;
     }
 
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched) {
       _snack('Unable to open dialer');
     }
@@ -229,7 +229,9 @@ class _FieldExecutiveMapTrackingScreenState
   @override
   Widget build(BuildContext context) {
     final customerName = _customerName.isEmpty ? 'Customer' : _customerName;
-    final serviceId = _displayServiceId.isEmpty ? widget.serviceId : _displayServiceId;
+    final serviceId = _displayServiceId.isEmpty
+        ? widget.serviceId
+        : _displayServiceId;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -290,7 +292,10 @@ class _FieldExecutiveMapTrackingScreenState
                           children: [
                             const Text(
                               'Destination',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -325,9 +330,8 @@ class _FieldExecutiveMapTrackingScreenState
                         child: Image.asset(
                           'assets/images/map_placeholder.jpg',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: Colors.grey.shade200,
-                          ),
+                          errorBuilder: (_, __, ___) =>
+                              Container(color: Colors.grey.shade200),
                         ),
                       ),
                     ),
@@ -375,10 +379,7 @@ class _FieldExecutiveMapTrackingScreenState
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.grey.shade200,
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.grey.shade600,
-                      ),
+                      child: Icon(Icons.person, color: Colors.grey.shade600),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -483,9 +484,8 @@ class _FieldExecutiveMapTrackingScreenState
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                      ),
                     ),
-                  
+                  ),
                 ],
               ),
             ],

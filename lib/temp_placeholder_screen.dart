@@ -13,10 +13,7 @@ class TempPlaceholderScreen extends StatelessWidget {
         child: Text(
           '$title\n(Screen under development)',
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
     );

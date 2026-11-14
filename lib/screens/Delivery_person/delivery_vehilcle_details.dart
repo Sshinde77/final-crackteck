@@ -44,7 +44,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       drivingLicenseNo: licenceCtrl.text.trim(),
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     if (provider.lastSaveSucceeded) {
       Navigator.pop(context);
     }
@@ -55,11 +57,14 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final provider = context.watch<DeliveryDocumentsProvider>();
     final vehicle = provider.vehicle;
     if (!provider.isLoading && vehicleTypeCtrl.text.isEmpty) {
-      vehicleTypeCtrl.text = (vehicle['vehicle_type'] ?? vehicle['brand'] ?? '').toString();
+      vehicleTypeCtrl.text = (vehicle['vehicle_type'] ?? vehicle['brand'] ?? '')
+          .toString();
       vehicleNumberCtrl.text =
-          (vehicle['vehicle_number'] ?? vehicle['registration_number'] ?? '').toString();
+          (vehicle['vehicle_number'] ?? vehicle['registration_number'] ?? '')
+              .toString();
       licenceCtrl.text =
-          (vehicle['driving_license_no'] ?? vehicle['licence_no'] ?? '').toString();
+          (vehicle['driving_license_no'] ?? vehicle['licence_no'] ?? '')
+              .toString();
     }
 
     return Scaffold(
@@ -68,7 +73,10 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         backgroundColor: darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -86,7 +94,10 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _Label('Vehicle Type'),
-                    _InputField(controller: vehicleTypeCtrl, hint: 'Bike / Car'),
+                    _InputField(
+                      controller: vehicleTypeCtrl,
+                      hint: 'Bike / Car',
+                    ),
                     const SizedBox(height: 16),
                     const _Label('Vehicle Number'),
                     _InputField(
@@ -157,10 +168,7 @@ class _Label extends StatelessWidget {
 }
 
 class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.controller,
-    required this.hint,
-  });
+  const _InputField({required this.controller, required this.hint});
 
   final TextEditingController controller;
   final String hint;
@@ -174,7 +182,10 @@ class _InputField extends StatelessWidget {
         isDense: true,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Colors.black12),

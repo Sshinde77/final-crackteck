@@ -84,8 +84,8 @@ class _FieldExecutiveWorkCallScreenState
     final double tabFontSize = screenWidth < 360
         ? 11
         : screenWidth < 400
-            ? 12
-            : 14;
+        ? 12
+        : 14;
     final double tabIconSize = screenWidth < 360 ? 16 : 20;
     final double tabHorizontalPadding = screenWidth < 360 ? 8 : 12;
 
@@ -185,64 +185,64 @@ class _FieldExecutiveWorkCallScreenState
               child: _jobsLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _jobsError != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'Failed to load service requests',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _jobsError!,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                TextButton(
-                                  onPressed: _loadServiceRequests,
-                                  child: const Text('Retry'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : visibleJobs.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No service requests found',
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Failed to load service requests',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.red,
                               ),
-                            )
-                          : ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              itemCount: visibleJobs.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final job = visibleJobs[index];
-                                return _JobCard(
-                                  job: job,
-                                  roleId: widget.roleId,
-                                  roleName: widget.roleName,
-                                );
-                              },
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _jobsError!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            TextButton(
+                              onPressed: _loadServiceRequests,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : visibleJobs.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No service requests found',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      itemCount: visibleJobs.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final job = visibleJobs[index];
+                        return _JobCard(
+                          job: job,
+                          roleId: widget.roleId,
+                          roleName: widget.roleName,
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -368,7 +368,10 @@ class _JobCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           job.description,
-                          style: const TextStyle(fontSize: 10, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -377,7 +380,10 @@ class _JobCard extends StatelessWidget {
                           children: [
                             const Text(
                               'Service ID: ',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                             Expanded(
                               child: Text(
@@ -397,7 +403,10 @@ class _JobCard extends StatelessWidget {
                           children: [
                             const Text(
                               'Location: ',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                             Expanded(
                               child: Text(
@@ -507,43 +516,60 @@ class JobItem {
       return null;
     }
 
-    final title = readStr(
-      const ['title', 'service_name', 'service_title', 'name', 'issue', 'problem'],
-      fallback: 'Service Request',
-    );
+    final title = readStr(const [
+      'title',
+      'service_name',
+      'service_title',
+      'name',
+      'issue',
+      'problem',
+    ], fallback: 'Service Request');
 
     final description = readStr(
       const ['description', 'details', 'notes', 'remark', 'remarks'],
-      fallback: 'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
+      fallback:
+          'Visit charge of Rs 159 waived in final bill; spare part/ repair cost extra',
     );
 
-    final location = readStr(
-      const ['location', 'address', 'city', 'area'],
-      fallback: '-',
-    );
+    final location = readStr(const [
+      'location',
+      'address',
+      'city',
+      'area',
+    ], fallback: '-');
 
     final id = readInt(const ['id', 'service_request_id']);
 
-    final requestId = readStr(
-      const ['request_id', 'requestId', 'service_id', 'serviceId', 'ticket_no'],
-      fallback: '',
-    );
-    final serviceIdSource = requestId.isNotEmpty ? requestId : (id?.toString() ?? '-');
+    final requestId = readStr(const [
+      'request_id',
+      'requestId',
+      'service_id',
+      'serviceId',
+      'ticket_no',
+    ], fallback: '');
+    final serviceIdSource = requestId.isNotEmpty
+        ? requestId
+        : (id?.toString() ?? '-');
     final serviceId = serviceIdSource == '-' || serviceIdSource.isEmpty
         ? '-'
-        : (serviceIdSource.startsWith('#') ? serviceIdSource : '#$serviceIdSource');
+        : (serviceIdSource.startsWith('#')
+              ? serviceIdSource
+              : '#$serviceIdSource');
 
-    final priority = readStr(
-      const ['priority', 'priority_level', 'urgency'],
-      fallback: 'Medium',
-    );
+    final priority = readStr(const [
+      'priority',
+      'priority_level',
+      'urgency',
+    ], fallback: 'Medium');
 
     final tab = _tabFromServiceType(readStr(const ['service_type']));
 
-    final imageUrl = readStr(
-      const ['image_url', 'image', 'service_image', 'product_image'],
-      fallback: '',
-    );
+    final imageUrl = readStr(const [
+      'image_url',
+      'image',
+      'service_image',
+      'product_image',
+    ], fallback: '');
 
     return JobItem(
       id: id,

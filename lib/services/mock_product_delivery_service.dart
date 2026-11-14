@@ -47,8 +47,7 @@ class MockProductDeliveryService {
       'location': 'Sector 62, Noida',
       'customer_name': 'Neha Verma',
       'customer_phone': '9123456780',
-      'customer_address':
-          'A-24, Sector 62, Noida, Uttar Pradesh - 201309',
+      'customer_address': 'A-24, Sector 62, Noida, Uttar Pradesh - 201309',
       'request_type': 'product_delivery',
       'product': <String, dynamic>{
         'product_name': 'Smart Air Cooler',
@@ -97,8 +96,6 @@ class MockProductDeliveryService {
       throw Exception('Product delivery details not found for id $deliveryId');
     }
 
-    return <String, dynamic>{
-      'data': Map<String, dynamic>.from(request),
-    };
+    return <String, dynamic>{'data': Map<String, dynamic>.from(request)};
   }
 }

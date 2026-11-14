@@ -53,10 +53,7 @@ class AttendanceRecord {
 class AttendanceScreen extends StatefulWidget {
   final int roleId;
 
-  const AttendanceScreen({
-    super.key,
-    required this.roleId,
-  });
+  const AttendanceScreen({super.key, required this.roleId});
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -117,7 +114,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   String _deriveStatus(Map<String, dynamic> log, DateTime? logoutAt) {
     if (logoutAt != null) return 'Completed';
-    final loginSuccessful = log['login_successful'] == true ||
+    final loginSuccessful =
+        log['login_successful'] == true ||
         log['login_successful']?.toString() == '1';
     return loginSuccessful ? 'In Progress' : 'Failed';
   }
@@ -147,8 +145,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         );
         final duration = _calculateDuration(loginAt, logoutAt);
         final logId = log['id']?.toString().trim();
-        final displayId =
-            (logId == null || logId.isEmpty) ? '-' : '#ATT$logId';
+        final displayId = (logId == null || logId.isEmpty) ? '-' : '#ATT$logId';
 
         parsed.add(
           AttendanceRecord(
@@ -194,9 +191,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: brandGreen,
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: brandGreen),
           ),
           child: child!,
         );
@@ -204,7 +201,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
 
     if (picked != null) {
-      setState(() => _selectedDate = DateTime(picked.year, picked.month, picked.day));
+      setState(
+        () => _selectedDate = DateTime(picked.year, picked.month, picked.day),
+      );
     }
   }
 
@@ -242,7 +241,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(999),
@@ -261,7 +263,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                     ),
                     const Spacer(),
-                    TextButton(onPressed: _clearFilter, child: const Text('Clear')),
+                    TextButton(
+                      onPressed: _clearFilter,
+                      child: const Text('Clear'),
+                    ),
                   ],
                 ),
               ),
@@ -270,31 +275,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage != null
-                      ? _ErrorState(
-                          message: _errorMessage!,
-                          onRetry: _loadAttendance,
-                        )
-                      : list.isEmpty
-                          ? _EmptyState(
-                              date: _selectedDate,
-                              onPick: _openCalendar,
-                              onClear: _selectedDate == null ? null : _clearFilter,
-                            )
-                          : RefreshIndicator(
-                              onRefresh: _loadAttendance,
-                              child: ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
-                                itemCount: list.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final r = list[index];
-                                  return _AttendanceCard(
-                                    record: r,
-                                    hhmmss: _hhmmss,
-                                  );
-                                },
-                              ),
-                            ),
+                  ? _ErrorState(
+                      message: _errorMessage!,
+                      onRetry: _loadAttendance,
+                    )
+                  : list.isEmpty
+                  ? _EmptyState(
+                      date: _selectedDate,
+                      onPick: _openCalendar,
+                      onClear: _selectedDate == null ? null : _clearFilter,
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _loadAttendance,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
+                        itemCount: list.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final r = list[index];
+                          return _AttendanceCard(record: r, hhmmss: _hhmmss);
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -307,10 +309,7 @@ class _AttendanceCard extends StatelessWidget {
   final AttendanceRecord record;
   final String Function(Duration?) hhmmss;
 
-  const _AttendanceCard({
-    required this.record,
-    required this.hhmmss,
-  });
+  const _AttendanceCard({required this.record, required this.hhmmss});
 
   static const Color brandGreen = Color(0xFF1B6E1B);
 
@@ -469,10 +468,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final Future<void> Function() onRetry;
 
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -490,10 +486,7 @@ class _ErrorState extends StatelessWidget {
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 14),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),

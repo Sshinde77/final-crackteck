@@ -266,7 +266,9 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final title = isMeeting
         ? 'Meeting'
-        : (isFollowup ? 'Follow Up' : _firstNonEmpty(<String>[task.title], fallback: 'Task'));
+        : (isFollowup
+              ? 'Follow Up'
+              : _firstNonEmpty(<String>[task.title], fallback: 'Task'));
 
     late final List<String> leftLabels;
     late final List<String> rightValues;
@@ -450,7 +452,10 @@ class _TaskScreenState extends State<TaskScreen> {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -668,7 +673,8 @@ class _MonthDropdown extends StatelessWidget {
             ),
           ),
           items: [
-            for (final m in months) DropdownMenuItem<String>(value: m, child: Text(m)),
+            for (final m in months)
+              DropdownMenuItem<String>(value: m, child: Text(m)),
           ],
           onChanged: (v) {
             if (v == null) return;
@@ -946,7 +952,10 @@ class _TaskCard extends StatelessWidget {
                       width: 86,
                       child: Text(
                         item.leftLabels[i],
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black54,
+                        ),
                       ),
                     ),
                     Expanded(

@@ -35,8 +35,18 @@ class CustomerAddress {
     return CustomerAddress(
       id: read(const ['id', 'address_id', 'customer_address_id']),
       branchName: read(const ['branch_name', 'branchName']),
-      address1: read(const ['address1', 'address_1', 'address_line_1', 'line1']),
-      address2: read(const ['address2', 'address_2', 'address_line_2', 'line2']),
+      address1: read(const [
+        'address1',
+        'address_1',
+        'address_line_1',
+        'line1',
+      ]),
+      address2: read(const [
+        'address2',
+        'address_2',
+        'address_line_2',
+        'line2',
+      ]),
       city: read(const ['city', 'city_name']),
       state: read(const ['state', 'state_name']),
       country: read(const ['country', 'country_name']),
@@ -121,10 +131,12 @@ class FieldExecutiveServiceRequestDetail {
   ) {
     final raw = Map<String, dynamic>.from(json);
 
-    final requestMap = _asMap(raw['service_request']) ??
+    final requestMap =
+        _asMap(raw['service_request']) ??
         _asMap(raw['request']) ??
         _asMap(raw['service']);
-    final customerMap = _asMap(raw['customer']) ??
+    final customerMap =
+        _asMap(raw['customer']) ??
         _asMap(raw['customer_details']) ??
         _asMap(raw['user']);
 
@@ -144,21 +156,18 @@ class FieldExecutiveServiceRequestDetail {
     CustomerAddress? matchedAddress;
 
     if (normalizedAddressId.isNotEmpty) {
-      matchedAddress = _findAddressById(
-        normalizedAddressId,
-        <dynamic>[
-          raw['customer_address'],
-          raw['customerAddress'],
-          requestMap?['customer_address'],
-          requestMap?['customerAddress'],
-          customerMap?['customer_address'],
-          customerMap?['customerAddress'],
-          raw['customer_addresses'],
-          raw['addresses'],
-          customerMap?['customer_addresses'],
-          customerMap?['addresses'],
-        ],
-      );
+      matchedAddress = _findAddressById(normalizedAddressId, <dynamic>[
+        raw['customer_address'],
+        raw['customerAddress'],
+        requestMap?['customer_address'],
+        requestMap?['customerAddress'],
+        customerMap?['customer_address'],
+        customerMap?['customerAddress'],
+        raw['customer_addresses'],
+        raw['addresses'],
+        customerMap?['customer_addresses'],
+        customerMap?['addresses'],
+      ]);
     }
 
     return FieldExecutiveServiceRequestDetail(
@@ -206,7 +215,10 @@ class FieldExecutiveServiceRequestDetail {
     return null;
   }
 
-  static void _collectAddressMaps(dynamic value, List<Map<String, dynamic>> out) {
+  static void _collectAddressMaps(
+    dynamic value,
+    List<Map<String, dynamic>> out,
+  ) {
     if (value == null) return;
 
     final map = _asMap(value);

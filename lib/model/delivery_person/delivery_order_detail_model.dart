@@ -69,14 +69,15 @@ class DeliveryOrderDetailModel {
                 '')
             .toString();
     final parsed = DateTime.tryParse(rawDate);
-    final rawId = (payload['order_number'] ??
-            payload['display_id'] ??
-            payload['order_id'] ??
-            payload['id'] ??
-            payload['request_id'] ??
-            fallbackOrderId ??
-            'NA')
-        .toString();
+    final rawId =
+        (payload['order_number'] ??
+                payload['display_id'] ??
+                payload['order_id'] ??
+                payload['id'] ??
+                payload['request_id'] ??
+                fallbackOrderId ??
+                'NA')
+            .toString();
     final normalizedId = rawId.startsWith('#') ? rawId : '#$rawId';
     final normalizedRaw = Map<String, dynamic>.from(payload);
     if (customer != null) {
@@ -94,14 +95,16 @@ class DeliveryOrderDetailModel {
       );
     }
 
-    final customerFirstName = _readString(
-      customer,
-      const <String>['first_name', 'firstName', 'firstname'],
-    );
-    final customerLastName = _readString(
-      customer,
-      const <String>['last_name', 'lastName', 'lastname'],
-    );
+    final customerFirstName = _readString(customer, const <String>[
+      'first_name',
+      'firstName',
+      'firstname',
+    ]);
+    final customerLastName = _readString(customer, const <String>[
+      'last_name',
+      'lastName',
+      'lastname',
+    ]);
 
     return DeliveryOrderDetailModel(
       id: normalizedId,
@@ -127,14 +130,21 @@ class DeliveryOrderDetailModel {
       customerLastName: _valueOrPlaceholder(customerLastName),
       customerName: _firstNonEmpty(<String>[
         _joinName(customerFirstName, customerLastName),
-        _readString(customer, const <String>['name', 'full_name', 'customer_name']),
+        _readString(customer, const <String>[
+          'name',
+          'full_name',
+          'customer_name',
+        ]),
         payload['customer_name']?.toString() ?? '',
       ]),
       customerPhone: _firstNonEmpty(<String>[
-        _readString(
-          customer,
-          const <String>['phone', 'phone_number', 'mobile', 'mobile_number', 'contact_number'],
-        ),
+        _readString(customer, const <String>[
+          'phone',
+          'phone_number',
+          'mobile',
+          'mobile_number',
+          'contact_number',
+        ]),
         payload['customer_phone']?.toString() ?? '',
         payload['phone']?.toString() ?? '',
       ]),
@@ -144,7 +154,8 @@ class DeliveryOrderDetailModel {
         payload['email']?.toString() ?? '',
       ]),
       items: _parseItems(payload['order_items']),
-      accepted: status.contains('accept') ||
+      accepted:
+          status.contains('accept') ||
           status.contains('assigned') ||
           status.contains('picked'),
       raw: normalizedRaw,
@@ -234,8 +245,7 @@ Map<String, dynamic>? _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
     return value.map(
-      (dynamic key, dynamic entryValue) =>
-          MapEntry(key.toString(), entryValue),
+      (dynamic key, dynamic entryValue) => MapEntry(key.toString(), entryValue),
     );
   }
   return null;
@@ -252,10 +262,10 @@ Map<String, dynamic>? _firstMap(dynamic value) {
 }
 
 String _joinName(String? firstName, String? lastName) {
-  return <String>[firstName ?? '', lastName ?? '']
-      .map((part) => part.trim())
-      .where((part) => part.isNotEmpty)
-      .join(' ');
+  return <String>[
+    firstName ?? '',
+    lastName ?? '',
+  ].map((part) => part.trim()).where((part) => part.isNotEmpty).join(' ');
 }
 
 Map<String, dynamic> _extractOrderPayload(Map<String, dynamic> json) {

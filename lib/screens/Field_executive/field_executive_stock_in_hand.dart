@@ -165,8 +165,8 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
     final relative = value.startsWith('//')
         ? Uri.parse('https:$value')
         : value.startsWith('/')
-            ? Uri.parse(value)
-            : Uri.parse('/$value');
+        ? Uri.parse(value)
+        : Uri.parse('/$value');
 
     return origin.resolveUri(relative).toString();
   }
@@ -196,22 +196,28 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
           item['product_images'],
     );
     final name = _readText(products, const ['product_name', 'name', 'title']);
-    final price = _readText(
-      products,
-      const ['final_price', 'selling_price', 'price', 'amount'],
-    );
-    final quantity = _readText(
-      item,
-      const ['total_requested_quantity', 'requested_quantity', 'quantity', 'qty'],
-    );
-    final productId = _readId(
-      products,
-      const ['product_id', 'productId', 'id'],
-    );
-    final stockInHandId = _readId(
-      item,
-      const ['stock_in_hand_id', 'stockInHandId', 'id'],
-    );
+    final price = _readText(products, const [
+      'final_price',
+      'selling_price',
+      'price',
+      'amount',
+    ]);
+    final quantity = _readText(item, const [
+      'total_requested_quantity',
+      'requested_quantity',
+      'quantity',
+      'qty',
+    ]);
+    final productId = _readId(products, const [
+      'product_id',
+      'productId',
+      'id',
+    ]);
+    final stockInHandId = _readId(item, const [
+      'stock_in_hand_id',
+      'stockInHandId',
+      'id',
+    ]);
 
     return _StockItemData(
       imageUrl: image,
@@ -289,9 +295,7 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
     final selected = _buildSelectedStockResult();
     if (selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least 1 stock item.'),
-        ),
+        const SnackBar(content: Text('Please select at least 1 stock item.')),
       );
       return false;
     }
@@ -334,77 +338,77 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: _loadStockInHand,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryGreen,
-                            ),
-                            child: const Text(
-                              'Retry',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.black54),
                       ),
-                    ),
-                  )
-                : _items.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No stock in hand available',
-                          style: TextStyle(color: Colors.black54),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _loadStockInHand,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryGreen,
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                        itemCount: _items.length,
-                        itemBuilder: (context, index) {
-                          final item = _items[index];
-                          final selectedQty =
-                              _selectedQuantities[_itemKey(item, index)] ?? 0;
-                          return InkWell(
-                            onTap: widget.selectionMode
-                                ? null
-                                : () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.FieldExecutiveProductDetailScreen,
-                                      arguments: fieldexecutiveproductdetailArguments(
-                                        roleId: widget.roleId,
-                                        roleName: widget.roleName,
-                                        productId: item.productId,
-                                      ),
-                                    );
-                                  },
-                            child: StockItemCard(
-                              item: item,
-                              selectionMode: widget.selectionMode,
-                              selectedQty: selectedQty,
-                              onIncrease: widget.selectionMode
-                                  ? () => _increaseSelectedQty(item, index)
-                                  : null,
-                              onDecrease: widget.selectionMode
-                                  ? () => _decreaseSelectedQty(item, index)
-                                  : null,
-                              onClear: widget.selectionMode
-                                  ? () => _clearSelectedQty(item, index)
-                                  : null,
-                            ),
-                          );
-                        },
+                        child: const Text(
+                          'Retry',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+              )
+            : _items.isEmpty
+            ? const Center(
+                child: Text(
+                  'No stock in hand available',
+                  style: TextStyle(color: Colors.black54),
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                itemCount: _items.length,
+                itemBuilder: (context, index) {
+                  final item = _items[index];
+                  final selectedQty =
+                      _selectedQuantities[_itemKey(item, index)] ?? 0;
+                  return InkWell(
+                    onTap: widget.selectionMode
+                        ? null
+                        : () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.FieldExecutiveProductDetailScreen,
+                              arguments: fieldexecutiveproductdetailArguments(
+                                roleId: widget.roleId,
+                                roleName: widget.roleName,
+                                productId: item.productId,
+                              ),
+                            );
+                          },
+                    child: StockItemCard(
+                      item: item,
+                      selectionMode: widget.selectionMode,
+                      selectedQty: selectedQty,
+                      onIncrease: widget.selectionMode
+                          ? () => _increaseSelectedQty(item, index)
+                          : null,
+                      onDecrease: widget.selectionMode
+                          ? () => _decreaseSelectedQty(item, index)
+                          : null,
+                      onClear: widget.selectionMode
+                          ? () => _clearSelectedQty(item, index)
+                          : null,
+                    ),
+                  );
+                },
+              ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -435,7 +439,9 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
                       );
                     },
               child: Text(
-                widget.selectionMode ? 'Use Selected Stock' : 'Request more product',
+                widget.selectionMode
+                    ? 'Use Selected Stock'
+                    : 'Request more product',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -547,13 +553,7 @@ class StockItemCard extends StatelessWidget {
       qtyView = Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Text(
-            'Qty',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.red,
-            ),
-          ),
+          const Text('Qty', style: TextStyle(fontSize: 12, color: Colors.red)),
           const SizedBox(height: 4),
           Text(
             item.quantity,

@@ -34,45 +34,68 @@ class AppRoutes {
   static const String salespersonNewQuotation = '/salesperson-new-quotation';
   static const String salespernewsonMeeting = '/salesperson-new-meeting';
 
-
-
   // field executive screens
   static const String FieldExecutiveDashboard = '/field_executive_dashboard';
-  static const String FieldExecutiveNotificationScreen = '/field_executive_notification';
-  static const String FieldExecutiveStockInHandScreen = '/field_executive_stock_in_hand';
-  static const String FieldExecutiveProductDetailScreen = '/field_executive_product_detail';
-  static const String FieldExecutiveAddProductScreen = '/field_executive_add_product';
-  static const String FieldExecutiveProductListToAddMoreScreen = '/field_executive_product_list';
-  static const String FieldExecutiveRequestedProductDetailScreen = '/field_executive_requested_product_detail';
-  static const String FieldExecutiveProductPaymentScreen = '/field_executive_product_payment';
-  static const String FieldExecutiveCashInHandScreen = '/field_executive_cash_in_hand';
-  static const String FieldExecutiveDeliveryScreen = '/field_executive_delivery';
+  static const String FieldExecutiveNotificationScreen =
+      '/field_executive_notification';
+  static const String FieldExecutiveStockInHandScreen =
+      '/field_executive_stock_in_hand';
+  static const String FieldExecutiveProductDetailScreen =
+      '/field_executive_product_detail';
+  static const String FieldExecutiveAddProductScreen =
+      '/field_executive_add_product';
+  static const String FieldExecutiveProductListToAddMoreScreen =
+      '/field_executive_product_list';
+  static const String FieldExecutiveRequestedProductDetailScreen =
+      '/field_executive_requested_product_detail';
+  static const String FieldExecutiveProductPaymentScreen =
+      '/field_executive_product_payment';
+  static const String FieldExecutiveCashInHandScreen =
+      '/field_executive_cash_in_hand';
+  static const String FieldExecutiveDeliveryScreen =
+      '/field_executive_delivery';
   static const String DeliveryRequestListScreen = '/delivery_request_list';
   static const String DeliveryProductDetailScreen = '/delivery_product_detail';
   static const String DeliveryMapTrackingScreen = '/delivery_map_tracking';
-  static const String DeliveryOtpVerificationScreen = '/delivery_otp_verification';
-  static const String FieldExecutivePaymentReceiptsScreen = '/field_executive_payment_receipts';
-  static const String FieldExecutivePaymentDoneScreen = '/field_executive_payment_done';
-  static const String FieldExecutiveWorkCallScreen = '/field_executive_work_call';
-  static const String FieldExecutiveInstallationDetailScreen = '/field_executive_installation_detail';
-  static const String FieldExecutiveOtpVerificationScreen = '/field_executive_otp_verification';
-  static const String FieldExecutiveAllProductsScreen = '/field_executive_all_products';
-  static const String FieldExecutiveProductItemDetailScreen = '/field_executive_product_item_detail';
-  static const String FieldExecutiveMapTrackingScreen = '/field_executive_map_tracking';
-  static const String FieldExecutiveUploadBeforeImagesScreen = '/field_executive_upload_before_images';
-  static const String FieldExecutiveWriteReportScreen = '/field_executive_write_report';
-  static const String FieldExecutiveCaseTransferScreen = '/field_executive_case_transfer';
-  static const String FieldExecutivePersonalInfo = '/field_executive_personal_info';
-  static const String field_executive_attendance = '/field_executive_attendance';
-  static const String PickupMaterialsScreen = '/field_executive_pickup_material';
+  static const String DeliveryOtpVerificationScreen =
+      '/delivery_otp_verification';
+  static const String FieldExecutivePaymentReceiptsScreen =
+      '/field_executive_payment_receipts';
+  static const String FieldExecutivePaymentDoneScreen =
+      '/field_executive_payment_done';
+  static const String FieldExecutiveWorkCallScreen =
+      '/field_executive_work_call';
+  static const String FieldExecutiveInstallationDetailScreen =
+      '/field_executive_installation_detail';
+  static const String FieldExecutiveOtpVerificationScreen =
+      '/field_executive_otp_verification';
+  static const String FieldExecutiveAllProductsScreen =
+      '/field_executive_all_products';
+  static const String FieldExecutiveProductItemDetailScreen =
+      '/field_executive_product_item_detail';
+  static const String FieldExecutiveMapTrackingScreen =
+      '/field_executive_map_tracking';
+  static const String FieldExecutiveUploadBeforeImagesScreen =
+      '/field_executive_upload_before_images';
+  static const String FieldExecutiveWriteReportScreen =
+      '/field_executive_write_report';
+  static const String FieldExecutiveCaseTransferScreen =
+      '/field_executive_case_transfer';
+  static const String FieldExecutivePersonalInfo =
+      '/field_executive_personal_info';
+  static const String field_executive_attendance =
+      '/field_executive_attendance';
+  static const String PickupMaterialsScreen =
+      '/field_executive_pickup_material';
   static const String RepairRequestScreen = '/field_executive_repair_request';
   static const String PaymentsScreen = '/field_executive_payments';
   static const String WorksScreen = '/field_executive_works';
-  static const String fieldexecutivePrivacyPolicyScreen = '/field_executive_privacy_policy';
-  static const String fieldexecutiveFeedbackScreen = '/field_executive_feedback';
+  static const String fieldexecutivePrivacyPolicyScreen =
+      '/field_executive_privacy_policy';
+  static const String fieldexecutiveFeedbackScreen =
+      '/field_executive_feedback';
 
   static const String PlaceholderScreen = '/placeholder';
-
 
   // 🔹 TEMP DASHBOARD ROUTES (ADD THESE)
   static const String adminDashboard = '/admin-dashboard';
@@ -84,7 +107,8 @@ class AppRoutes {
   static const String Deliverypersondashbord = '/deliverypersondashbord';
   static const String DeliveryDashboard = Deliverypersondashbord;
   static const String DeliveryNotificationScreen = '/delivery_notification';
-  static const String DeliveryTermsConditionScreen = '/delivery_terms_condition';
+  static const String DeliveryTermsConditionScreen =
+      '/delivery_terms_condition';
   static const String DeliveryPrivacyPolicyScreen = '/delivery_privacy_policy';
   static const String DeliverypickupparcelScreen = '/delivery_pickup_parcel';
   static const String DeliveryOtpScreen = '/delivery_otp';
@@ -92,13 +116,10 @@ class AppRoutes {
   static const String DeliveryDetailScreen = '/delivery_detail';
 }
 
-
-
 enum FieldExecutiveProductItemDetailFlow {
   normalBrowsing,
   afterOtpVerification,
 }
-
 
 /// Route arguments for passing data between screens
 class LoginArguments {
@@ -138,23 +159,28 @@ class SignUpArguments {
   SignUpArguments({required this.roleId, required this.roleName});
 }
 
-
-
-
-
 class fieldexecutivedashboardArguments {
   final int roleId;
   final String roleName;
   final int initialIndex;
 
-  fieldexecutivedashboardArguments({required this.roleId, required this.roleName, this.initialIndex = 0});
+  fieldexecutivedashboardArguments({
+    required this.roleId,
+    required this.roleName,
+    this.initialIndex = 0,
+  });
 }
+
 class fieldexecutivenotificationArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivenotificationArguments({required this.roleId, required this.roleName});
+  fieldexecutivenotificationArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
+
 class fieldexecutivestockinhandArguments {
   final int roleId;
   final String roleName;
@@ -170,6 +196,7 @@ class fieldexecutivestockinhandArguments {
     this.initialSelectedItems = const <SelectedStockItem>[],
   });
 }
+
 class fieldexecutiveproductdetailArguments {
   final int roleId;
   final String roleName;
@@ -181,6 +208,7 @@ class fieldexecutiveproductdetailArguments {
     this.productId = '',
   });
 }
+
 class fieldexecutiveaddproductArguments {
   final int roleId;
   final String roleName;
@@ -196,6 +224,7 @@ class fieldexecutiveaddproductArguments {
     this.initialSelectedPart,
   });
 }
+
 class fieldexecutiverequestedproductlistArguments {
   final int roleId;
   final String roleName;
@@ -218,28 +247,40 @@ class fieldexecutiveproductlisttoaddmoreArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveproductlisttoaddmoreArguments({required this.roleId, required this.roleName});
+  fieldexecutiveproductlisttoaddmoreArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutiveproductpaymentArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveproductpaymentArguments({required this.roleId, required this.roleName});
+  fieldexecutiveproductpaymentArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutivecashinhandArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivecashinhandArguments({required this.roleId, required this.roleName});
+  fieldexecutivecashinhandArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutivedeliveryArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivedeliveryArguments({required this.roleId, required this.roleName});
+  fieldexecutivedeliveryArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class deliveryrequestlistArguments {
@@ -334,21 +375,30 @@ class fieldexecutivepaymentreceiptsArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivepaymentreceiptsArguments({required this.roleId, required this.roleName});
+  fieldexecutivepaymentreceiptsArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutivepaymentdoneArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivepaymentdoneArguments({required this.roleId, required this.roleName});
+  fieldexecutivepaymentdoneArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutiveworkcallArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveworkcallArguments({required this.roleId, required this.roleName});
+  fieldexecutiveworkcallArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutiveinstallationdetailArguments {
@@ -396,7 +446,8 @@ class fieldexecutiveallproductsArguments {
     this.flow = FieldExecutiveProductItemDetailFlow.normalBrowsing,
     this.serviceRequestId = '',
     FieldExecutiveProductServicesController? controller,
-  }) : controller = controller ?? FieldExecutiveProductServicesController.withDefaults();
+  }) : controller =
+           controller ?? FieldExecutiveProductServicesController.withDefaults();
 }
 
 class fieldexecutiveproductitemdetailArguments {
@@ -422,7 +473,8 @@ class fieldexecutiveproductitemdetailArguments {
     required this.priority,
     this.flow = FieldExecutiveProductItemDetailFlow.normalBrowsing,
     FieldExecutiveProductServicesController? controller,
-  }) : controller = controller ?? FieldExecutiveProductServicesController.withDefaults();
+  }) : controller =
+           controller ?? FieldExecutiveProductServicesController.withDefaults();
 }
 
 class fieldexecutivemaptrackingArguments {
@@ -493,98 +545,105 @@ class fieldexecutivecasetransferArguments {
   });
 }
 
-
 class fieldexecutivePersonalInfoArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivePersonalInfoArguments({required this.roleId, required this.roleName});
+  fieldexecutivePersonalInfoArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
-
 
 class fieldexecutiveattendanceArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveattendanceArguments({required this.roleId, required this.roleName});
+  fieldexecutiveattendanceArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
-
 
 class fieldexecutivePickupMaterialArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivePickupMaterialArguments({required this.roleId, required this.roleName});
+  fieldexecutivePickupMaterialArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
-
 
 class fieldexecutiveRepairRequestArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveRepairRequestArguments({required this.roleId, required this.roleName});
+  fieldexecutiveRepairRequestArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
-
 
 class fieldexecutivePaymentsScreenArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivePaymentsScreenArguments({required this.roleId, required this.roleName});
+  fieldexecutivePaymentsScreenArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class fieldexecutiveWorksScreenArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveWorksScreenArguments({required this.roleId, required this.roleName});
+  fieldexecutiveWorksScreenArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
-
 
 class fieldexecutivePrivacyPolicyScreenArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutivePrivacyPolicyScreenArguments({required this.roleId, required this.roleName});
+  fieldexecutivePrivacyPolicyScreenArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
-
-
 
 class fieldexecutiveFeedbackScreenArguments {
   final int roleId;
   final String roleName;
 
-  fieldexecutiveFeedbackScreenArguments({required this.roleId, required this.roleName});
+  fieldexecutiveFeedbackScreenArguments({
+    required this.roleId,
+    required this.roleName,
+  });
 }
 
 class deliverynotificationArguments {
   final int roleId;
   final String roleName;
 
-  deliverynotificationArguments({
-    required this.roleId,
-    required this.roleName,
-  });
+  deliverynotificationArguments({required this.roleId, required this.roleName});
 }
 
 class deliverytermsArguments {
   final int roleId;
   final String roleName;
 
-  deliverytermsArguments({
-    required this.roleId,
-    required this.roleName,
-  });
+  deliverytermsArguments({required this.roleId, required this.roleName});
 }
 
 class deliverypolicyArguments {
   final int roleId;
   final String roleName;
 
-  deliverypolicyArguments({
-    required this.roleId,
-    required this.roleName,
-  });
+  deliverypolicyArguments({required this.roleId, required this.roleName});
 }
 
 class deliverypickupparcelArguments {
@@ -615,20 +674,14 @@ class deliverydoneArguments {
   final int roleId;
   final String roleName;
 
-  deliverydoneArguments({
-    required this.roleId,
-    required this.roleName,
-  });
+  deliverydoneArguments({required this.roleId, required this.roleName});
 }
 
 class deliverydetailArguments {
   final int roleId;
   final String roleName;
 
-  deliverydetailArguments({
-    required this.roleId,
-    required this.roleName,
-  });
+  deliverydetailArguments({required this.roleId, required this.roleName});
 }
 
 class deliverydasboardArguments {

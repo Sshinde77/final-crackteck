@@ -122,9 +122,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       final parsed = decoded
           .whereType<Map>()
           .map(
-            (e) => csc_picker.StatusModel.fromJson(
-              Map<String, dynamic>.from(e),
-            ),
+            (e) =>
+                csc_picker.StatusModel.fromJson(Map<String, dynamic>.from(e)),
           )
           .toList();
 
@@ -255,7 +254,10 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   }
 
   String _joinNonEmpty(Iterable<String> parts, {String separator = ', '}) {
-    return parts.map((e) => e.trim()).where((e) => e.isNotEmpty).join(separator);
+    return parts
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .join(separator);
   }
 
   Map<String, dynamic> _buildLeadPayload(int userId) {
@@ -266,7 +268,9 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     final address2 = address2Ctrl.text.trim();
     final city = cityCtrl.text.trim();
     final state = stateCtrl.text.trim();
-    final country = countryCtrl.text.trim().isEmpty ? 'India' : countryCtrl.text.trim();
+    final country = countryCtrl.text.trim().isEmpty
+        ? 'India'
+        : countryCtrl.text.trim();
     final pincode = pincodeCtrl.text.trim();
     final notes = notesCtrl.text.trim();
     final address = _joinNonEmpty([
@@ -393,11 +397,18 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         address2Ctrl.text = address2;
         cityCtrl.text = _pickFromMaps(sourceMaps, ['city', 'city_name']);
         stateCtrl.text = _pickFromMaps(sourceMaps, ['state', 'state_name']);
-        countryCtrl.text = _pickFromMaps(sourceMaps, ['country', 'country_name']);
+        countryCtrl.text = _pickFromMaps(sourceMaps, [
+          'country',
+          'country_name',
+        ]);
         if (countryCtrl.text.isEmpty) {
           countryCtrl.text = 'India';
         }
-        pincodeCtrl.text = _pickFromMaps(sourceMaps, ['pincode', 'zip', 'zipcode']);
+        pincodeCtrl.text = _pickFromMaps(sourceMaps, [
+          'pincode',
+          'zip',
+          'zipcode',
+        ]);
         requirementTypeCtrl.text = _pick(leadMap, ['requirement_type']);
         budgetRangeCtrl.text = _pick(leadMap, ['budget_range']);
         notesCtrl.text = _pick(leadMap, ['notes']);
@@ -417,7 +428,9 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load lead details for editing')),
+        const SnackBar(
+          content: Text('Failed to load lead details for editing'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -606,7 +619,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                               roleId: widget.roleId,
                             );
 
-                      final message = response.message ??
+                      final message =
+                          response.message ??
                           (_isEditMode
                               ? 'Lead updated successfully'
                               : 'Lead submitted');
@@ -658,14 +672,26 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         currentIndex: _navIndex,
         roleId: widget.roleId,
         roleName: widget.roleName,
-        onHome: () { Navigator.pushNamed(context, AppRoutes.salespersonDashboard);},
-        onProfile: () { Navigator.pushNamed(context, AppRoutes.salespersonProfile);},
+        onHome: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonDashboard);
+        },
+        onProfile: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonProfile);
+        },
         onMore: () => setState(() => _moreOpen = true),
         onLess: () => setState(() => _moreOpen = false),
-        onLeads: () { Navigator.pushNamed(context, AppRoutes.salespersonLeads);},
-        onFollowUp: () { Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);},
-        onMeeting: () { Navigator.pushNamed(context, AppRoutes.salespersonMeeting);},
-        onQuotation: () { Navigator.pushNamed(context, AppRoutes.salespersonQuotation);},
+        onLeads: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonLeads);
+        },
+        onFollowUp: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonFollowUp);
+        },
+        onMeeting: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonMeeting);
+        },
+        onQuotation: () {
+          Navigator.pushNamed(context, AppRoutes.salespersonQuotation);
+        },
       ),
     );
   }

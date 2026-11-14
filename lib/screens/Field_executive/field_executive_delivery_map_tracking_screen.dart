@@ -29,7 +29,8 @@ class DeliveryMapTrackingScreen extends StatefulWidget {
   });
 
   @override
-  State<DeliveryMapTrackingScreen> createState() => _DeliveryMapTrackingScreenState();
+  State<DeliveryMapTrackingScreen> createState() =>
+      _DeliveryMapTrackingScreenState();
 }
 
 class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
@@ -37,7 +38,9 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
   bool _isSendingOtp = false;
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _openGoogleMaps(String address) async {
@@ -52,10 +55,7 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
       'https://www.google.com/maps/dir/?api=1&destination=$encodedAddress',
     );
 
-    final launched = await launchUrl(
-      url,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!launched) {
       _showSnack('Unable to open Google Maps');
     }
@@ -76,10 +76,7 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
       return;
     }
 
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched) {
       _showSnack('Unable to open dialer');
     }
@@ -172,7 +169,10 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                         color: const Color(0xFFEAF5E7),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.location_on, color: _primaryGreen),
+                      child: const Icon(
+                        Icons.location_on,
+                        color: _primaryGreen,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -214,9 +214,8 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                         'assets/images/map_placeholder.jpg',
                         fit: BoxFit.cover,
                         width: double.infinity,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey.shade200,
-                        ),
+                        errorBuilder: (_, __, ___) =>
+                            Container(color: Colors.grey.shade200),
                       ),
                     ),
                   ),
@@ -275,14 +274,20 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                           const SizedBox(height: 2),
                           Text(
                             'Order No: ${widget.requestId}',
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             widget.customerPhone.trim().isEmpty
                                 ? 'Phone: -'
                                 : 'Phone: ${widget.customerPhone}',
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                         ],
                       ),
@@ -306,7 +311,10 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                       onPressed: () => _openGoogleMaps(widget.customerAddress),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
-                        side: const BorderSide(color: _primaryGreen, width: 1.4),
+                        side: const BorderSide(
+                          color: _primaryGreen,
+                          width: 1.4,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

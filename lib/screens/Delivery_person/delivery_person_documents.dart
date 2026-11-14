@@ -116,7 +116,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         backgroundColor: DocumentsScreen.darkGreen,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -155,22 +158,21 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
               const SizedBox(height: 10),
               _DocImageRow(
-                leftImageUrl: _imageUrl(
-                  aadhar,
-                  const [
-                    'aadhar_front_path',
-                    'aadhar_front',
-                    'document_file',
-                    'document_path',
-                    'document_url',
-                    'file',
-                    'file_path',
-                  ],
-                ),
-                rightImageUrl: _imageUrl(
-                  aadhar,
-                  const ['aadhar_back_path', 'aadhar_back', 'back_path', 'back_image'],
-                ),
+                leftImageUrl: _imageUrl(aadhar, const [
+                  'aadhar_front_path',
+                  'aadhar_front',
+                  'document_file',
+                  'document_path',
+                  'document_url',
+                  'file',
+                  'file_path',
+                ]),
+                rightImageUrl: _imageUrl(aadhar, const [
+                  'aadhar_back_path',
+                  'aadhar_back',
+                  'back_path',
+                  'back_image',
+                ]),
                 onEdit: () async {
                   await Navigator.push(
                     context,
@@ -186,29 +188,24 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
               const SizedBox(height: 20),
               const _Label('PAN no.'),
-              _InputBox(
-                value: _textValue(
-                  pan['pan_number'] ?? pan['pan_no'],
-                ),
-              ),
+              _InputBox(value: _textValue(pan['pan_number'] ?? pan['pan_no'])),
               const SizedBox(height: 10),
               _DocImageRow(
-                leftImageUrl: _imageUrl(
-                  pan,
-                  const [
-                    'pan_card_front_path',
-                    'pan_front',
-                    'document_file',
-                    'document_path',
-                    'document_url',
-                    'file',
-                    'file_path',
-                  ],
-                ),
-                rightImageUrl: _imageUrl(
-                  pan,
-                  const ['pan_card_back_path', 'pan_back', 'back_path', 'back_image'],
-                ),
+                leftImageUrl: _imageUrl(pan, const [
+                  'pan_card_front_path',
+                  'pan_front',
+                  'document_file',
+                  'document_path',
+                  'document_url',
+                  'file',
+                  'file_path',
+                ]),
+                rightImageUrl: _imageUrl(pan, const [
+                  'pan_card_back_path',
+                  'pan_back',
+                  'back_path',
+                  'back_image',
+                ]),
                 onEdit: () async {
                   await Navigator.push(
                     context,
@@ -231,31 +228,25 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
               const SizedBox(height: 10),
               _DocImageRow(
-                leftImageUrl: _imageUrl(
-                  vehicle,
-                  const [
-                    'driving_license_front_path',
-                    'licence_front_image',
-                    'licence_front_path',
-                    'license_front_path',
-                    'document_file',
-                    'document_path',
-                    'document_url',
-                    'file',
-                    'file_path',
-                  ],
-                ),
-                rightImageUrl: _imageUrl(
-                  vehicle,
-                  const [
-                    'driving_license_back_path',
-                    'licence_back_image',
-                    'licence_back_path',
-                    'license_back_path',
-                    'back_path',
-                    'back_image',
-                  ],
-                ),
+                leftImageUrl: _imageUrl(vehicle, const [
+                  'driving_license_front_path',
+                  'licence_front_image',
+                  'licence_front_path',
+                  'license_front_path',
+                  'document_file',
+                  'document_path',
+                  'document_url',
+                  'file',
+                  'file_path',
+                ]),
+                rightImageUrl: _imageUrl(vehicle, const [
+                  'driving_license_back_path',
+                  'licence_back_image',
+                  'licence_back_path',
+                  'license_back_path',
+                  'back_path',
+                  'back_image',
+                ]),
                 onEdit: () async {
                   await Navigator.push(
                     context,
@@ -276,27 +267,22 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
               const SizedBox(height: 12),
               const _Label('Type'),
-              _InputBox(
-                value: _pick(
-                  vehicle,
-                  const ['vehicle_type', 'brand'],
-                ),
-              ),
+              _InputBox(value: _pick(vehicle, const ['vehicle_type', 'brand'])),
               const SizedBox(height: 12),
               const _Label('Vehicle Number'),
               _InputBox(
-                value: _pick(
-                  vehicle,
-                  const ['vehicle_number', 'registration_number'],
-                ),
+                value: _pick(vehicle, const [
+                  'vehicle_number',
+                  'registration_number',
+                ]),
               ),
               const SizedBox(height: 12),
               const _Label('Driving License No.'),
               _InputBox(
-                value: _pick(
-                  vehicle,
-                  const ['driving_license_no', 'licence_no'],
-                ),
+                value: _pick(vehicle, const [
+                  'driving_license_no',
+                  'licence_no',
+                ]),
               ),
               const SizedBox(height: 12),
               const _Label('Fuel type'),
@@ -398,10 +384,7 @@ class _InputBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.black12),
       ),
-      child: Text(
-        value,
-        style: const TextStyle(fontWeight: FontWeight.w700),
-      ),
+      child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -437,7 +420,10 @@ class _DocImageRow extends StatelessWidget {
             children: const [
               Text(
                 'Edit',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               SizedBox(width: 4),
               Icon(Icons.edit, size: 14, color: Colors.red),
@@ -485,9 +471,8 @@ class _DocImageBox extends StatelessWidget {
           ? Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Center(
-                child: _DocFallback(label: _fileLabel(imageUrl)),
-              ),
+              errorBuilder: (_, __, ___) =>
+                  Center(child: _DocFallback(label: _fileLabel(imageUrl))),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return const Center(child: CircularProgressIndicator());
@@ -514,7 +499,11 @@ class _DocFallback extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.description_outlined, color: Colors.black54, size: 28),
+          const Icon(
+            Icons.description_outlined,
+            color: Colors.black54,
+            size: 28,
+          ),
           const SizedBox(height: 6),
           Text(
             label,

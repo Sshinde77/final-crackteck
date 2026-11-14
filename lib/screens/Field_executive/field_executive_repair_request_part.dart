@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 class RepairRequestScreen extends StatefulWidget {
   final int roleId;
   final String roleName;
-  const RepairRequestScreen({super.key, required this.roleId, required this.roleName});
+  const RepairRequestScreen({
+    super.key,
+    required this.roleId,
+    required this.roleName,
+  });
 
   @override
   State<RepairRequestScreen> createState() => _RepairRequestScreenState();
@@ -154,8 +158,13 @@ class _RepairRequestScreenState extends State<RepairRequestScreen> {
       barrierDismissible: true,
       builder: (_) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: _RepairDetailsPopup(
             item: item,
             onCall: () {
@@ -221,10 +230,7 @@ class _RepairCard extends StatelessWidget {
   final RepairRequestItem item;
   final VoidCallback onTap;
 
-  const _RepairCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _RepairCard({required this.item, required this.onTap});
 
   static const Color brandGreen = Color(0xFF1B6E1B);
 
@@ -253,7 +259,11 @@ class _RepairCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE6E7EA)),
               ),
-              child: const Icon(Icons.build_circle, size: 36, color: Color(0xFF555555)),
+              child: const Icon(
+                Icons.build_circle,
+                size: 36,
+                color: Color(0xFF555555),
+              ),
             ),
             const SizedBox(width: 12),
 
@@ -263,15 +273,28 @@ class _RepairCard extends StatelessWidget {
                 children: [
                   _rowLabelValue("Request ID", item.requestId, valueBold: true),
                   const SizedBox(height: 4),
-                  _rowLabelValue("Service ID", item.serviceId, valueColor: brandGreen, valueBold: true),
+                  _rowLabelValue(
+                    "Service ID",
+                    item.serviceId,
+                    valueColor: brandGreen,
+                    valueBold: true,
+                  ),
                   const SizedBox(height: 4),
-                  _rowLabelValue("Location", item.location, valueColor: brandGreen),
+                  _rowLabelValue(
+                    "Location",
+                    item.location,
+                    valueColor: brandGreen,
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       const Text(
                         "Status :",
-                        style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -288,11 +311,19 @@ class _RepairCard extends StatelessWidget {
                         children: [
                           const Text(
                             "Qty",
-                            style: TextStyle(fontSize: 12.5, color: brandGreen, fontWeight: FontWeight.w800),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: brandGreen,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           Text(
                             "${item.qty}",
-                            style: const TextStyle(fontSize: 16, color: brandGreen, fontWeight: FontWeight.w900),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: brandGreen,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ],
                       ),
@@ -300,7 +331,7 @@ class _RepairCard extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -308,16 +339,20 @@ class _RepairCard extends StatelessWidget {
   }
 
   Widget _rowLabelValue(
-      String label,
-      String value, {
-        bool valueBold = false,
-        Color? valueColor,
-      }) {
+    String label,
+    String value, {
+    bool valueBold = false,
+    Color? valueColor,
+  }) {
     return Row(
       children: [
         Text(
           "$label : ",
-          style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 12.5,
+            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w600,
+          ),
         ),
         Expanded(
           child: Text(
@@ -395,7 +430,10 @@ class _RepairDetailsPopup extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               "Attachments",
-              style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF374151)),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF374151),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -405,22 +443,27 @@ class _RepairDetailsPopup extends StatelessWidget {
                 .take(2)
                 .map(
                   (a) => Expanded(
-                child: Container(
-                  height: 70,
-                  margin: EdgeInsets.only(right: a == item.attachments.first ? 10 : 0),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      a,
-                      style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF4B5563)),
+                    child: Container(
+                      height: 70,
+                      margin: EdgeInsets.only(
+                        right: a == item.attachments.first ? 10 : 0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5E7EB),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          a,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF4B5563),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            )
+                )
                 .toList(),
           ),
 
@@ -434,11 +477,19 @@ class _RepairDetailsPopup extends StatelessWidget {
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: onCall,
                     icon: const Icon(Icons.call, color: Colors.white, size: 18),
-                    label: const Text("Call", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    label: const Text(
+                      "Call",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -449,11 +500,23 @@ class _RepairDetailsPopup extends StatelessWidget {
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: onChat,
-                    icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 18),
-                    label: const Text("Chat", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      "Chat",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -473,7 +536,10 @@ class _RepairDetailsPopup extends StatelessWidget {
             width: 110,
             child: Text(
               k,
-              style: const TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Expanded(
@@ -521,9 +587,29 @@ class _RepairTimeline extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
-            SizedBox(width: 70, child: Text("Created", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-            SizedBox(width: 70, child: Text("Assigned", textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-            SizedBox(width: 70, child: Text("Completed", textAlign: TextAlign.right, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
+            SizedBox(
+              width: 70,
+              child: Text(
+                "Created",
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
+            SizedBox(
+              width: 70,
+              child: Text(
+                "Assigned",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
+            SizedBox(
+              width: 70,
+              child: Text(
+                "Completed",
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
       ],
@@ -538,7 +624,9 @@ class _RepairTimeline extends StatelessWidget {
         color: active ? brandGreen : const Color(0xFFE5E7EB),
         shape: BoxShape.circle,
       ),
-      child: active ? const Icon(Icons.check, size: 16, color: Colors.white) : const SizedBox.shrink(),
+      child: active
+          ? const Icon(Icons.check, size: 16, color: Colors.white)
+          : const SizedBox.shrink(),
     );
   }
 
@@ -547,7 +635,8 @@ class _RepairTimeline extends StatelessWidget {
       builder: (context, constraints) {
         final dashWidth = 6.0;
         final dashSpace = 4.0;
-        final dashCount = (constraints.maxWidth / (dashWidth + dashSpace)).floor();
+        final dashCount = (constraints.maxWidth / (dashWidth + dashSpace))
+            .floor();
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

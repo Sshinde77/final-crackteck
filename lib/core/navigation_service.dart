@@ -13,7 +13,8 @@ class NavigationService {
   /// Global navigator key used by [MaterialApp].
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
-  static final NavigatorObserver navigatorObserver = _LoggingNavigatorObserver();
+  static final NavigatorObserver navigatorObserver =
+      _LoggingNavigatorObserver();
   static String? _currentRouteName;
   static bool _isNavigatingToAuthRoot = false;
 
@@ -75,7 +76,9 @@ class NavigationService {
     }
 
     if (!force) {
-      final token = await SecureStorageService.getAccessToken(forceReload: true);
+      final token = await SecureStorageService.getAccessToken(
+        forceReload: true,
+      );
       final hasToken = token != null && token.trim().isNotEmpty;
       if (hasToken) {
         debugPrint(
@@ -93,8 +96,13 @@ class NavigationService {
       'currentRoute=${_currentRouteName ?? 'unknown'}',
     );
 
+    // Signup is intentionally unauthenticated. Android permission dialogs,
+    // cameras, galleries, and document pickers pause and resume the app; that
+    // lifecycle transition must not clear an in-progress signup form.
+    if (_currentRouteName == AppRoutes.signUp) return;
     if (_currentRouteName == AppRoutes.login && resolvedRoleId != null) return;
-    if (_currentRouteName == AppRoutes.roleSelection && resolvedRoleId == null) {
+    if (_currentRouteName == AppRoutes.roleSelection &&
+        resolvedRoleId == null) {
       return;
     }
 
