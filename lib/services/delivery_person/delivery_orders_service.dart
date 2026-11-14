@@ -67,8 +67,9 @@ class DeliveryOrdersService extends DeliveryApiClient {
       final returnRequest = item['return_request'];
 
       Map<String, dynamic>? asMap(dynamic value) {
-        if (value is Map<String, dynamic>)
+        if (value is Map<String, dynamic>) {
           return Map<String, dynamic>.from(value);
+        }
         if (value is Map) return Map<String, dynamic>.from(value);
         return null;
       }

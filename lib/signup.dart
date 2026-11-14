@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:country_state_city_picker/model/select_status_model.dart'
     as csc_picker;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -274,7 +275,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<bool> _requestDocumentPermission() async {
-    if (!Platform.isAndroid) return true;
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
 
     var status = await Permission.photos.status;
     if (!status.isGranted && !status.isLimited) {

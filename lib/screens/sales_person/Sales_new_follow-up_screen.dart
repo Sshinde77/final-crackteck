@@ -822,8 +822,9 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
                   validator: (v) {
                     final value = (v ?? "").trim();
                     if (value.isEmpty) return "Select lead ID first";
-                    if (!value.contains("@") || !value.contains("."))
+                    if (!value.contains("@") || !value.contains(".")) {
                       return "Invalid email in lead data";
+                    }
                     return null;
                   },
                 ),

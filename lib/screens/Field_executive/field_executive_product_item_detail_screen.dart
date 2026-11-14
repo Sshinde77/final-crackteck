@@ -425,8 +425,9 @@ class _FieldExecutiveProductItemDetailScreenState
 
   String get _serviceIdForDisplay {
     if (_requestId.trim().isNotEmpty) return _requestId.trim();
-    if (widget.displayServiceId.trim().isNotEmpty)
+    if (widget.displayServiceId.trim().isNotEmpty) {
       return widget.displayServiceId.trim();
+    }
     return widget.serviceId;
   }
 
