@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,7 +20,7 @@ class DeliveryPersonalInfoScreen extends StatefulWidget {
 }
 
 class _DeliveryPersonalInfoScreenState extends State<DeliveryPersonalInfoScreen> {
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   @override
   void initState() {

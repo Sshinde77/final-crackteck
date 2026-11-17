@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -47,7 +48,7 @@ class _DeliveryOtpVerificationScreenState
   bool _isResending = false;
   bool _isLoadingDetail = false;
   bool _cashReceivedConfirmed = false;
-  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
   Map<String, dynamic>? _detail;
 
   @override
@@ -362,7 +363,7 @@ class _DeliveryOtpVerificationScreenState
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w800,
-          color: isEnabled ? const Color(0xFF17321A) : const Color(0xFF9AA1A6),
+          color: isEnabled ? AppColors.primary : const Color(0xFF9AA1A6),
         ),
         decoration: InputDecoration(
           counterText: '',
@@ -371,7 +372,7 @@ class _DeliveryOtpVerificationScreenState
           contentPadding: EdgeInsets.zero,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(color: Color(0xFFDCE8DE)),
+            borderSide: const BorderSide(color: AppColors.primarySurface),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
@@ -399,7 +400,7 @@ class _DeliveryOtpVerificationScreenState
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF177A14), Color(0xFF0F5E10)],
+          colors: [AppColors.primary, AppColors.primary],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
@@ -428,7 +429,7 @@ class _DeliveryOtpVerificationScreenState
                 Text(
                   'Secure delivery confirmation',
                   style: TextStyle(
-                    color: Color(0xFFD6F0D8),
+                    color: AppColors.primarySurface,
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
@@ -564,7 +565,7 @@ class _DeliveryOtpVerificationScreenState
             'Enter code',
             style: TextStyle(
               fontSize: 18,
-              color: Color(0xFF243027),
+              color: AppColors.primary,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -591,7 +592,7 @@ class _DeliveryOtpVerificationScreenState
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF79B36A), Color(0xFF4D9854)],
+                colors: [AppColors.primary, AppColors.primary],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: const [
@@ -656,9 +657,9 @@ class _DeliveryOtpVerificationScreenState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F8F7),
+              color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE7ECE7)),
+              border: Border.all(color: AppColors.primarySurface),
             ),
             child: Row(
               children: [
@@ -670,7 +671,7 @@ class _DeliveryOtpVerificationScreenState
                     _isResending ? 'Sending...' : 'Resend code',
                     style: TextStyle(
                       color: _secondsRemaining == 0
-                          ? const Color(0xFF17321A)
+                          ? AppColors.primary
                           : const Color(0xFF7A8580),
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -825,7 +826,7 @@ class _DeliveryOtpVerificationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F3),
+      backgroundColor: AppColors.primarySurface,
       body: Column(
         children: [
           _buildHeroHeader(),
@@ -839,7 +840,7 @@ class _DeliveryOtpVerificationScreenState
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAF5EA),
+                      color: AppColors.primarySurface,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
@@ -850,7 +851,7 @@ class _DeliveryOtpVerificationScreenState
                           style: TextStyle(
                             fontSize: 12,
                             height: 1.3,
-                            color: Color(0xFF68806A),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -861,7 +862,7 @@ class _DeliveryOtpVerificationScreenState
                               : '+91 **** ** ****',
                           style: const TextStyle(
                             fontSize: 18,
-                            color: Color(0xFF17321A),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -955,7 +956,7 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
               Container(
                 height: _trackHeight,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
@@ -969,8 +970,8 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      Color(0xFF66BB6A),
-                      Color(0xFF020F37),
+                      AppColors.primary,
+                      AppColors.primary,
                     ],
                   ),
                   borderRadius: BorderRadius.circular(30),
@@ -985,7 +986,7 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                       fontWeight: FontWeight.w700,
                       color: _dragFraction > 0.45
                           ? Colors.white
-                          : const Color(0xFF243027),
+                          : AppColors.primary,
                     ),
                     child: Text(
                       _isCompleted ? 'Cash Received ✓' : 'Cash Received',
@@ -1025,14 +1026,14 @@ class _CashReceivedSliderState extends State<CashReceivedSlider> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.2,
-                              color: Color(0xFF020F37),
+                              color: AppColors.primary,
                             ),
                           )
                         : Icon(
                             _isCompleted
                                 ? Icons.check
                                 : Icons.arrow_forward_rounded,
-                            color: const Color(0xFF020F37),
+                            color: AppColors.primary,
                             size: 26,
                           ),
                   ),

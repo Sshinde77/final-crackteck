@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DeliveryNotificationScreen extends StatelessWidget {
@@ -11,8 +12,8 @@ class DeliveryNotificationScreen extends StatelessWidget {
 
   });
 
-  static const Color green = Color(0xFF020F37);
-  static const Color lightGreen = Color(0xFFE6FFE1);
+  static const Color green = AppColors.primary;
+  static const Color lightGreen = AppColors.primarySurface;
 
   @override
   Widget build(BuildContext context) {
@@ -109,8 +110,8 @@ class _NewOrderCard extends StatelessWidget {
 
   const _NewOrderCard({required this.onViewOrder});
 
-  static const Color green = Color(0xFF020F37);
-  static const Color lightGreen = Color(0xFFE6FFE1);
+  static const Color green = AppColors.primary;
+  static const Color lightGreen = AppColors.primarySurface;
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +248,7 @@ class _SimpleNotificationCard extends StatelessWidget {
     this.trailing,
   });
 
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ class FieldExecutiveUploadBeforeImagesScreen extends StatefulWidget {
 class _FieldExecutiveUploadBeforeImagesScreenState
     extends State<FieldExecutiveUploadBeforeImagesScreen> {
   final ImagePicker _picker = ImagePicker();
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
 
   bool _isPicking = false;
 

@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -52,7 +53,7 @@ class FieldExecutiveInstallationChecklistScreen extends StatefulWidget {
 
 class _FieldExecutiveInstallationChecklistScreenState
     extends State<FieldExecutiveInstallationChecklistScreen> {
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
   static const List<String> _notWorkingOptions = <String>[
     'Not Working',
     'Add to Pickup',
@@ -2232,9 +2233,9 @@ class _FieldExecutiveInstallationChecklistScreenState
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF020F37),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF020F37)),
+        border: Border.all(color: AppColors.primary),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2264,7 +2265,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF020F37)),
+                  border: Border.all(color: AppColors.primary),
                 ),
                 child: Row(
                   children: [
@@ -2323,7 +2324,7 @@ class _FieldExecutiveInstallationChecklistScreenState
               onPressed: () => _onAddMoreProductsPressed(diagnosisName),
               style: OutlinedButton.styleFrom(
                 foregroundColor: primaryGreen,
-                side: BorderSide(color: const Color(0xFF020F37)),
+                side: BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -2612,7 +2613,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                                   },
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: primaryGreen,
-                                    side: BorderSide(color: const Color(0xFF020F37)),
+                                    side: BorderSide(color: AppColors.primary),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -2637,14 +2638,14 @@ class _FieldExecutiveInstallationChecklistScreenState
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF020F37),
+                                    color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: const Color(0xFF020F37)),
+                                    border: Border.all(color: AppColors.primary),
                                   ),
                                   child: Text(
                                     'Part will be marked as used on submit',
                                     style: TextStyle(
-                                      color: const Color(0xFF020F37),
+                                      color: AppColors.primary,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2755,7 +2756,7 @@ class _FieldExecutiveInstallationChecklistScreenState
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: isWorking
-                                  ? const Color(0xFF020F37)
+                                  ? AppColors.primary
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(

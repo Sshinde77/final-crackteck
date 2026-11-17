@@ -1,3 +1,5 @@
+import '../../core/media/media_url.dart';
+
 class ReturnOrderDetailModel {
   const ReturnOrderDetailModel({
     required this.id,
@@ -374,12 +376,15 @@ class ReturnOrderProduct {
         details['mac_address'],
         details['macAddress'],
       ], fallback: ''),
-      imageUrl: _firstNonEmpty(<dynamic>[
-        details['main_product_image'],
-        orderItem['main_product_image'],
-        orderItem['product_image'],
-        orderItem['image'],
-      ], fallback: ''),
+      imageUrl: MediaUrl.fromMap(details, const [
+        'main_product_image',
+        'product_image',
+        'image',
+      ], fallback: MediaUrl.fromMap(orderItem, const [
+        'main_product_image',
+        'product_image',
+        'image',
+      ])),
       unitPrice: _firstNonEmpty(<dynamic>[
         orderItem['unit_price'],
         orderItem['line_total'],

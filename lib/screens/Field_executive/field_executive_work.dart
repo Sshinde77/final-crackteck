@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class WorksScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _WorksScreenState extends State<WorksScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF020F37),
+        backgroundColor: AppColors.primary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -61,7 +62,7 @@ class _WorksScreenState extends State<WorksScreen> {
 
       /// Calendar Floating Button
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF020F37),
+        backgroundColor: AppColors.primary,
         onPressed: () {
           ScaffoldMessenger.of(
             context,
@@ -120,7 +121,7 @@ class _WorksScreenState extends State<WorksScreen> {
           height: 42,
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF020F37) : Colors.white,
+            color: isSelected ? AppColors.primary : Colors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
@@ -152,7 +153,7 @@ class _WorksScreenState extends State<WorksScreen> {
           Text(
             item["title"],
             style: TextStyle(
-              color: const Color(0xFF020F37),
+              color: AppColors.primary,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -172,7 +173,7 @@ class _WorksScreenState extends State<WorksScreen> {
               height: 44,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF020F37),
+                  backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

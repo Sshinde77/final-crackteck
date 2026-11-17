@@ -1,4 +1,6 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../routes/app_routes.dart';
@@ -34,7 +36,7 @@ class DeliveryMapTrackingScreen extends StatefulWidget {
 }
 
 class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
-  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
   bool _isSendingOtp = false;
 
   void _showSnack(String message) {
@@ -166,7 +168,7 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF5E7),
+                        color: AppColors.primarySurface,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
@@ -210,12 +212,17 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                     onTap: () => _openGoogleMaps(widget.customerAddress),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(14),
-                      child: Image.asset(
-                        'assets/images/map_placeholder.jpg',
-                        fit: BoxFit.cover,
+                      child: Lottie.asset(
+                        'assets/images/sign_up.json',
+                        fit: BoxFit.contain,
+                        repeat: true,
+                        animate: true,
                         width: double.infinity,
-                        errorBuilder: (_, __, ___) =>
-                            Container(color: Colors.grey.shade200),
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey.shade200,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.map, size: 64),
+                        ),
                       ),
                     ),
                   ),
@@ -295,7 +302,7 @@ class _DeliveryMapTrackingScreenState extends State<DeliveryMapTrackingScreen> {
                     IconButton(
                       onPressed: _callCustomer,
                       style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFFEAF5E7),
+                        backgroundColor: AppColors.primarySurface,
                         padding: const EdgeInsets.all(12),
                       ),
                       icon: const Icon(Icons.call, color: _primaryGreen),

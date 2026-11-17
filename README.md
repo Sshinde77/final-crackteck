@@ -1,6 +1,6 @@
-# final_crackteck
+# SRB Computer
 
-Technofra crackteck project
+SRB Computer service management application
 
 ## Getting Started
 

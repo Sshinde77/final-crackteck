@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:final_crackteck/widgets/delivery_man_bottom_navigation.dart';
+import 'package:srb_computer_engineer/widgets/delivery_man_bottom_navigation.dart';
 
 import '../../widgets/placeholder.dart';
 import 'delivery_home_tab.dart';

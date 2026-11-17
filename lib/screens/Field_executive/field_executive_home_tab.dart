@@ -1,4 +1,6 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import '../../core/media/media_url.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
@@ -60,7 +62,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF020F37);
+    const green = AppColors.primary;
 
     // Filtering logic for search and tabs
     final visibleJobs = _jobs.where((j) {
@@ -103,7 +105,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'crackteck',
+                          'SRB Computer',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: isSmall ? 20 : 24,
@@ -235,7 +237,7 @@ class _FieldExecutiveHomeTabState extends State<FieldExecutiveHomeTab> {
                         child: _StatCard(
                           title: 'Delivery',
                           icon: Icons.local_shipping,
-                          iconColor: const Color(0xFF020F37),
+                          iconColor: AppColors.primary,
                           isSmall: isSmall,
                         ),
                       ),
@@ -583,7 +585,7 @@ class _JobCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: isSmall ? 10 : 12,
                             fontWeight: FontWeight.bold,
-                            color: job.priority == 'High' ? const Color(0xFFEE2D2A) : const Color(0xFF020F37),
+                            color: job.priority == 'High' ? const Color(0xFFEE2D2A) : AppColors.primary,
                           ),
                         ),
                       ],
@@ -624,7 +626,7 @@ class _JobCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isSmall ? 10 : 12,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF020F37),
+                        color: AppColors.primary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -648,7 +650,7 @@ class _JobCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isSmall ? 10 : 12,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF020F37),
+                        color: AppColors.primary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -767,12 +769,53 @@ class JobItem {
 
     final tab = _tabFromServiceType(readStr(const ['service_type']));
 
-    final imageUrl = readStr(const [
+    Map<String, dynamic>? firstProductMap(dynamic value) {
+      if (value is Map) {
+        return Map<String, dynamic>.from(value);
+      }
+      if (value is List) {
+        for (final item in value) {
+          if (item is Map) {
+            return Map<String, dynamic>.from(item);
+          }
+        }
+      }
+      return null;
+    }
+
+    final product = firstProductMap(json['products']) ??
+        firstProductMap(json['product']);
+    final amcPlan = firstProductMap(json['amc_plan']) ??
+        firstProductMap(json['amcPlan']);
+    final coveredItem = firstProductMap(
+      amcPlan?['covered_items_details'] ?? amcPlan?['coveredItemsDetails'],
+    );
+    final productImageUrl = MediaUrl.fromMap(product, const [
+      'service_image_url',
+      'images_url',
+      'images',
       'image_url',
       'image',
-      'service_image',
+    ]);
+    final coveredItemImageUrl = MediaUrl.fromMap(coveredItem, const [
+      'service_image_url',
+      'image_url',
+      'image',
+    ]);
+    final serviceImageUrl = MediaUrl.fromMap(json, const [
+      'service_image_url',
+      'images_url',
+      'images',
+      'main_product_image',
       'product_image',
-    ], fallback: '');
+      'image',
+      'service_image',
+    ]);
+    final imageUrl = productImageUrl.isNotEmpty
+        ? productImageUrl
+        : coveredItemImageUrl.isNotEmpty
+        ? coveredItemImageUrl
+        : serviceImageUrl;
 
     return JobItem(
       id: id,

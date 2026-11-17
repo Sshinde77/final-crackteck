@@ -1,6 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../model/Delivery_person/return_order_detail_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -35,7 +37,7 @@ class DeliveryProductDetailScreen extends StatefulWidget {
     required this.customerAddress,
   });
 
-  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
 
   @override
   State<DeliveryProductDetailScreen> createState() =>
@@ -361,18 +363,16 @@ class _DeliveryProductDetailScreenState
   ]);
 
   String get _displayImageUrl {
-    final raw = _firstNonEmpty(<dynamic>[
-      _typedReturnOrderDetail?.product.imageUrl,
-      _mapFrom(_product['product_details'])['main_product_image'],
-      _product['main_product_image'],
-      _product['product_image'],
-      _product['image'],
-    ], fallback: '');
-
-    if (raw.isEmpty) return '';
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('/')) return '${ApiConstants.siteBaseUrl}$raw';
-    return '${ApiConstants.siteBaseUrl}/$raw';
+    final productDetails = _mapFrom(_product['product_details']);
+    return MediaUrl.fromMap(productDetails, const [
+      'main_product_image',
+      'product_image',
+      'image',
+    ], fallback: MediaUrl.fromMap(_product, const [
+      'main_product_image',
+      'product_image',
+      'image',
+    ], fallback: MediaUrl.resolve(_typedReturnOrderDetail?.product.imageUrl)));
   }
 
   String get _displayProductName => _firstNonEmpty(<dynamic>[

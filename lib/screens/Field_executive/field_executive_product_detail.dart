@@ -1,7 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
-import '../../constants/api_constants.dart';
 import '../../constants/app_strings.dart';
+import '../../core/media/media_url.dart';
 import '../../services/api_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color primaryGreen = AppColors.primary;
 
   bool _isLoading = true;
   String? _error;
@@ -79,52 +80,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return '';
   }
 
-  String _normalizeImageSource(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty || value.toLowerCase() == 'null') return '';
-
-    final parsed = Uri.tryParse(value);
-    if (parsed != null && parsed.hasScheme) {
-      final scheme = parsed.scheme.toLowerCase();
-      if (scheme == 'http' || scheme == 'https') return parsed.toString();
-      return '';
-    }
-
-    final base = Uri.parse(ApiConstants.baseUrl);
-    final origin = Uri(
-      scheme: base.scheme,
-      host: base.host,
-      port: base.hasPort ? base.port : null,
-    );
-
-    final relative = value.startsWith('//')
-        ? Uri.parse('https:$value')
-        : value.startsWith('/')
-        ? Uri.parse(value)
-        : Uri.parse('/$value');
-
-    return origin.resolveUri(relative).toString();
-  }
-
   String _readImage(Map<String, dynamic>? source) {
     if (source == null) return '';
-    for (final key in const [
-      'main_product_image',
-      'product_image',
-      'image_url',
-      'image',
-      'thumbnail',
-      'thumb',
-      'path',
-      'url',
-    ]) {
-      final value = source[key];
-      if (value is String) {
-        final normalized = _normalizeImageSource(value);
-        if (normalized.isNotEmpty) return normalized;
-      }
-    }
-    return '';
+    return MediaUrl.resolve(source);
   }
 
   String _formatPrice(String rawPrice) {
@@ -369,7 +327,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF163B18),
+                  color: AppColors.primary,
                 ),
               ),
               const Spacer(),
@@ -379,14 +337,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF8EC),
+                  color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
                   'Qty: ${data.totalRequestedQuantity}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF020F37),
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

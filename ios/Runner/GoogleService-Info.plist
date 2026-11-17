@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyBDWclrJupCeMQer7PUhEnulZnuZr58J0E</string>
+	<string>AIzaSyDNPAsLv5LJuj5iW061X8lA9NmTe-F8SFQ</string>
 	<key>GCM_SENDER_ID</key>
-	<string>837568282860</string>
+	<string>250076898154</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.crackteck.field</string>
+	<string>com.srbcomputer.engineer</string>
 	<key>PROJECT_ID</key>
-	<string>crackteck-final</string>
+	<string>srb-computers-1be29</string>
 	<key>STORAGE_BUCKET</key>
-	<string>crackteck-final.firebasestorage.app</string>
+	<string>srb-computers-1be29.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:837568282860:ios:83425a6039388b04b8a5c9</string>
+	<string>1:250076898154:ios:16b4d2bd2840bc8af0bb13</string>
 </dict>
 </plist>

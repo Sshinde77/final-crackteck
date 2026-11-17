@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
@@ -17,8 +18,8 @@ class SalesOverviewScreen extends StatefulWidget {
 }
 
 class _SalesOverviewScreenState extends State<SalesOverviewScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   // ✅ required for bottom switcher
   bool _moreOpen = false;
@@ -181,7 +182,7 @@ class _MetricCard extends StatelessWidget {
 
   const _MetricCard({required this.metric, required this.onTap});
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

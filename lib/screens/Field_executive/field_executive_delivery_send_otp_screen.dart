@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
@@ -28,7 +29,7 @@ class FieldExecutiveDeliverySendOtpScreen extends StatefulWidget {
 
 class _FieldExecutiveDeliverySendOtpScreenState
     extends State<FieldExecutiveDeliverySendOtpScreen> {
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
 
   bool _isSending = false;
   String? _error;
@@ -122,7 +123,7 @@ class _FieldExecutiveDeliverySendOtpScreenState
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF5E7),
+                  color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:final_crackteck/model/sales_person/lead_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/lead_model.dart';
 
 class MeetingModel {
   final int id;

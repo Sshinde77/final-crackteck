@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +23,7 @@ class ProductToBeDeliveredScreen extends StatefulWidget {
 }
 
 class _ProductToBeDeliveredScreenState extends State<ProductToBeDeliveredScreen> {
-  static const Color _green = Color(0xFF020F37);
+  static const Color _green = AppColors.primary;
 
   int _unreadNoti = 1;
 

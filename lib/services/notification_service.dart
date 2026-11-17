@@ -20,8 +20,8 @@ const bool _notificationsDisabledForBuild = bool.fromEnvironment(
 
 const AndroidNotificationChannel _defaultNotificationChannel =
     AndroidNotificationChannel(
-      'crackteck_field_alerts',
-      'Crackteck Field Alerts',
+      'srb_computer_alerts',
+      'SRB Computer Alerts',
       description: 'Used for service and backend push notifications.',
       importance: Importance.max,
     );
@@ -123,10 +123,12 @@ class NotificationService {
   }
 
   Future<void> _configureForegroundPresentation() async {
+    // Foreground messages are rendered by flutter_local_notifications below.
+    // Disable Firebase's automatic iOS foreground banner to avoid duplicates.
     await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
+      alert: false,
+      badge: false,
+      sound: false,
     );
   }
 
@@ -183,7 +185,11 @@ class NotificationService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
       ),
       payload: jsonEncode(message.data),
     );
@@ -192,7 +198,7 @@ class NotificationService {
   Future<void> showLocalTestNotification() async {
     await _localNotifications.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      'Crackteck Test Notification',
+      'SRB Computer Test Notification',
       'Local notification is working on this device.',
       NotificationDetails(
         android: AndroidNotificationDetails(
@@ -211,7 +217,17 @@ class NotificationService {
 
   Future<String?> _logAndPersistCurrentToken() async {
     await _ensureFirebaseReady();
-    final String? token = await _getMessagingTokenWithRetry();
+    String? token;
+    try {
+      token = await _getMessagingTokenWithRetry();
+    } catch (error, stackTrace) {
+      // A token may not be available immediately, especially on iOS while
+      // APNs is still registering. Keep notification listeners alive and let
+      // onTokenRefresh/sync retry when the token becomes available.
+      debugPrint('FCM token is not ready yet: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return null;
+    }
     if (token == null || token.isEmpty) {
       debugPrint('FCM token is not available yet.');
       return null;
@@ -226,14 +242,28 @@ class NotificationService {
     final normalized = error.toString().toUpperCase();
     return normalized.contains('SERVICE_NOT_AVAILABLE') ||
         normalized.contains('UNAVAILABLE') ||
-        normalized.contains('TIMEOUT');
+        normalized.contains('TIMEOUT') ||
+        normalized.contains('APNS TOKEN') ||
+        normalized.contains('APNS_TOKEN');
   }
 
-  Future<String?> _getMessagingTokenWithRetry({int maxAttempts = 3}) async {
+  Future<String?> _getMessagingTokenWithRetry({int maxAttempts = 5}) async {
     Object? lastError;
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
+        if (Platform.isIOS) {
+          final String? apnsToken = await _messaging.getAPNSToken();
+          if (apnsToken == null || apnsToken.isEmpty) {
+            debugPrint('FCM APNs token is not ready; attempt=$attempt.');
+            if (attempt < maxAttempts) {
+              await Future<void>.delayed(Duration(milliseconds: 800 * attempt));
+              continue;
+            }
+            return null;
+          }
+        }
+
         final token = await _messaging.getToken();
         if (token != null && token.isNotEmpty) {
           return token;
@@ -249,7 +279,7 @@ class NotificationService {
       }
 
       if (attempt < maxAttempts) {
-        final retryDelay = Duration(milliseconds: 600 * attempt);
+        final retryDelay = Duration(milliseconds: 800 * attempt);
         debugPrint(
           'Retrying FirebaseMessaging.getToken in ${retryDelay.inMilliseconds}ms.',
         );

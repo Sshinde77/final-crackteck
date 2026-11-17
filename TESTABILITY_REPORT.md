@@ -1,4 +1,4 @@
-# TESTABILITY REPORT — `final_crackteck` (Flutter)
+# TESTABILITY REPORT — SRB Computer (Flutter)
 
 This report is derived from the repo’s current implementation (Provider/ChangeNotifier state, static/singleton services, route generator wiring, token/session logic, and API client behavior including HTML-as-unauthorized detection).
 

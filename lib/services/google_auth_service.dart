@@ -12,17 +12,21 @@ class GoogleAuthException implements Exception {
 
 class GoogleAuthService {
   GoogleAuthService({GoogleSignIn? googleSignIn})
-    : _googleSignIn =
-          googleSignIn ??
-          GoogleSignIn(scopes: const <String>['email', 'profile']);
+    : _googleSignIn = googleSignIn;
 
-  final GoogleSignIn _googleSignIn;
+  // Keep construction lazy. google_sign_in_web validates the OAuth client ID
+  // in its constructor, so creating this service while the login screen is
+  // being built can crash the whole screen when web configuration is absent.
+  GoogleSignIn? _googleSignIn;
+
+  GoogleSignIn get _client =>
+      _googleSignIn ??= GoogleSignIn(scopes: const <String>['email', 'profile']);
 
   Future<GoogleAuthResult> signIn() async {
     try {
-      await _googleSignIn.signOut();
+      await _client.signOut();
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _client.signIn();
       if (googleUser == null) {
         throw const GoogleAuthException('Google sign-in was cancelled.');
       }
@@ -56,10 +60,13 @@ class GoogleAuthService {
   }
 
   Future<void> signOut() async {
+    final googleSignIn = _googleSignIn;
+    if (googleSignIn == null) return;
+
     try {
-      await _googleSignIn.disconnect();
+      await googleSignIn.disconnect();
     } catch (_) {
-      await _googleSignIn.signOut();
+      await googleSignIn.signOut();
     }
   }
 }

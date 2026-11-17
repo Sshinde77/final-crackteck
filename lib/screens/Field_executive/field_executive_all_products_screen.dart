@@ -1,7 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -22,7 +23,7 @@ class FieldExecutiveAllProductsScreen extends StatefulWidget {
     this.serviceRequestId = '',
   });
 
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
 
   @override
   State<FieldExecutiveAllProductsScreen> createState() =>
@@ -155,49 +156,8 @@ class _FieldExecutiveAllProductsScreenState
         .join(' ');
   }
 
-  bool _looksLikeHtml(String raw) {
-    final value = raw.trimLeft().toLowerCase();
-    return value.startsWith('<!doctype html') || value.startsWith('<html');
-  }
-
   String _normalizeImageSource(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty || value.toLowerCase() == 'null') {
-      return '';
-    }
-    if (_looksLikeHtml(value)) {
-      return '';
-    }
-    if (value.startsWith('data:image/')) {
-      return value;
-    }
-    if (value.contains('<') && value.contains('>')) {
-      return '';
-    }
-
-    final parsed = Uri.tryParse(value);
-    if (parsed != null && parsed.hasScheme) {
-      final scheme = parsed.scheme.toLowerCase();
-      if (scheme == 'http' || scheme == 'https') {
-        return parsed.toString();
-      }
-      return '';
-    }
-
-    final base = Uri.parse(ApiConstants.baseUrl);
-    final origin = Uri(
-      scheme: base.scheme,
-      host: base.host,
-      port: base.hasPort ? base.port : null,
-    );
-
-    final relative = value.startsWith('//')
-        ? Uri.parse('https:$value')
-        : value.startsWith('/')
-        ? Uri.parse(value)
-        : Uri.parse('/$value');
-
-    return origin.resolveUri(relative).toString();
+    return MediaUrl.resolve(raw);
   }
 
   String _readImageFromDynamic(dynamic value) {
@@ -242,6 +202,8 @@ class _FieldExecutiveAllProductsScreenState
     }
 
     if (value is Map) {
+      final resolvedMap = MediaUrl.resolve(value);
+      if (resolvedMap.isNotEmpty) return resolvedMap;
       for (final key in const [
         'url',
         'path',
@@ -262,6 +224,15 @@ class _FieldExecutiveAllProductsScreenState
   }
 
   String _extractImageUrl(Map<String, dynamic> product) {
+    final companionUrl = MediaUrl.fromMap(product, const [
+      'main_product_image',
+      'product_image',
+      'image',
+      'images',
+      'thumbnail',
+      'photo',
+    ]);
+    if (companionUrl.isNotEmpty) return companionUrl;
     for (final key in const [
       'images',
       'image',
@@ -797,18 +768,18 @@ class _FieldExecutiveAllProductsScreenState
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: isCompleted ? const Color(0xFF020F37) : const Color(0xFFEE2D2A),
+                            color: isCompleted ? AppColors.primary : const Color(0xFFEE2D2A),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isCompleted ? const Color(0xFF020F37) : const Color(0xFFEE2D2A),
+                              color: isCompleted ? AppColors.primary : const Color(0xFFEE2D2A),
                             ),
                           ),
                           child: Text(
                             isCompleted ? 'Completed' : 'Incomplete',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isCompleted ? const Color(0xFF020F37) : const Color(0xFFEE2D2A),
+                              color: Colors.white,
                             ),
                           ),
                         ),

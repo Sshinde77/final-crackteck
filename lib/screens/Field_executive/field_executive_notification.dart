@@ -1,9 +1,10 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class EnigneerNotificationScreen extends StatelessWidget {
   const EnigneerNotificationScreen({super.key});
 
-  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color primaryGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +105,7 @@ class NotificationCard extends StatelessWidget {
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: title == 'New Call'
-                              ? const Color(0xFF020F37)
+                              ? AppColors.primary
                               : Colors.black,
                         ),
                       ),

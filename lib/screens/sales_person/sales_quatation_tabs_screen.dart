@@ -1,8 +1,9 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:final_crackteck/model/sales_person/quotation_model.dart';
-import 'package:final_crackteck/model/sales_person/quotations_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/quotation_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/quotations_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 
@@ -23,8 +24,8 @@ class SalesPersonQuotationScreen extends StatefulWidget {
 
 class _SalesPersonQuotationScreenState
     extends State<SalesPersonQuotationScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   bool _moreOpen = false;
   final int _navIndex = 0;
@@ -533,7 +534,7 @@ class _SalesPersonQuotationScreenState
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDFFFD7),
+                                  color: AppColors.primarySurface,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 alignment: Alignment.center,
@@ -830,7 +831,7 @@ class _SalesPersonQuotationScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFE9FFE6),
+        color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -1192,7 +1193,7 @@ class _QuotationCard extends StatelessWidget {
     required this.onStatusTap,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -1218,7 +1219,7 @@ class _QuotationCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _SmallButton(
-                  bg: const Color(0xFFE9FFE6),
+                  bg: AppColors.primarySurface,
                   fg: darkGreen,
                   label: "View",
                   icon: Icons.remove_red_eye_outlined,

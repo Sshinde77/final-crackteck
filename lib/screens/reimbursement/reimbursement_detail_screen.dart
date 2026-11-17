@@ -1,8 +1,9 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../model/reimbursement_model.dart';
 import '../../services/api_service.dart';
 
@@ -84,29 +85,8 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
     if (raw.isEmpty) {
       return null;
     }
-
-    final encodedRaw = Uri.encodeFull(raw);
-    final parsed = Uri.tryParse(encodedRaw);
-    if (parsed != null && parsed.hasScheme) {
-      return parsed;
-    }
-
-    final baseUri = Uri.parse(ApiConstants.baseUrl);
-    final origin = '${baseUri.scheme}://${baseUri.authority}';
-
-    if (raw.startsWith('/')) {
-      return Uri.tryParse(Uri.encodeFull('$origin$raw'));
-    }
-
-    final apiBasePath = baseUri.path.endsWith('/')
-        ? baseUri.path.substring(0, baseUri.path.length - 1)
-        : baseUri.path;
-
-    if (raw.startsWith('receipts/')) {
-      return Uri.tryParse(Uri.encodeFull('$origin$apiBasePath/$raw'));
-    }
-
-    return Uri.tryParse(Uri.encodeFull('$origin/$raw'));
+    final resolved = MediaUrl.resolve(raw);
+    return resolved.isEmpty ? null : Uri.tryParse(resolved);
   }
 
   Future<void> _downloadReceipt() async {
@@ -152,7 +132,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF020F37)),
+                child: CircularProgressIndicator(color: AppColors.primary),
               )
             : _errorMessage != null && _detail == null
                 ? _DetailErrorState(
@@ -160,7 +140,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                     onRetry: _fetchDetail,
                   )
                 : RefreshIndicator(
-                    color: const Color(0xFF020F37),
+                    color: AppColors.primary,
                     onRefresh: _fetchDetail,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -282,7 +262,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                                 child: ElevatedButton.icon(
                                   onPressed: _downloadReceipt,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF020F37),
+                                    backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
@@ -409,7 +389,7 @@ class _ReceiptPreview extends StatelessWidget {
               color: const Color(0xFFF9FAFB),
               alignment: Alignment.center,
               child: const CircularProgressIndicator(
-                color: Color(0xFF020F37),
+                color: AppColors.primary,
               ),
             );
           },
@@ -489,7 +469,7 @@ class _DetailErrorState extends StatelessWidget {
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF020F37),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -546,8 +526,8 @@ class _DetailStatusStyle {
         );
       case ReimbursementStatus.approved:
         return const _DetailStatusStyle(
-          backgroundColor: Color(0xFFEAF8EC),
-          textColor: Color(0xFF2E7D32),
+          backgroundColor: AppColors.primarySurface,
+          textColor: AppColors.primary,
         );
       case ReimbursementStatus.rejected:
         return const _DetailStatusStyle(

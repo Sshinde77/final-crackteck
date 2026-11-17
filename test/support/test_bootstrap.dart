@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:final_crackteck/core/navigation_service.dart';
-import 'package:final_crackteck/core/secure_storage_service.dart';
+import 'package:srb_computer_engineer/core/navigation_service.dart';
+import 'package:srb_computer_engineer/core/secure_storage_service.dart';
 
 import 'secure_storage_mock.dart';
 

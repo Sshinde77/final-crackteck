@@ -1,10 +1,11 @@
+import '../../constants/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:final_crackteck/core/secure_storage_service.dart';
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/services/delivery_person/delivery_documents_service.dart';
+import 'package:srb_computer_engineer/core/secure_storage_service.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/services/delivery_person/delivery_documents_service.dart';
 
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
@@ -20,7 +21,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   final ImagePicker _picker = ImagePicker();
   final DeliveryDocumentsService _service = DeliveryDocumentsService();
 
-  static const Color green = Color(0xFF2E7D32);
+  static const Color green = AppColors.primary;
 
   XFile? _frontFile;
   XFile? _backFile;

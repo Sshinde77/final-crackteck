@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +25,7 @@ class DeliveryOtpVerificationScreen extends StatefulWidget {
 class _DeliveryOtpVerificationScreenState
     extends State<DeliveryOtpVerificationScreen> {
   final TextEditingController _otpController = TextEditingController();
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   @override
   void initState() {

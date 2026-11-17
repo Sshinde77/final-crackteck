@@ -1,11 +1,11 @@
 {
-    "name": "final_crackteck",
-    "short_name": "final_crackteck",
+    "name": "SRB Computer",
+    "short_name": "SRB Computer",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Technofra crackteck project",
+    "description": "SRB Computer service management application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

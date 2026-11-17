@@ -14,7 +14,7 @@
         android:required="false" />
 
     <application
-        android:label="Crackteck Field"
+        android:label="SRB Computer"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data

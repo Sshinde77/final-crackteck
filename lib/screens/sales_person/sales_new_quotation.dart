@@ -1,6 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/secure_storage_service.dart';
@@ -24,8 +26,8 @@ class NewQuotationScreen extends StatefulWidget {
 }
 
 class _NewQuotationScreenState extends State<NewQuotationScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -41,6 +43,8 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
   int? _selectedLeadId;
   int? _selectedAmcPlanId;
   File? _selectedProductImage;
+  Uint8List? _selectedProductImageBytes;
+  String? _selectedProductImageName;
 
   final List<LeadModel> _leadOptions = <LeadModel>[];
   final List<Map<String, dynamic>> _amcPlans = <Map<String, dynamic>>[];
@@ -253,13 +257,25 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
   }
 
   Future<void> _pickProductImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    final path = result?.files.single.path;
-    if (path == null || path.trim().isEmpty) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    final pickedFile = result?.files.single;
+    if (pickedFile == null) return;
 
     setState(() {
-      _selectedProductImage = File(path);
+      _selectedProductImageName = pickedFile.name;
+      _selectedProductImageBytes = pickedFile.bytes;
+      final path = pickedFile.path;
+      _selectedProductImage =
+          kIsWeb || path == null || path.trim().isEmpty ? null : File(path);
     });
+  }
+
+  String _fileNameFromPath(String path) {
+    // Works with both Windows and POSIX paths and is also safe on web.
+    return path.split(RegExp(r'[\\/]')).last;
   }
 
   Future<void> _submit() async {
@@ -362,6 +378,8 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
       final response = await ApiService.createQuotation(
         fields: fields,
         productImage: _selectedProductImage,
+        productImageBytes: _selectedProductImageBytes,
+        productImageName: _selectedProductImageName,
       );
 
       debugPrint(
@@ -795,11 +813,13 @@ class _NewQuotationScreenState extends State<NewQuotationScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            _selectedProductImage == null
+                            _selectedProductImage == null &&
+                                    _selectedProductImageBytes == null
                                 ? 'Select product image'
-                                : _selectedProductImage!.path
-                                      .split(Platform.pathSeparator)
-                                      .last,
+                                : _selectedProductImageName ??
+                                    _fileNameFromPath(
+                                      _selectedProductImage!.path,
+                                    ),
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),

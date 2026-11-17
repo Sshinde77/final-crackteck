@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -18,8 +19,8 @@ class TaskScreen extends StatefulWidget {
 }
 
 class _TaskScreenState extends State<TaskScreen> {
-  static const Color darkGreen = Color(0xFF020F37);
-  static const Color midGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
+  static const Color midGreen = AppColors.primary;
 
   bool _moreOpen = false;
   final int _navIndex = 0;
@@ -622,7 +623,7 @@ class _MonthDropdown extends StatelessWidget {
     required this.onChangedMonthIndex,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +704,7 @@ class _WeekStrip extends StatelessWidget {
     required this.onTapDay,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   String _dayLetter(DateTime d) {
     const map = {1: 'M', 2: 'T', 3: 'W', 4: 'T', 5: 'F', 6: 'S', 7: 'S'};
@@ -727,7 +728,7 @@ class _WeekStrip extends StatelessWidget {
                 margin: EdgeInsets.only(right: i == dates.length - 1 ? 0 : 10),
                 decoration: BoxDecoration(
                   color: _sameDay(dates[i], selectedDate)
-                      ? const Color(0xFFF3FAF2)
+                      ? AppColors.primarySurface
                       : Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
@@ -880,7 +881,7 @@ class _TaskCard extends StatelessWidget {
     required this.onView,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

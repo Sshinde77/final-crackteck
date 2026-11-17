@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -21,7 +22,7 @@ class DeliveryOtpScreen extends StatefulWidget {
 }
 
 class _DeliveryOtpScreenState extends State<DeliveryOtpScreen> {
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   Future<void> _sendOtp() async {
     final provider = context.read<DeliveryOrderActionProvider>();

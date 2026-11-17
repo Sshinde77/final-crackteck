@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -21,7 +22,7 @@ class DeliveryKycScreen extends StatefulWidget {
 }
 
 class _DeliveryKycScreenState extends State<DeliveryKycScreen> {
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();

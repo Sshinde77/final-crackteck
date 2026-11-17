@@ -1,7 +1,7 @@
 # API Integration Changes Summary
 
 ## Project Overview
-**CrackTeck** - A Flutter mobile application with role-based dashboards for Admin, Resident, and Salesperson roles.
+**SRB Computer** - A Flutter mobile application with role-based dashboards for Admin, Resident, and Salesperson roles.
 
 ## Changes Made
 

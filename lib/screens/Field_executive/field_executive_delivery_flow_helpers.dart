@@ -1,3 +1,5 @@
+import '../../core/media/media_url.dart';
+
 class FieldExecutiveDeliveryTypes {
   FieldExecutiveDeliveryTypes._();
 
@@ -186,15 +188,17 @@ class FieldExecutiveDeliveryRequest {
       'title',
     ]);
 
-    final imageUrl = _readString(
-      product,
-      const ['product_image', 'image_url', 'image', 'thumbnail'],
-      fallback: _readString(json, const [
-        'image_url',
-        'image',
-        'service_image',
-      ], fallback: ''),
-    );
+    final imageUrl = MediaUrl.fromMap(product, const [
+      'main_product_image',
+      'product_image',
+      'image',
+      'thumbnail',
+    ], fallback: MediaUrl.fromMap(json, const [
+      'main_product_image',
+      'product_image',
+      'image',
+      'service_image',
+    ]));
 
     return FieldExecutiveDeliveryRequest(
       raw: Map<String, dynamic>.from(json),

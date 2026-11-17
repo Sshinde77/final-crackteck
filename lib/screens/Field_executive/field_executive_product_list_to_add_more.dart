@@ -1,5 +1,7 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/media/media_url.dart';
 import '../../model/field executive/requested_product.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -20,7 +22,7 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
   final RequestedProductsStore _store = RequestedProductsStore.instance;
 
   @override
@@ -216,13 +218,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Widget _productImage(String imagePathOrUrl) {
-    final isNetwork =
-        imagePathOrUrl.startsWith('http://') ||
-        imagePathOrUrl.startsWith('https://');
+    final isAsset = imagePathOrUrl.startsWith('assets/');
+    final imageSource = isAsset ? imagePathOrUrl : MediaUrl.resolve(imagePathOrUrl);
 
-    if (isNetwork) {
+    if (imageSource.isEmpty) {
+      return const Icon(Icons.image_not_supported, color: Colors.grey);
+    }
+
+    if (!isAsset) {
       return Image.network(
-        imagePathOrUrl,
+        imageSource,
         fit: BoxFit.contain,
         errorBuilder: (_, __, ___) =>
             const Icon(Icons.image_not_supported, color: Colors.grey),
@@ -230,7 +235,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
 
     return Image.asset(
-      imagePathOrUrl,
+      imageSource,
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) =>
           const Icon(Icons.image_not_supported, color: Colors.grey),
@@ -273,7 +278,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   child: CircularProgressIndicator(
                     strokeWidth: 8,
                     valueColor: AlwaysStoppedAnimation<Color>(primaryGreen),
-                    backgroundColor: Color(0xFFE0E8E0),
+                    backgroundColor: AppColors.primarySurface,
                   ),
                 ),
                 SizedBox(height: 32),

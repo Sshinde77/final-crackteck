@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../routes/app_routes.dart';
@@ -25,7 +26,7 @@ class FieldExecutiveWriteReportScreen extends StatefulWidget {
 
 class _FieldExecutiveWriteReportScreenState
     extends State<FieldExecutiveWriteReportScreen> {
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
   final TextEditingController _reportController = TextEditingController();
 
   @override

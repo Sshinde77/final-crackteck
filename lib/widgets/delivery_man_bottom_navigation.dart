@@ -1,3 +1,4 @@
+import '../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DeliveryBottomNavigation extends StatelessWidget {
@@ -5,11 +6,15 @@ class DeliveryBottomNavigation extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.middleLabel = 'Chat',
+    this.middleIcon = Icons.chat_bubble,
   });
 
   /// 0 = Home, 1 = Chat, 2 = Profile
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final String middleLabel;
+  final IconData middleIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +43,8 @@ class DeliveryBottomNavigation extends StatelessWidget {
                 onTap: () => onTap(0),
               ),
               _NavItem(
-                label: 'Chat',
-                icon: Icons.chat_bubble,
+                label: middleLabel,
+                icon: middleIcon,
                 isActive: currentIndex == 1,
                 onTap: () => onTap(1),
               ),
@@ -70,7 +75,7 @@ class _NavItem extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  static const Color _green = Color(0xFF020F37);
+  static const Color _green = AppColors.primary;
   static const Color _inactive = Color(0xFF8E8E93);
 
   @override
@@ -82,7 +87,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: isActive
             ? BoxDecoration(
-                color: const Color(0xFFE7F6E5),
+                color: AppColors.primarySurface,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(color: _green, width: 1.5),
               )

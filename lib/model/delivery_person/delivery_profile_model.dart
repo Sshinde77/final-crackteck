@@ -1,3 +1,5 @@
+import '../../core/media/media_url.dart';
+
 class DeliveryProfileModel {
   const DeliveryProfileModel({
     required this.name,
@@ -33,10 +35,12 @@ class DeliveryProfileModel {
       rating: rawRating is num
           ? rawRating.toDouble()
           : double.tryParse(rawRating.toString()) ?? 0,
-      avatarUrl:
-          (json['profile_image'] ?? json['avatar'] ?? json['image'] ?? '')
-              .toString()
-              .trim(),
+      avatarUrl: MediaUrl.fromMap(json, const [
+        'profile_image',
+        'avatar',
+        'image',
+        'profile',
+      ]),
       raw: Map<String, dynamic>.from(json),
     );
   }

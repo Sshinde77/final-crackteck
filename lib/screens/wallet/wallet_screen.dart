@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -20,8 +21,8 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
-  static const Color _primaryGreen = Color(0xFF020F37);
-  static const Color _darkGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
+  static const Color _darkGreen = AppColors.primary;
 
   bool _isLoading = true;
   String? _error;
@@ -327,7 +328,7 @@ class _WalletScreenState extends State<WalletScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F3),
+      backgroundColor: AppColors.primarySurface,
       appBar: AppBar(
         elevation: 0,
         title: Text(widget.title),
@@ -427,7 +428,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFFE5E9DD)),
+                        border: Border.all(color: AppColors.primarySurface),
                       ),
                       child: Row(
                         children: <Widget>[
@@ -435,7 +436,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             height: 46,
                             width: 46,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE9F7E5),
+                              color: AppColors.primarySurface,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(
@@ -523,7 +524,7 @@ class _WalletErrorState extends StatelessWidget {
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF020F37),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('Retry'),
@@ -544,7 +545,7 @@ class _WalletEmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E9DD)),
+        border: Border.all(color: AppColors.primarySurface),
       ),
       child: const Column(
         children: <Widget>[
@@ -889,7 +890,7 @@ class _WalletDetailSheetState extends State<_WalletDetailSheet> {
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF7F8F6),
+                                color: AppColors.primarySurface,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Row(

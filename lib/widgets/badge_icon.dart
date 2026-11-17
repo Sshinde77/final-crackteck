@@ -1,4 +1,4 @@
-import 'package:final_crackteck/constants/app_colors.dart';
+import 'package:srb_computer_engineer/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class BadgeIcon extends StatelessWidget {

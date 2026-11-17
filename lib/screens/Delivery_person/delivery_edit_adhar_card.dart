@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,7 +14,7 @@ class AadhaarEditScreen extends StatefulWidget {
 }
 
 class _AadhaarEditScreenState extends State<AadhaarEditScreen> {
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
@@ -307,9 +308,9 @@ class _UploadBox extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(Icons.upload_outlined, color: Color(0xFF020F37)),
+                Icon(Icons.upload_outlined, color: AppColors.primary),
                 SizedBox(width: 12),
-                Icon(Icons.camera_alt_outlined, color: Color(0xFF020F37)),
+                Icon(Icons.camera_alt_outlined, color: AppColors.primary),
               ],
             ),
             const SizedBox(height: 8),
@@ -318,7 +319,7 @@ class _UploadBox extends StatelessWidget {
                   ? fileName!.split('/').last
                   : 'Click to upload or take a photo',
               style: const TextStyle(
-                color: Color(0xFF020F37),
+                color: AppColors.primary,
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,

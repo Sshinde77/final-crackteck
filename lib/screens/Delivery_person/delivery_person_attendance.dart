@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,7 @@ class DeliveryPersonAttendanceScreen extends StatefulWidget {
 
 class _DeliveryPersonAttendanceScreenState
     extends State<DeliveryPersonAttendanceScreen> {
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
   DateTime? _selectedDate;
 
   @override
@@ -282,7 +283,7 @@ class _AttendanceCard extends StatelessWidget {
 
   final _AttendanceRecord record;
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -448,7 +449,7 @@ class _CalendarFab extends StatelessWidget {
 
   final VoidCallback onTap;
 
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

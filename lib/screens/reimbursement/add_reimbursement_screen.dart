@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class AddReimbursementScreen extends StatefulWidget {
 }
 
 class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
-  static const Color _primaryColor = Color(0xFF020F37);
+  static const Color _primaryColor = AppColors.primary;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
@@ -281,7 +282,7 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF9FAFB),
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0xFFD7DCE4)),
+                            border: Border.all(color: AppColors.primarySurface),
                           ),
                           child: Column(
                             children: [
@@ -290,7 +291,7 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
                                   height: 56,
                                   width: 56,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE9F6E5),
+                                    color: AppColors.primarySurface,
                                     borderRadius: BorderRadius.circular(18),
                                   ),
                                   child: const Icon(
@@ -412,11 +413,11 @@ class _AddReimbursementScreenState extends State<AddReimbursementScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFD7DCE4)),
+        borderSide: const BorderSide(color: AppColors.primarySurface),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFD7DCE4)),
+        borderSide: const BorderSide(color: AppColors.primarySurface),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -483,10 +484,10 @@ class _PickerOptionTile extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFE9F6E5),
+                color: AppColors.primarySurface,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: const Color(0xFF020F37)),
+              child: Icon(icon, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -512,7 +513,7 @@ class _PickerOptionTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF020F37)),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
           ],
         ),
       ),

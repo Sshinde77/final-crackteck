@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -60,7 +61,7 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   final List<AttendanceRecord> _all = <AttendanceRecord>[];
   bool _isLoading = true;
@@ -311,7 +312,7 @@ class _AttendanceCard extends StatelessWidget {
 
   const _AttendanceCard({required this.record, required this.hhmmss});
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -431,7 +432,7 @@ class _CalendarFab extends StatelessWidget {
 
   const _CalendarFab({required this.onTap});
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

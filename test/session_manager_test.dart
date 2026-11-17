@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/services/session_manager.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/secure_storage_mock.dart';

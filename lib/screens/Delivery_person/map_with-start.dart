@@ -1,4 +1,6 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -23,8 +25,8 @@ class DeliverypickupparcelScreen extends StatefulWidget {
 }
 
 class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen> {
-  static const Color green = Color(0xFF020F37);
-  static const Color lightGreen = Color(0xFFEFF7EE);
+  static const Color green = AppColors.primary;
+  static const Color lightGreen = AppColors.primarySurface;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -97,17 +99,22 @@ class _DeliverypickupparcelScreenState extends State<DeliverypickupparcelScreen>
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: Image.asset(
-                    'assets/images/map_placeholder.jpg',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(Icons.map, size: 100, color: Colors.grey),
-                        ),
-                      );
-                    },
+                  child: Container(
+                    color: Colors.grey[100],
+                    alignment: Alignment.center,
+                    child: Lottie.asset(
+                      'assets/images/sign_up.json',
+                      fit: BoxFit.contain,
+                      repeat: true,
+                      animate: true,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.map,
+                          size: 100,
+                          color: Colors.grey,
+                        );
+                      },
+                    ),
                   ),
                 ),
                 Positioned(
@@ -298,7 +305,7 @@ class _InfoItem extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF020F37),
+            color: AppColors.primary,
           ),
         ),
       ],
@@ -309,7 +316,7 @@ class _InfoItem extends StatelessWidget {
 class _CircleAction extends StatelessWidget {
   const _CircleAction({required this.icon, required this.onTap});
 
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
   final IconData icon;
   final VoidCallback onTap;
 

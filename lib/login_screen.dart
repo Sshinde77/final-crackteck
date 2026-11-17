@@ -1,11 +1,11 @@
-import 'package:final_crackteck/core/secure_storage_service.dart';
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/services/api_service.dart';
-import 'package:final_crackteck/services/auth_service.dart';
-import 'package:final_crackteck/services/google_auth_service.dart';
-import 'package:final_crackteck/services/notification_service.dart';
-import 'package:final_crackteck/services/session_manager.dart';
-import 'package:final_crackteck/widgets/error_dialog.dart';
+import 'package:srb_computer_engineer/core/secure_storage_service.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/services/api_service.dart';
+import 'package:srb_computer_engineer/services/auth_service.dart';
+import 'package:srb_computer_engineer/services/google_auth_service.dart';
+import 'package:srb_computer_engineer/services/notification_service.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
+import 'package:srb_computer_engineer/widgets/error_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -115,6 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return normalized.contains('network error') ||
         normalized.contains('no internet') ||
         normalized.contains('request timeout') ||
+        normalized.contains('not responding') ||
         normalized.contains('ssl error') ||
         normalized.contains('request failed');
   }
@@ -166,7 +167,6 @@ class _LoginScreenState extends State<LoginScreen> {
           setState(() {
             _errorText = message;
           });
-          showErrorDialog(context: context, message: message);
         } else if (_isPhoneNotFoundMessage(message)) {
           await showPhoneNotFoundDialog(
             context: context,
@@ -555,7 +555,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: const Text(
                                   'Sign Up',
                                   style: TextStyle(
-                                    color: Color(0xFF020F37),
+                                    color: AppColors.primary,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -747,7 +747,7 @@ class EmailLoginTab extends StatelessWidget {
             child: const Text(
               'Forgot Password?',
               style: TextStyle(
-                color: Color(0xFF020F37),
+                color: AppColors.primary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -941,10 +941,10 @@ class PrimaryActionButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF020F37),
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          disabledBackgroundColor: const Color(0xFF020F37).withValues(alpha: 0.7),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.7),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),

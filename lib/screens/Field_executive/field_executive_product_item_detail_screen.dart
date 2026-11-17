@@ -1,9 +1,10 @@
+import '../../constants/app_colors.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 
-import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -35,7 +36,7 @@ class FieldExecutiveProductItemDetailScreen extends StatefulWidget {
     required this.controller,
   });
 
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
 
   @override
   State<FieldExecutiveProductItemDetailScreen> createState() =>
@@ -219,49 +220,8 @@ class _FieldExecutiveProductItemDetailScreenState
     return false;
   }
 
-  bool _looksLikeHtml(String raw) {
-    final value = raw.trimLeft().toLowerCase();
-    return value.startsWith('<!doctype html') || value.startsWith('<html');
-  }
-
   String _normalizeImageSource(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty || value.toLowerCase() == 'null') {
-      return '';
-    }
-    if (_looksLikeHtml(value)) {
-      return '';
-    }
-    if (value.startsWith('data:image/')) {
-      return value;
-    }
-    if (value.contains('<') && value.contains('>')) {
-      return '';
-    }
-
-    final parsed = Uri.tryParse(value);
-    if (parsed != null && parsed.hasScheme) {
-      final scheme = parsed.scheme.toLowerCase();
-      if (scheme == 'http' || scheme == 'https') {
-        return parsed.toString();
-      }
-      return '';
-    }
-
-    final base = Uri.parse(ApiConstants.baseUrl);
-    final origin = Uri(
-      scheme: base.scheme,
-      host: base.host,
-      port: base.hasPort ? base.port : null,
-    );
-
-    final relative = value.startsWith('//')
-        ? Uri.parse('https:$value')
-        : value.startsWith('/')
-        ? Uri.parse(value)
-        : Uri.parse('/$value');
-
-    return origin.resolveUri(relative).toString();
+    return MediaUrl.resolve(raw);
   }
 
   String _readImageFromDynamic(dynamic value) {
@@ -306,6 +266,8 @@ class _FieldExecutiveProductItemDetailScreenState
     }
 
     if (value is Map) {
+      final resolvedMap = MediaUrl.resolve(value);
+      if (resolvedMap.isNotEmpty) return resolvedMap;
       for (final key in const [
         'url',
         'path',
@@ -327,6 +289,15 @@ class _FieldExecutiveProductItemDetailScreenState
 
   String _extractImageUrl(Map<String, dynamic>? product) {
     if (product == null) return '';
+    final companionUrl = MediaUrl.fromMap(product, const [
+      'main_product_image',
+      'product_image',
+      'image',
+      'images',
+      'thumbnail',
+      'photo',
+    ]);
+    if (companionUrl.isNotEmpty) return companionUrl;
     for (final key in const [
       'images',
       'image',
@@ -660,7 +631,7 @@ class _FieldExecutiveProductItemDetailScreenState
                                 child: Text(
                                   widget.priority,
                                   style: const TextStyle(
-                                    color: Color(0xFFEE2D2A),
+                                    color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
                                   ),

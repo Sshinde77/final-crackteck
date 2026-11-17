@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 
@@ -7,7 +8,7 @@ class DeliveryDetailsScreen extends StatelessWidget {
 
   const DeliveryDetailsScreen({super.key, this.roleId, this.roleName});
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   /// ✅ SAFE navigation (no pop, no empty stack)
   void _goToDashboard(BuildContext context) {

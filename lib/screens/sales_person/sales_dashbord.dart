@@ -1,15 +1,16 @@
+import '../../constants/app_colors.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:final_crackteck/core/secure_storage_service.dart';
-import 'package:final_crackteck/model/sales_person/dashboard_provider.dart';
-import 'package:final_crackteck/model/sales_person/lead_model.dart';
-import 'package:final_crackteck/model/sales_person/task_model.dart';
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/services/api_service.dart';
-import 'package:final_crackteck/widgets/bottom_navigation.dart';
+import 'package:srb_computer_engineer/core/secure_storage_service.dart';
+import 'package:srb_computer_engineer/model/sales_person/dashboard_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/lead_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/task_model.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/services/api_service.dart';
+import 'package:srb_computer_engineer/widgets/bottom_navigation.dart';
 
 class SalespersonDashboard extends StatefulWidget {
   const SalespersonDashboard({super.key});
@@ -19,8 +20,8 @@ class SalespersonDashboard extends StatefulWidget {
 }
 
 class _SalespersonDashboardState extends State<SalespersonDashboard> {
-  static const darkGreen = Color(0xFF020F37);
-  static const midGreen = Color(0xFF020F37);
+  static const darkGreen = AppColors.primary;
+  static const midGreen = AppColors.primary;
 
   String _reportValue = "Today's Sales Report";
 
@@ -240,7 +241,7 @@ class _SalespersonDashboardState extends State<SalespersonDashboard> {
             Icon(Icons.bolt, color: Colors.white, size: 22),
             SizedBox(width: 6),
             Text(
-              'CRACKTECK',
+              'SRB COMPUTER',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
@@ -498,7 +499,7 @@ class _TodayTaskHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const darkGreen = Color(0xFF020F37);
+    const darkGreen = AppColors.primary;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -544,7 +545,7 @@ class _TodayTaskList extends StatelessWidget {
         height: 155,
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF020F37)),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
         ),
       );
@@ -597,8 +598,8 @@ class _TodayTaskList extends StatelessWidget {
 }
 
 class SalesOverviewSection extends StatelessWidget {
-  static const darkGreen = Color(0xFF020F37);
-  static const newLeadsColor = Color(0xFF020F37);
+  static const darkGreen = AppColors.primary;
+  static const newLeadsColor = AppColors.primary;
   static const inProgressLeadsColor = Color(0xFFF4B400);
   static const wonLeadsColor = Color(0xFF1A73E8);
   static const lostLeadsColor = Color(0xFFD93025);
@@ -990,7 +991,7 @@ class _TaskCard extends StatelessWidget {
   Color _getStatusColor() {
     switch (status.toLowerCase()) {
       case 'completed':
-        return const Color(0xFF020F37);
+        return AppColors.primary;
       case 'in_progress':
       case 'in progress':
         return Colors.orange;

@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:final_crackteck/core/network/api_http_client.dart';
-import 'package:final_crackteck/services/session_manager.dart';
+import 'package:srb_computer_engineer/core/network/api_http_client.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:integration_test/integration_test.dart';
 
-import 'package:final_crackteck/main.dart' as app;
+import 'package:srb_computer_engineer/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

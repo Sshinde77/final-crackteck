@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/secure_storage_service.dart';
@@ -29,7 +30,7 @@ class FieldExecutiveDeliveryRequestListBase extends StatefulWidget {
 
 class _FieldExecutiveDeliveryRequestListBaseState
     extends State<FieldExecutiveDeliveryRequestListBase> {
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
 
   bool _isLoading = true;
   String? _error;

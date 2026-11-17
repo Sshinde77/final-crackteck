@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:final_crackteck/model/sales_person/meeting_model.dart';
-import 'package:final_crackteck/services/api_service.dart';
+import 'package:srb_computer_engineer/model/sales_person/meeting_model.dart';
+import 'package:srb_computer_engineer/services/api_service.dart';
 
 class MeetingsProvider extends ChangeNotifier {
   List<MeetingModel> meetings = <MeetingModel>[];

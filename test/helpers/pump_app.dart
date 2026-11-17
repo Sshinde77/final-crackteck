@@ -1,5 +1,5 @@
-import 'package:final_crackteck/core/navigation_service.dart';
-import 'package:final_crackteck/routes/route_generator.dart';
+import 'package:srb_computer_engineer/core/navigation_service.dart';
+import 'package:srb_computer_engineer/routes/route_generator.dart';
 import 'package:flutter/material.dart';
 
 /// Shared widget-test harness that matches the app's navigation style.

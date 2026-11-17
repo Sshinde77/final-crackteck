@@ -1,11 +1,11 @@
 // import 'dart:async';
 // import 'package:flutter/material.dart';
-// import 'package:final_crackteck/constants/app_colors.dart';
-// import 'package:final_crackteck/constants/app_spacing.dart';
-// import 'package:final_crackteck/constants/api_constants.dart'; // :contentReference[oaicite:0]{index=0}
-// import 'package:final_crackteck/routes/app_routes.dart';
-// import 'package:final_crackteck/services/api_service.dart';
-// import 'package:final_crackteck/widgets/custom_button.dart';
+// import 'package:srb_computer_engineer/constants/app_colors.dart';
+// import 'package:srb_computer_engineer/constants/app_spacing.dart';
+// import 'package:srb_computer_engineer/constants/api_constants.dart'; // :contentReference[oaicite:0]{index=0}
+// import 'package:srb_computer_engineer/routes/app_routes.dart';
+// import 'package:srb_computer_engineer/services/api_service.dart';
+// import 'package:srb_computer_engineer/widgets/custom_button.dart';
 
 // class OtpVerificationScreen extends StatefulWidget {
 //   final OtpArguments args;
@@ -271,14 +271,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 
-import 'package:final_crackteck/constants/app_colors.dart';
-import 'package:final_crackteck/constants/app_spacing.dart';
-import 'package:final_crackteck/core/secure_storage_service.dart';
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/services/api_service.dart';
-import 'package:final_crackteck/services/notification_service.dart';
-import 'package:final_crackteck/services/session_manager.dart';
-import 'package:final_crackteck/widgets/custom_button.dart';
+import 'package:srb_computer_engineer/constants/app_colors.dart';
+import 'package:srb_computer_engineer/constants/app_spacing.dart';
+import 'package:srb_computer_engineer/core/secure_storage_service.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/services/api_service.dart';
+import 'package:srb_computer_engineer/services/notification_service.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
+import 'package:srb_computer_engineer/widgets/custom_button.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final OtpArguments args;

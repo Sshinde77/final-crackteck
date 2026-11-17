@@ -209,16 +209,25 @@ class ApiService {
     required String phoneNumber,
   }) async {
     try {
-      debugPrint('🔵 API Request: POST ${ApiConstants.login}');
-      debugPrint(
-        '🔵 Request Body: {"role_id": $roleId, "phone_number": "$phoneNumber"}',
+      // The web/Postman API contract sends these values as query parameters,
+      // not as a JSON request body. Keep the mobile request identical so the
+      // backend receives the same payload shape as the working web login.
+      final loginUri = Uri.parse(ApiConstants.login).replace(
+        queryParameters: <String, String>{
+          'phone_number': phoneNumber,
+          'role_id': roleId.toString(),
+        },
       );
-
+      debugPrint('🔵 API Request: POST $loginUri');
+      debugPrint('🔵 Request Query: role_id=$roleId, phone_number=$phoneNumber');
       final response = await _httpClient
           .post(
-            Uri.parse(ApiConstants.login),
+            loginUri,
             headers: _headers,
-            body: jsonEncode({'role_id': roleId, 'phone_number': phoneNumber}),
+            body: jsonEncode({
+              'role_id': roleId,
+              'phone_number': phoneNumber,
+            }),
           )
           .timeout(ApiConstants.requestTimeout);
 
@@ -278,7 +287,7 @@ class ApiService {
       debugPrint('🔴 Timeout: $e');
       return ApiResponse(
         success: false,
-        message: 'Request timeout. Please try again.',
+        message: 'Server is not responding. Please check your internet connection and try again.',
       );
     } catch (e) {
       debugPrint('🔴 Unexpected Error: $e');
@@ -293,14 +302,20 @@ class ApiService {
     required String otp,
   }) async {
     try {
-      debugPrint('🔵 API Request: POST ${ApiConstants.verifyOtp}');
-      debugPrint(
-        '🔵 Request Body: {"role_id": $roleId, "phone_number": "$phoneNumber", "otp": "$otp"}',
+      final verifyUri = Uri.parse(ApiConstants.verifyOtp).replace(
+        queryParameters: <String, String>{
+          'phone_number': phoneNumber,
+          'role_id': roleId.toString(),
+          'otp': otp,
+        },
       );
-
+      debugPrint('🔵 API Request: POST $verifyUri');
+      debugPrint(
+        '🔵 Request Query: role_id=$roleId, phone_number=$phoneNumber, otp=$otp',
+      );
       final response = await _httpClient
           .post(
-            Uri.parse(ApiConstants.verifyOtp),
+            verifyUri,
             headers: _headers,
             body: jsonEncode({
               'role_id': roleId,
@@ -2032,19 +2047,23 @@ class ApiService {
         throw Exception('Server returned non-JSON service requests response');
       }
 
-      List<dynamic> rawList = const [];
+      List<dynamic> extractServiceRequestList(dynamic value) {
+        if (value is List) return value;
+        if (value is! Map) return const <dynamic>[];
 
-      if (decoded is List) {
-        rawList = decoded;
-      } else if (decoded is Map<String, dynamic>) {
-        if (decoded['serviceRequests'] is List) {
-          rawList = decoded['serviceRequests'] as List;
-        } else if (decoded['service_requests'] is List) {
-          rawList = decoded['service_requests'] as List;
-        } else if (decoded['data'] is List) {
-          rawList = decoded['data'] as List;
+        for (final key in const [
+          'serviceRequests',
+          'service_requests',
+          'requests',
+          'data',
+        ]) {
+          final nested = extractServiceRequestList(value[key]);
+          if (nested.isNotEmpty) return nested;
         }
+        return const <dynamic>[];
       }
+
+      final rawList = extractServiceRequestList(decoded);
 
       return rawList
           .whereType<Map>()
@@ -6329,6 +6348,23 @@ class ApiService {
         return _normalizeQuotationsResponse(decoded);
       }
 
+      // The backend currently uses 404 for a valid empty quotation list.
+      // Normalize that response so the UI can show its empty state instead
+      // of logging an exception every time the quotation screen resumes.
+      if (response.statusCode == 404) {
+        try {
+          final decoded = jsonDecode(response.body);
+          final message = decoded is Map
+              ? decoded['message']?.toString().toLowerCase() ?? ''
+              : '';
+          if (message.contains('no quotation')) {
+            return {'data': const <dynamic>[]};
+          }
+        } catch (_) {
+          // Fall through to the normal HTTP error below for invalid JSON.
+        }
+      }
+
       throw Exception('Failed to load quotations: ${response.statusCode}');
     } on TimeoutException catch (e) {
       debugPrint('🔴 Timeout: $e');
@@ -6430,6 +6466,8 @@ class ApiService {
   static Future<ApiResponse<Map<String, dynamic>>> createQuotation({
     required Map<String, String> fields,
     File? productImage,
+    Uint8List? productImageBytes,
+    String? productImageName,
   }) async {
     final storedUserId = await SecureStorageService.getUserId();
     final accessToken = await SecureStorageService.getAccessToken();
@@ -6451,11 +6489,21 @@ class ApiService {
           ..fields.addAll({...fields, 'user_id': storedUserId.toString()});
 
     try {
-      if (productImage != null && productImage.path.trim().isNotEmpty) {
+      if (!kIsWeb &&
+          productImage != null &&
+          productImage.path.trim().isNotEmpty) {
         request.files.add(
           await http.MultipartFile.fromPath(
             'products[0][images]',
             productImage.path,
+          ),
+        );
+      } else if (productImageBytes != null && productImageBytes.isNotEmpty) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'products[0][images]',
+            productImageBytes,
+            filename: productImageName ?? 'product_image',
           ),
         );
       }

@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class PickupMaterialsScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class PickupMaterialsScreen extends StatefulWidget {
 }
 
 class _PickupMaterialsScreenState extends State<PickupMaterialsScreen> {
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   // ✅ Dummy Data
   final List<PickupItem> items = [
@@ -232,7 +233,7 @@ class _PickupCard extends StatelessWidget {
 
   const _PickupCard({required this.item, required this.onTap});
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -385,7 +386,7 @@ class _PickupDetailsPopup extends StatelessWidget {
     required this.onChat,
   });
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -569,7 +570,7 @@ class _Timeline extends StatelessWidget {
   final int timelineIndex; // 0..2
   const _Timeline({required this.timelineIndex});
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

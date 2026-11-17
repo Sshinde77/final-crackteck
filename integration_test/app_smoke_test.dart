@@ -1,8 +1,8 @@
-import 'package:final_crackteck/services/session_manager.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import 'package:final_crackteck/main.dart' as app;
+import 'package:srb_computer_engineer/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

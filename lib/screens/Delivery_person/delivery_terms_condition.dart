@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DeliveryTermsConditionScreen extends StatelessWidget {
@@ -10,7 +11,7 @@ class DeliveryTermsConditionScreen extends StatelessWidget {
     required this.roleName,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

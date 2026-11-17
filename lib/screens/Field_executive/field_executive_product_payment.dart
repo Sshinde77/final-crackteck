@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../constants/app_strings.dart';
@@ -20,7 +21,7 @@ class FieldExecutiveProductPaymentScreen extends StatefulWidget {
 
 class _FieldExecutiveProductPaymentScreenState
     extends State<FieldExecutiveProductPaymentScreen> {
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
   
   // Payment selection state
   int? selectedPaymentIndex = 0; 

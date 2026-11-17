@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/secure_storage_service.dart';
@@ -73,8 +74,8 @@ class _NewFollowUpScreenState extends State<NewFollowUpScreen> {
   String? _selectedStatus = 'pending';
 
   // Theme-ish colors similar to your UI
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   @override
   void initState() {

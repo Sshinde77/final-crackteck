@@ -1,5 +1,7 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/media/media_url.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
 
@@ -20,7 +22,7 @@ class FieldExecutiveWorkCallScreen extends StatefulWidget {
 
 class _FieldExecutiveWorkCallScreenState
     extends State<FieldExecutiveWorkCallScreen> {
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
 
   final List<_WorkCallTabConfig> tabs = const [
     _WorkCallTabConfig(
@@ -390,7 +392,7 @@ class _JobCard extends StatelessWidget {
                                 job.serviceId,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF020F37),
+                                  color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
@@ -413,7 +415,7 @@ class _JobCard extends StatelessWidget {
                                 job.location,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF020F37),
+                                  color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
@@ -564,12 +566,12 @@ class JobItem {
 
     final tab = _tabFromServiceType(readStr(const ['service_type']));
 
-    final imageUrl = readStr(const [
-      'image_url',
+    final imageUrl = MediaUrl.fromMap(json, const [
+      'main_product_image',
+      'product_image',
       'image',
       'service_image',
-      'product_image',
-    ], fallback: '');
+    ]);
 
     return JobItem(
       id: id,

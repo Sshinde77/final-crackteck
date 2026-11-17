@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -154,7 +155,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddReimbursementForm,
-        backgroundColor: const Color(0xFF020F37),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
@@ -201,18 +202,18 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                                 : const Color(0xFF374151),
                           ),
                           backgroundColor: Colors.white,
-                          selectedColor: const Color(0xFF020F37),
+                          selectedColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
                               color: isSelected
-                                  ? const Color(0xFF020F37)
+                                  ? AppColors.primary
                                   : const Color(0xFFD9DEE7),
                             ),
                           ),
                           side: BorderSide(
                             color: isSelected
-                                ? const Color(0xFF020F37)
+                                ? AppColors.primary
                                 : const Color(0xFFD9DEE7),
                           ),
                           showCheckmark: false,
@@ -237,7 +238,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
   Widget _buildBody(List<ReimbursementModel> filteredReimbursements) {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF020F37)),
+        child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
@@ -246,7 +247,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF020F37),
+      color: AppColors.primary,
       onRefresh: () => _loadReimbursements(showLoader: false),
       child: filteredReimbursements.isEmpty
           ? ListView(
@@ -309,12 +310,12 @@ class _ReimbursementOverviewCard extends StatelessWidget {
             height: 52,
             width: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFE9F6E5),
+              color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.receipt_long_outlined,
-              color: Color(0xFF020F37),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -437,7 +438,7 @@ class ReimbursementListCard extends StatelessWidget {
                     child: const Icon(
                       Icons.description_outlined,
                       size: 18,
-                      color: Color(0xFF020F37),
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -475,7 +476,7 @@ class ReimbursementListCard extends StatelessWidget {
                       Icon(
                         Icons.attach_file_rounded,
                         size: 16,
-                        color: Color(0xFF020F37),
+                        color: AppColors.primary,
                       ),
                       SizedBox(width: 6),
                       Text(
@@ -483,7 +484,7 @@ class ReimbursementListCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF020F37),
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -540,13 +541,13 @@ class _EmptyState extends StatelessWidget {
               height: 72,
               width: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFE9F6E5),
+                color: AppColors.primarySurface,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.inbox_outlined,
                 size: 34,
-                color: Color(0xFF020F37),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 16),
@@ -617,7 +618,7 @@ class _ErrorState extends StatelessWidget {
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF020F37),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -644,8 +645,8 @@ class _StatusStyle {
         );
       case ReimbursementStatus.approved:
         return const _StatusStyle(
-          backgroundColor: Color(0xFFEAF8EC),
-          textColor: Color(0xFF2E7D32),
+          backgroundColor: AppColors.primarySurface,
+          textColor: AppColors.primary,
         );
       case ReimbursementStatus.rejected:
         return const _StatusStyle(

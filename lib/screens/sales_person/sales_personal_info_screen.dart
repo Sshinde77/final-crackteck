@@ -1,7 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:final_crackteck/model/sales_person/profile_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/profile_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
 
@@ -22,8 +23,8 @@ class SalesPersonPersonalInfoScreen extends StatefulWidget {
 
 class _SalesPersonPersonalInfoScreenState
     extends State<SalesPersonPersonalInfoScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   /// ✅ STATE VARIABLES
   bool _moreOpen = false;

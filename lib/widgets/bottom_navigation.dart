@@ -1,3 +1,4 @@
+import '../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class CrackteckBottomSwitcher extends StatelessWidget {
@@ -37,7 +38,7 @@ class CrackteckBottomSwitcher extends StatelessWidget {
     required this.onFollowUp,
     required this.onMeeting,
     required this.onQuotation,
-    this.activeColor = const Color(0xFF020F37),
+    this.activeColor = AppColors.primary,
     this.inactiveColor = const Color(0xFFB5B5B5),
   });
 

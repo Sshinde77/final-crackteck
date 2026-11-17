@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -643,7 +644,7 @@ class _DeliveryPersonHomeTabState extends State<DeliveryPersonHomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF020F37);
+    const green = AppColors.primary;
     final provider = context.watch<DeliveryHomeProvider>();
     final attendanceProvider = context.watch<AttendanceProvider>();
 
@@ -805,7 +806,7 @@ class HeaderWithSearch extends StatelessWidget {
             child: Row(
               children: [
                 const Text(
-                  'CRACKTECK',
+                  'SRB COMPUTER',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -913,8 +914,8 @@ class AttendanceSection extends StatelessWidget {
                 child: _AttendanceTile(
                   label: 'Check-in',
                   icon: Icons.login,
-                  pillColor: const Color(0xFF020F37),
-                  bg: const Color(0xFFEFF7EE),
+                  pillColor: AppColors.primary,
+                  bg: AppColors.primarySurface,
                   timeText: loginTimeText,
                   onTap: isBusy ? null : onLogin,
                 ),
@@ -1074,7 +1075,7 @@ class StatsTabsSection extends StatelessWidget {
       OrdersTab.returnRequest,
       OrdersTab.returnProduct,
     ];
-    const activeGreen = Color(0xFF020F37);
+    const activeGreen = AppColors.primary;
 
     return Container(
       width: double.infinity,
@@ -1082,7 +1083,7 @@ class StatsTabsSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD7E8D2)),
+        border: Border.all(color: AppColors.primarySurface),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<OrdersTab>(
@@ -1094,7 +1095,7 @@ class StatsTabsSection extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(12),
           style: const TextStyle(
-            color: Color(0xFF17321A),
+            color: AppColors.primary,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -1278,7 +1279,7 @@ class OrderCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: order.accepted ? const Color(0xFFB8D8B2) : Colors.black12,
+              color: order.accepted ? AppColors.primarySurface : Colors.black12,
             ),
           ),
           padding: const EdgeInsets.all(12),
@@ -1355,7 +1356,7 @@ class _HomeStateCard extends StatelessWidget {
           ElevatedButton(
             onPressed: onTap,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF020F37),
+              backgroundColor: AppColors.primary,
             ),
             child: Text(
               actionLabel,

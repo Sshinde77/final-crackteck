@@ -1,11 +1,11 @@
 # Sales Dashboard API Integration Summary
 
 ## Overview
-This document summarizes the API integration for the sales person dashboard in the CrackTeck Flutter application.
+This document summarizes the API integration for the sales person dashboard in the SRB Computer Flutter application.
 
 ## Base URL
 ```
-https://crackteck.co.in/api/v1
+https://srbcomputers.co.in/api/v1
 ```
 
 ## Integrated Endpoints

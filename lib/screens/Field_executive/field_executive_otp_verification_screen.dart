@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../model/field executive/field_executive_product_service.dart';
@@ -32,7 +33,7 @@ class _FieldExecutiveOtpVerificationScreenState
   Timer? _timer;
   int _secondsRemaining = 80; // 1:20 = 80 seconds
   bool _isVerifyingOtp = false;
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
 
   @override
   void initState() {

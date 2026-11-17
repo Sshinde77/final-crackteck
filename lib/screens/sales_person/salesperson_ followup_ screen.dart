@@ -1,10 +1,11 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:final_crackteck/model/sales_person/followup_model.dart';
-import 'package:final_crackteck/model/sales_person/followup_provider.dart';
-import 'package:final_crackteck/screens/sales_person/Sales_new_follow-up_screen.dart';
+import 'package:srb_computer_engineer/model/sales_person/followup_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/followup_provider.dart';
+import 'package:srb_computer_engineer/screens/sales_person/Sales_new_follow-up_screen.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navigation.dart';
@@ -23,8 +24,8 @@ class SalesPersonFollowUpScreen extends StatefulWidget {
 
 class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
   // Colors
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
   bool _moreOpen = false;
   final int _navIndex = 0;
 
@@ -157,7 +158,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                         child: Container(
                           height: 40,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE9FFE6),
+                            color: AppColors.primarySurface,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextButton.icon(
@@ -599,7 +600,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDFFFD7),
+                                  color: AppColors.primarySurface,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 alignment: Alignment.center,
@@ -893,7 +894,7 @@ class _SalesPersonFollowUpScreenState extends State<SalesPersonFollowUpScreen> {
 // ======================= CARD =======================
 
 class FollowUpCard extends StatelessWidget {
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   final FollowUpItem item;
   final VoidCallback onView;
@@ -933,7 +934,7 @@ class FollowUpCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _SmallButton(
-                  bg: const Color(0xFFE9FFE6),
+                  bg: AppColors.primarySurface,
                   fg: darkGreen,
                   label: "View",
                   icon: Icons.remove_red_eye_outlined,
@@ -1106,7 +1107,7 @@ _Pill statusPill(FollowUpStatus s) {
   switch (s) {
     case FollowUpStatus.confirmed:
       return const _Pill(
-        bg: Color(0xFF020F37),
+        bg: AppColors.primary,
         fg: Colors.white,
         text: "Confirmed",
       );

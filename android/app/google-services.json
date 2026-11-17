@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "837568282860",
-    "project_id": "crackteck-final",
-    "storage_bucket": "crackteck-final.firebasestorage.app"
+    "project_number": "250076898154",
+    "project_id": "srb-computers-1be29",
+    "storage_bucket": "srb-computers-1be29.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:837568282860:android:648a62988a936103b8a5c9",
+        "mobilesdk_app_id": "1:250076898154:android:5e6e6e1885048accf0bb13",
         "android_client_info": {
-          "package_name": "com.crackteck.field"
+          "package_name": "com.srbcomputer.engineer"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA0UtLDHHMY4YI8u-8Bgqdv6g_KYwqfldo"
+          "current_key": "AIzaSyDZA0ZaEtF6VTCEJ-2eDRjvSxcQT7KYGiY"
         }
       ],
       "services": {

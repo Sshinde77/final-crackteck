@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -29,8 +30,8 @@ class NewLeadScreen extends StatefulWidget {
 }
 
 class _NewLeadScreenState extends State<NewLeadScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  // static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  // static const Color darkGreen = AppColors.primary;
 
   bool _moreOpen = false;
   final int _navIndex = 0;

@@ -1,10 +1,11 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:final_crackteck/model/sales_person/lead_model.dart';
-import 'package:final_crackteck/model/sales_person/leads_provider.dart';
-import 'package:final_crackteck/screens/sales_person/sales_new_lead_screens.dart';
+import 'package:srb_computer_engineer/model/sales_person/lead_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/leads_provider.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_new_lead_screens.dart';
 import '../../core/secure_storage_service.dart';
 import '../../routes/app_routes.dart';
 // import '../../services/api_service.dart';
@@ -18,8 +19,8 @@ class SalesPersonLeadsScreen extends StatefulWidget {
 }
 
 class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   bool _moreOpen = false;
   final int _navIndex = 0;
@@ -437,7 +438,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDFFFD7),
+                                  color: AppColors.primarySurface,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 alignment: Alignment.center,
@@ -585,7 +586,7 @@ class _SalesPersonLeadsScreenState extends State<SalesPersonLeadsScreen> {
                       actionButton(
                         label: "Call",
                         icon: Icons.call_outlined,
-                        bg: const Color(0xFFE6F6EA),
+                        bg: AppColors.primarySurface,
                         fg: darkGreen,
                         onTap: () async {
                           Navigator.pop(ctx);
@@ -956,7 +957,7 @@ class _LeadCard extends StatelessWidget {
     required this.onStatusTap,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -980,7 +981,7 @@ class _LeadCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _SmallButton(
-                  bg: const Color(0xFFE9FFE6),
+                  bg: AppColors.primarySurface,
                   fg: darkGreen,
                   label: "View",
                   icon: Icons.remove_red_eye_outlined,

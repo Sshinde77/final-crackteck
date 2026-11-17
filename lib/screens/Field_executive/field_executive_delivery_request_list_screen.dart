@@ -1,6 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../model/field executive/delivery_request_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -25,7 +27,7 @@ class DeliveryRequestListScreen extends StatefulWidget {
 }
 
 class _DeliveryRequestListScreenState extends State<DeliveryRequestListScreen> {
-  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
 
   List<DeliveryRequestModel> _requests = const <DeliveryRequestModel>[];
   bool _isLoading = true;
@@ -343,13 +345,7 @@ class _RequestImage extends StatelessWidget {
   }
 
   String _resolveImageUrl(String? path) {
-    final raw = path?.trim() ?? '';
-    if (raw.isEmpty) return '';
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('/')) {
-      return '${ApiConstants.baseUrl}$raw';
-    }
-    return '${ApiConstants.baseUrl}/$raw';
+    return MediaUrl.resolve(path);
   }
 }
 
@@ -364,7 +360,7 @@ class _ImagePlaceholder extends StatelessWidget {
       width: 84,
       height: 84,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F4F1),
+        color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(10),
       ),
       alignment: Alignment.center,

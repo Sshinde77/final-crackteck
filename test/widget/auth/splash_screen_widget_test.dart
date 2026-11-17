@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/screens/splash_screen.dart';
-import 'package:final_crackteck/services/session_manager.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/screens/splash_screen.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

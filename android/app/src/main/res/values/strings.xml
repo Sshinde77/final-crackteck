@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="default_notification_channel_id">crackteck_field_alerts</string>
+    <string name="default_notification_channel_id">srb_computer_alerts</string>
 </resources>

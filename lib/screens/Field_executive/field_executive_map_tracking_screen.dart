@@ -1,5 +1,7 @@
-import 'package:final_crackteck/model/api_response.dart';
+import '../../constants/app_colors.dart';
+import 'package:srb_computer_engineer/model/api_response.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../routes/app_routes.dart';
@@ -36,7 +38,7 @@ class FieldExecutiveMapTrackingScreen extends StatefulWidget {
 
 class _FieldExecutiveMapTrackingScreenState
     extends State<FieldExecutiveMapTrackingScreen> {
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
   bool _isSendingOtp = false;
 
   late final String _customerName;
@@ -277,7 +279,7 @@ class _FieldExecutiveMapTrackingScreenState
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEAF5E7),
+                          color: AppColors.primarySurface,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -328,11 +330,16 @@ class _FieldExecutiveMapTrackingScreenState
                       borderRadius: BorderRadius.circular(14),
                       child: SizedBox(
                         width: double.infinity,
-                        child: Image.asset(
-                          'assets/images/map_placeholder.jpg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              Container(color: Colors.grey.shade200),
+                        child: Lottie.asset(
+                          'assets/images/sign_up.json',
+                          fit: BoxFit.contain,
+                          repeat: true,
+                          animate: true,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey.shade200,
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.map, size: 64),
+                          ),
                         ),
                       ),
                     ),
@@ -420,7 +427,7 @@ class _FieldExecutiveMapTrackingScreenState
                     IconButton(
                       onPressed: _callCustomer,
                       style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFFEAF5E7),
+                        backgroundColor: AppColors.primarySurface,
                         padding: const EdgeInsets.all(12),
                       ),
                       icon: const Icon(Icons.call, color: primaryGreen),

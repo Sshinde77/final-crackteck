@@ -36,7 +36,7 @@ class _TodayTaskList extends StatelessWidget {
 **Fix:**
 Added import statement:
 ```dart
-import 'package:final_crackteck/model/sales_person/task_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/task_model.dart';
 ```
 
 **File Modified:** `lib/screens/sales_person/sales_dashbord.dart`
@@ -148,7 +148,7 @@ NotificationModel.fromJson(Map<String, dynamic> json)
 Removed unused import:
 ```dart
 // REMOVED
-import 'package:final_crackteck/model/sales_person/sales_overview_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/sales_overview_model.dart';
 ```
 
 **File Modified:** `lib/screens/sales_person/sales_dashbord.dart`

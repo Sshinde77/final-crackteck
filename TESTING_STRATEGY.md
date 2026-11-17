@@ -1,4 +1,4 @@
-# Production-Grade Testing Strategy — `final_crackteck` (Flutter)
+# Production-Grade Testing Strategy — SRB Computer (Flutter)
 
 This strategy is based on the repo’s current implementation (Provider/ChangeNotifier state, route generator wiring, static singleton services, and HTTP-based services with refresh-token retry + HTML-as-unauthorized detection).
 

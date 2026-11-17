@@ -1,5 +1,5 @@
-import 'package:final_crackteck/routes/app_routes.dart';
-import 'package:final_crackteck/routes/route_generator.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
+import 'package:srb_computer_engineer/routes/route_generator.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -140,6 +140,18 @@ class _CrackTechAppState extends State<CrackTechApp>
         ],
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
+        // Keep every route's bottom actions above the device navigation area.
+        // Individual screens may still add their own SafeArea for custom
+        // bottom bars, but this provides a safe app-wide baseline.
+        builder: (context, child) {
+          if (child == null) return const SizedBox.shrink();
+          return SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            child: child,
+          );
+        },
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: AppColors.primary,

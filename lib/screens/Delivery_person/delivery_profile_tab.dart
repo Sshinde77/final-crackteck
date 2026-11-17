@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -34,7 +35,7 @@ class DeliveryProfileScreen extends StatefulWidget {
 }
 
 class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
   bool _isLoggingOut = false;
 
   @override
@@ -153,7 +154,7 @@ class _DeliveryProfileScreenState extends State<DeliveryProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 48,
-                backgroundColor: const Color(0xFFEFF7EE),
+                backgroundColor: AppColors.primarySurface,
                 backgroundImage: avatar,
                 child: avatar == null
                     ? const Icon(Icons.person, size: 48, color: green)
@@ -426,7 +427,7 @@ class _ProfileTile extends StatelessWidget {
   final VoidCallback onTap;
   final Widget? trailing;
 
-  static const Color green = Color(0xFF020F37);
+  static const Color green = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

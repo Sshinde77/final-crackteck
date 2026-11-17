@@ -1,11 +1,12 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:final_crackteck/model/sales_person/meeting_model.dart';
-import 'package:final_crackteck/model/sales_person/meetings_provider.dart';
-import 'package:final_crackteck/screens/sales_person/sales_add_new_meeting.dart';
-import 'package:final_crackteck/services/api_service.dart';
+import 'package:srb_computer_engineer/model/sales_person/meeting_model.dart';
+import 'package:srb_computer_engineer/model/sales_person/meetings_provider.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_add_new_meeting.dart';
+import 'package:srb_computer_engineer/services/api_service.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/bottom_navigation.dart';
 
@@ -25,8 +26,8 @@ class SalesPersonMeetingScreen extends StatefulWidget {
 }
 
 class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   bool _moreOpen = false;
   final int _navIndex = 0;
@@ -556,7 +557,7 @@ class _SalesPersonMeetingScreenState extends State<SalesPersonMeetingScreen> {
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDFFFD7),
+                                  color: AppColors.primarySurface,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 alignment: Alignment.center,
@@ -1010,7 +1011,7 @@ class _MeetingCard extends StatelessWidget {
     required this.onStatusTap,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -1036,7 +1037,7 @@ class _MeetingCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _SmallButton(
-                  bg: const Color(0xFFE9FFE6),
+                  bg: AppColors.primarySurface,
                   fg: darkGreen,
                   label: "View",
                   icon: Icons.remove_red_eye_outlined,
@@ -1226,7 +1227,7 @@ class _MeetingItem {
   });
 }
 
-const Color kDarkGreen = Color(0xFF020F37);
+const Color kDarkGreen = AppColors.primary;
 
 class _MeetingCenterDialog extends StatelessWidget {
   final _MeetingItem item;
@@ -1426,7 +1427,7 @@ class _MeetingCenterDialog extends StatelessWidget {
                       child: _SoftActionButton(
                         icon: Icons.call_outlined,
                         label: "Call",
-                        bg: const Color(0xFFE9FFE6),
+                        bg: AppColors.primarySurface,
                         fg: kDarkGreen,
                         onTap: onCall ?? () {},
                       ),

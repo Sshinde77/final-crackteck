@@ -1,3 +1,5 @@
+import '../../core/media/media_url.dart';
+
 class DeliveryRequestModel {
   final String id;
   final String request_id;
@@ -71,13 +73,15 @@ class DeliveryRequestModel {
       json['total_amount'],
       json['amount'],
     ]);
-    final mainProductImage = _firstText([
-      product['main_product_image'],
-      product['product_image'],
-      product['image'],
-      json['main_product_image'],
-      json['product_image'],
-    ]);
+    final mainProductImage = MediaUrl.fromMap(product, const [
+      'main_product_image',
+      'product_image',
+      'image',
+    ], fallback: MediaUrl.fromMap(json, const [
+      'main_product_image',
+      'product_image',
+      'image',
+    ]));
     final status = _firstText([
       json['status'],
       json['delivery_status'],

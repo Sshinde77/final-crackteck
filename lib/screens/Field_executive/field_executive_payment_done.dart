@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
@@ -18,8 +19,8 @@ class FieldExecutivePaymentDoneScreen extends StatefulWidget {
 }
 
 class _FieldExecutivePaymentDoneScreenState extends State<FieldExecutivePaymentDoneScreen> {
-  static const Color darkGreen = Color(0xFF020F37);
-  static const Color lightGreen = Color(0xFFD8E6D2);
+  static const Color darkGreen = AppColors.primary;
+  static const Color lightGreen = AppColors.primarySurface;
   Timer? _timer;
 
   @override

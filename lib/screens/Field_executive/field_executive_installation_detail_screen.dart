@@ -1,8 +1,9 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../model/field executive/field_executive_product_service.dart';
 import '../../model/field executive/field_executive_service_request_detail.dart';
 import '../../routes/app_routes.dart';
-import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../services/api_service.dart';
 
 enum CaseTransferStatus { none, pending }
@@ -44,7 +45,7 @@ class _FieldExecutiveInstallationDetailScreenState
   bool _isLoadingDetail = true;
   String? _detailError;
   Map<String, dynamic>? _detailData;
-  static const primaryGreen = Color(0xFF020F37);
+  static const primaryGreen = AppColors.primary;
 
   @override
   void initState() {
@@ -289,40 +290,8 @@ class _FieldExecutiveInstallationDetailScreenState
     }
   }
 
-  bool _looksLikeHtml(String raw) {
-    final value = raw.trimLeft().toLowerCase();
-    return value.startsWith('<!doctype html') || value.startsWith('<html');
-  }
-
   String _normalizeImageSource(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty) return '';
-    if (value.toLowerCase() == 'null') return '';
-    if (_looksLikeHtml(value)) return '';
-    if (value.startsWith('data:image/')) return value;
-    if (value.contains('<') && value.contains('>')) return '';
-
-    final parsed = Uri.tryParse(value);
-    if (parsed != null && parsed.hasScheme) {
-      final scheme = parsed.scheme.toLowerCase();
-      if (scheme == 'http' || scheme == 'https') return parsed.toString();
-      return '';
-    }
-
-    final base = Uri.parse(ApiConstants.baseUrl);
-    final origin = Uri(
-      scheme: base.scheme,
-      host: base.host,
-      port: base.hasPort ? base.port : null,
-    );
-
-    final relative = value.startsWith('//')
-        ? Uri.parse('https:$value')
-        : value.startsWith('/')
-        ? Uri.parse(value)
-        : Uri.parse('/$value');
-
-    return origin.resolveUri(relative).toString();
+    return MediaUrl.resolve(raw);
   }
 
   Widget _buildImageFallback({
@@ -460,10 +429,30 @@ class _FieldExecutiveInstallationDetailScreenState
     return formatted;
   }
 
-  String get _imageUrl => _field(
-        const ['image_url', 'image', 'service_image', 'product_image'],
-        fallback: '',
-      );
+  String get _serviceImageUrl {
+    for (final product in _productMaps) {
+      final serviceImage = MediaUrl.fromMap(product, const [
+        'service_image_url',
+        'service_image',
+      ]);
+      if (serviceImage.isNotEmpty) return serviceImage;
+
+      for (final nestedKey in const ['covered_item', 'item_code']) {
+        final nested = _asMap(product[nestedKey]);
+        final nestedImage = MediaUrl.fromMap(nested, const [
+          'service_image_url',
+          'image_url',
+          'image',
+        ]);
+        if (nestedImage.isNotEmpty) return nestedImage;
+      }
+    }
+
+    return MediaUrl.fromMap(_detailData, const [
+      'service_image_url',
+      'service_image',
+    ]);
+  }
   String get _customerName {
     final firstName = _readFromMap(_customerMap, const [
       'first_name',
@@ -552,12 +541,10 @@ class _FieldExecutiveInstallationDetailScreenState
 
     for (final product in _productMaps) {
       for (final key in const [
-        'images',
-        'product_images',
-        'gallery',
-        'photos',
-        'media',
-        'attachments',
+        'additional_product_images_url',
+        'images_url',
+        'main_product_image_url',
+        'product_image_url',
         'product_image',
         'image_url',
         'image',
@@ -573,12 +560,10 @@ class _FieldExecutiveInstallationDetailScreenState
   List<String> get _attachmentMediaUrls {
     final urls = <String>[];
     for (final key in const [
-      'images',
-      'photos',
-      'media',
-      'attachments',
-      'before_images',
-      'after_images',
+      'before_photos_url',
+      'after_photos_url',
+      'before_photos',
+      'after_photos',
       'videos',
     ]) {
       _addUrl(urls, _detailData?[key]);
@@ -587,22 +572,21 @@ class _FieldExecutiveInstallationDetailScreenState
   }
 
   String get _heroImageUrl {
-    if (_productImageUrls.isNotEmpty) return _productImageUrls.first;
-    final normalizedImage = _normalizeImageSource(_imageUrl);
-    if (normalizedImage.isNotEmpty) return normalizedImage;
-    return '';
+    return _serviceImageUrl;
   }
 
   String get _productImage {
     if (_productImageUrls.isNotEmpty) return _productImageUrls.first;
-    return _normalizeImageSource(
-      _readProductField(const [
-        'product_image',
-        'image_url',
-        'image',
-        'thumbnail',
-      ], fallback: _imageUrl),
-    );
+    return MediaUrl.fromMap(_productMap, const [
+      'product_image_url',
+      'main_product_image_url',
+      'images_url',
+      'images',
+      'product_image',
+      'image_url',
+      'image',
+      'thumbnail',
+    ]);
   }
 
   String get _productDetailText {
@@ -647,14 +631,11 @@ class _FieldExecutiveInstallationDetailScreenState
   }
 
   List<String> get _mediaUrls {
-    final productImages = _productImageUrls;
-    if (productImages.length > 1) {
-      return productImages.skip(1).toList();
+    final urls = <String>[];
+    for (final url in [..._productImageUrls, ..._attachmentMediaUrls]) {
+      if (url.isNotEmpty && !urls.contains(url)) urls.add(url);
     }
-    if (productImages.length == 1) {
-      return const [];
-    }
-    return _attachmentMediaUrls;
+    return urls.take(20).toList();
   }
 
   bool get _showMediaSection => _mediaUrls.isNotEmpty;
@@ -832,7 +813,7 @@ class _FieldExecutiveInstallationDetailScreenState
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(codeOrId, style: const TextStyle(color: Color(0xFF020F37), fontWeight: FontWeight.bold)),
+              Text(codeOrId, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
               Text(location, style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ],
           ),
@@ -852,6 +833,39 @@ class _FieldExecutiveInstallationDetailScreenState
             width: 100,
             height: 100,
             child: _buildImageFallback(iconSize: 28),
+          ),
+        ),
+      );
+    }
+
+    final lowerUrl = normalized.toLowerCase().split('?').first;
+    final isVideo = lowerUrl.endsWith('.mp4') ||
+        lowerUrl.endsWith('.mov') ||
+        lowerUrl.endsWith('.avi') ||
+        lowerUrl.endsWith('.mkv') ||
+        lowerUrl.endsWith('.webm') ||
+        lowerUrl.contains('/videos/');
+
+    if (isVideo) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 100,
+            height: 100,
+            color: Colors.grey.shade900,
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.play_circle_fill, color: Colors.white, size: 36),
+                SizedBox(height: 4),
+                Text(
+                  'Video',
+                  style: TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ],
+            ),
           ),
         ),
       );

@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -90,12 +91,12 @@ class _ReimbursementSectionState extends State<ReimbursementSection> {
                 height: 46,
                 width: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9F6E5),
+                  color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_outlined,
-                  color: Color(0xFF020F37),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -142,7 +143,7 @@ class _ReimbursementSectionState extends State<ReimbursementSection> {
             child: ElevatedButton.icon(
               onPressed: _openAddReimbursementForm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF020F37),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -255,7 +256,7 @@ class _ReimbursementCard extends StatelessWidget {
                   Icon(
                     Icons.receipt_long_outlined,
                     size: 16,
-                    color: Color(0xFF020F37),
+                    color: AppColors.primary,
                   ),
                   SizedBox(width: 6),
                   Text(
@@ -263,7 +264,7 @@ class _ReimbursementCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF020F37),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -318,8 +319,8 @@ class _StatusStyle {
         );
       case ReimbursementStatus.approved:
         return const _StatusStyle(
-          backgroundColor: Color(0xFFEAF8EC),
-          textColor: Color(0xFF2E7D32),
+          backgroundColor: AppColors.primarySurface,
+          textColor: AppColors.primary,
         );
       case ReimbursementStatus.rejected:
         return const _StatusStyle(

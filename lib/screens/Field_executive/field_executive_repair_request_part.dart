@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class RepairRequestScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class RepairRequestScreen extends StatefulWidget {
 }
 
 class _RepairRequestScreenState extends State<RepairRequestScreen> {
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   // ✅ Dummy Data for Repair Requests
   final List<RepairRequestItem> items = [
@@ -232,7 +233,7 @@ class _RepairCard extends StatelessWidget {
 
   const _RepairCard({required this.item, required this.onTap});
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -383,7 +384,7 @@ class _RepairDetailsPopup extends StatelessWidget {
     required this.onChat,
   });
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -564,7 +565,7 @@ class _RepairTimeline extends StatelessWidget {
   final int timelineIndex; // 0..2
   const _RepairTimeline({required this.timelineIndex});
 
-  static const Color brandGreen = Color(0xFF020F37);
+  static const Color brandGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

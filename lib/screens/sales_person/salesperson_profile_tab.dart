@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,8 +26,8 @@ class SalesPersonMoreScreen extends StatefulWidget {
 }
 
 class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
   bool _moreOpen = false;
   int _navIndex = 2; // 0=Home, 2=Profile
   bool _isLoggingOut = false;
@@ -230,10 +231,10 @@ class _SalesPersonMoreScreenState extends State<SalesPersonMoreScreen> {
                 //         //   child: _TimeCard(
                 //         //     title: "Login",
                 //         //     time: loginTime,
-                //         //     bg: const Color(0xFFE9FFE6),
-                //         //     iconBg: const Color(0xFF2E7D32),
+                //         //     bg: AppColors.primarySurface,
+                //         //     iconBg: AppColors.primary,
                 //         //     icon: Icons.access_time,
-                //         //     titleColor: const Color(0xFF2E7D32),
+                //         //     titleColor: AppColors.primary,
                 //         //     onTap: () {
                 //         //       // ✅ example: update state
                 //         //       setState(() {
@@ -424,7 +425,7 @@ class _OptionTile extends StatelessWidget {
     this.textColor = Colors.black54,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

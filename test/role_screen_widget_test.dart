@@ -1,6 +1,6 @@
-import 'package:final_crackteck/login_screen.dart';
-import 'package:final_crackteck/role_screen.dart';
-import 'package:final_crackteck/routes/app_routes.dart';
+import 'package:srb_computer_engineer/login_screen.dart';
+import 'package:srb_computer_engineer/role_screen.dart';
+import 'package:srb_computer_engineer/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

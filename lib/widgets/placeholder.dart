@@ -1,3 +1,4 @@
+import '../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ComingSoonScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _ComingSoonScreenState extends State<ComingSoonScreen> {
 
       // ✅ AppBar with back button and NO title
       appBar: AppBar(
-        backgroundColor: const Color(0xFF020F37),
+        backgroundColor: AppColors.primary,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(

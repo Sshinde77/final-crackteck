@@ -1,4 +1,4 @@
-import 'package:final_crackteck/services/session_manager.dart';
+import 'package:srb_computer_engineer/services/session_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'constants/app_strings.dart';
@@ -20,12 +20,13 @@ class rolesccreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // LOGO 107 x 109
+                // Keep the logo's wide aspect ratio so it does not render as
+                // a tiny strip inside a square box.
                 SizedBox(
-                  width: 107,
-                  height: 109,
+                  width: 250,
+                  height: 64,
                   child: Image.asset(
-                    'assets/logo.png', // <-- put your logo here
+                    'assets/logo.png',
                     fit: BoxFit.contain,
                   ),
                 ),

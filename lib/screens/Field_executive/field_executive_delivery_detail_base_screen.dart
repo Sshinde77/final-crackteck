@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../routes/app_routes.dart';
@@ -35,7 +36,7 @@ class FieldExecutiveDeliveryDetailBaseScreen extends StatefulWidget {
 
 class _FieldExecutiveDeliveryDetailBaseScreenState
     extends State<FieldExecutiveDeliveryDetailBaseScreen> {
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
 
   bool _isLoading = true;
   String? _error;

@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
@@ -18,8 +19,8 @@ class FieldExecutivePersonalInfo extends StatefulWidget {
 }
 
 class _FieldExecutivePersonalInfoState extends State<FieldExecutivePersonalInfo> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
 
   bool _isLoading = true;
   String? _errorMessage;

@@ -1,6 +1,7 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
-import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -21,7 +22,7 @@ class AddProductScreen extends StatefulWidget {
     this.initialSelectedPart,
   });
 
-  static const Color primaryGreen = Color(0xFF020F37);
+  static const Color primaryGreen = AppColors.primary;
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -84,30 +85,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   String _normalizeImageSource(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty || value.toLowerCase() == 'null') return '';
-
-    final parsed = Uri.tryParse(value);
-    if (parsed != null && parsed.hasScheme) {
-      final scheme = parsed.scheme.toLowerCase();
-      if (scheme == 'http' || scheme == 'https') return parsed.toString();
-      return '';
-    }
-
-    final base = Uri.parse(ApiConstants.baseUrl);
-    final origin = Uri(
-      scheme: base.scheme,
-      host: base.host,
-      port: base.hasPort ? base.port : null,
-    );
-
-    final relative = value.startsWith('//')
-        ? Uri.parse('https:$value')
-        : value.startsWith('/')
-        ? Uri.parse(value)
-        : Uri.parse('/$value');
-
-    return origin.resolveUri(relative).toString();
+    return MediaUrl.resolve(raw);
   }
 
   String _readImage(dynamic value) {
@@ -127,20 +105,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     final map = _asMap(value);
     if (map != null) {
-      for (final key in const [
-        'main_product_image',
-        'product_image',
-        'image',
-        'image_url',
-        'path',
-        'url',
-        'src',
-        'thumbnail',
-        'thumb',
-      ]) {
-        final image = _readImage(map[key]);
-        if (image.isNotEmpty) return image;
-      }
+      return MediaUrl.resolve(map);
     }
 
     return '';
@@ -171,16 +136,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       'price',
       'amount',
     ]);
-    final image = _readImage(
-      nestedProduct?['main_product_image'] ??
-          nestedProduct?['product_image'] ??
-          nestedProduct?['image'] ??
-          nestedProduct?['image_url'] ??
-          item['main_product_image'] ??
-          item['product_image'] ??
-          item['image'] ??
-          item['image_url'],
-    );
+    final image = _readImage(nestedProduct ?? item);
 
     return _Product(
       id: id.replaceFirst(RegExp(r'^#'), ''),

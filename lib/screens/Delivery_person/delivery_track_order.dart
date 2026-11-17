@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/delivery_person/delivery_track_work_service.dart';
@@ -14,7 +15,7 @@ class TotalDeliveryScreen extends StatefulWidget {
 }
 
 class _TotalDeliveryScreenState extends State<TotalDeliveryScreen> {
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   final DeliveryTrackWorkService _trackWorkService = DeliveryTrackWorkService();
   bool _isLoading = true;
@@ -397,7 +398,7 @@ class _SectionCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F7F2),
+                      color: AppColors.primarySurface,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -464,7 +465,7 @@ class _EmptyState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAF8),
+        color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Text(

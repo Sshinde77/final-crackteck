@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/api_constants.dart';
@@ -6,14 +7,16 @@ import '../../routes/app_routes.dart';
 class FieldExecutiveDeliveryScreen extends StatelessWidget {
   final int roleId;
   final String roleName;
+  final bool showBackButton;
 
   const FieldExecutiveDeliveryScreen({
     super.key,
     required this.roleId,
     required this.roleName,
+    this.showBackButton = true,
   });
 
-  static const Color _primaryGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +25,13 @@ class FieldExecutiveDeliveryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: _primaryGreen,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: showBackButton,
+        leading: showBackButton
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text(
           'Delivery',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -131,7 +137,7 @@ class _DeliveryOptionCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF020F37)),
+            Icon(icon, color: AppColors.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -145,7 +151,7 @@ class _DeliveryOptionCard extends StatelessWidget {
             const Icon(
               Icons.arrow_forward_ios_rounded,
               size: 18,
-              color: Color(0xFF020F37),
+              color: AppColors.primary,
             ),
           ],
         ),

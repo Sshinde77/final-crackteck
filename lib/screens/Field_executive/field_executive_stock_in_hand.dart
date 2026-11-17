@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/api_constants.dart';
+import '../../constants/app_colors.dart';
+import '../../core/media/media_url.dart';
 import '../../model/field executive/selected_stock_item.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api_service.dart';
@@ -26,7 +27,7 @@ class StockInHandScreen extends StatefulWidget {
 }
 
 class _StockInHandScreenState extends State<StockInHandScreen> {
-  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color themeColor = AppColors.primary;
 
   bool _isLoading = true;
   String? _error;
@@ -111,64 +112,7 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
   }
 
   String _readImage(dynamic value) {
-    if (value == null) return '';
-
-    if (value is String) {
-      return _normalizeImageSource(value);
-    }
-
-    if (value is List) {
-      for (final item in value) {
-        final image = _readImage(item);
-        if (image.isNotEmpty) return image;
-      }
-      return '';
-    }
-
-    if (value is Map) {
-      final map = Map<String, dynamic>.from(value);
-      for (final key in const [
-        'url',
-        'image',
-        'image_url',
-        'path',
-        'src',
-        'thumbnail',
-        'thumb',
-      ]) {
-        final image = _readImage(map[key]);
-        if (image.isNotEmpty) return image;
-      }
-    }
-
-    return '';
-  }
-
-  String _normalizeImageSource(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty || value.toLowerCase() == 'null') return '';
-
-    final parsed = Uri.tryParse(value);
-    if (parsed != null && parsed.hasScheme) {
-      final scheme = parsed.scheme.toLowerCase();
-      if (scheme == 'http' || scheme == 'https') return parsed.toString();
-      return '';
-    }
-
-    final base = Uri.parse(ApiConstants.baseUrl);
-    final origin = Uri(
-      scheme: base.scheme,
-      host: base.host,
-      port: base.hasPort ? base.port : null,
-    );
-
-    final relative = value.startsWith('//')
-        ? Uri.parse('https:$value')
-        : value.startsWith('/')
-        ? Uri.parse(value)
-        : Uri.parse('/$value');
-
-    return origin.resolveUri(relative).toString();
+    return MediaUrl.resolve(value);
   }
 
   String _formatPrice(String rawPrice) {
@@ -183,18 +127,7 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
         ? Map<String, dynamic>.from(item['products'] as Map)
         : <String, dynamic>{};
 
-    final image = _readImage(
-      products['main_product_image'] ??
-          products['product_image'] ??
-          products['image_url'] ??
-          products['image'] ??
-          products['images'] ??
-          item['image'] ??
-          item['product_image'] ??
-          item['image_url'] ??
-          item['images'] ??
-          item['product_images'],
-    );
+    final image = _readImage(products.isNotEmpty ? products : item);
     final name = _readText(products, const ['product_name', 'name', 'title']);
     final price = _readText(products, const [
       'final_price',
@@ -318,7 +251,7 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: primaryGreen,
+        backgroundColor: themeColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -337,77 +270,94 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : _error != null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.black54),
+            : RefreshIndicator(
+                onRefresh: _loadStockInHand,
+                child: _error != null
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.28,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: _loadStockInHand,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: themeColor,
+                                  ),
+                                  child: const Text(
+                                    'Retry',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : _items.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 300),
+                          Center(
+                            child: Text(
+                              'No stock in hand available',
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          ),
+                        ],
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) {
+                          final item = _items[index];
+                          final selectedQty =
+                              _selectedQuantities[_itemKey(item, index)] ?? 0;
+                          return InkWell(
+                            onTap: widget.selectionMode
+                                ? null
+                                : () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes
+                                          .FieldExecutiveProductDetailScreen,
+                                      arguments:
+                                          fieldexecutiveproductdetailArguments(
+                                            roleId: widget.roleId,
+                                            roleName: widget.roleName,
+                                            productId: item.productId,
+                                          ),
+                                    );
+                                  },
+                            child: StockItemCard(
+                              item: item,
+                              selectionMode: widget.selectionMode,
+                              selectedQty: selectedQty,
+                              onIncrease: widget.selectionMode
+                                  ? () => _increaseSelectedQty(item, index)
+                                  : null,
+                              onDecrease: widget.selectionMode
+                                  ? () => _decreaseSelectedQty(item, index)
+                                  : null,
+                              onClear: widget.selectionMode
+                                  ? () => _clearSelectedQty(item, index)
+                                  : null,
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _loadStockInHand,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryGreen,
-                        ),
-                        child: const Text(
-                          'Retry',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : _items.isEmpty
-            ? const Center(
-                child: Text(
-                  'No stock in hand available',
-                  style: TextStyle(color: Colors.black54),
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                itemCount: _items.length,
-                itemBuilder: (context, index) {
-                  final item = _items[index];
-                  final selectedQty =
-                      _selectedQuantities[_itemKey(item, index)] ?? 0;
-                  return InkWell(
-                    onTap: widget.selectionMode
-                        ? null
-                        : () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.FieldExecutiveProductDetailScreen,
-                              arguments: fieldexecutiveproductdetailArguments(
-                                roleId: widget.roleId,
-                                roleName: widget.roleName,
-                                productId: item.productId,
-                              ),
-                            );
-                          },
-                    child: StockItemCard(
-                      item: item,
-                      selectionMode: widget.selectionMode,
-                      selectedQty: selectedQty,
-                      onIncrease: widget.selectionMode
-                          ? () => _increaseSelectedQty(item, index)
-                          : null,
-                      onDecrease: widget.selectionMode
-                          ? () => _decreaseSelectedQty(item, index)
-                          : null,
-                      onClear: widget.selectionMode
-                          ? () => _clearSelectedQty(item, index)
-                          : null,
-                    ),
-                  );
-                },
               ),
       ),
       bottomNavigationBar: SafeArea(
@@ -419,7 +369,7 @@ class _StockInHandScreenState extends State<StockInHandScreen> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryGreen,
+                backgroundColor: themeColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -632,7 +582,7 @@ class StockItemCard extends StatelessWidget {
         width: 22,
         height: 22,
         decoration: BoxDecoration(
-          color: const Color(0xFF2E7D32),
+          color: AppColors.primary,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(icon, size: 14, color: Colors.white),

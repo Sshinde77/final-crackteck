@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -20,8 +21,8 @@ class fieldexecutiveFeedbackScreen extends StatefulWidget {
 
 class _fieldexecutiveFeedbackScreenState
     extends State<fieldexecutiveFeedbackScreen> {
-  static const Color _primaryGreen = Color(0xFF020F37);
-  static const Color _darkGreen = Color(0xFF020F37);
+  static const Color _primaryGreen = AppColors.primary;
+  static const Color _darkGreen = AppColors.primary;
 
   List<_FeedbackListItem> _feedbacks = const <_FeedbackListItem>[];
   bool _isLoading = true;
@@ -250,7 +251,7 @@ class _FeedbackCard extends StatelessWidget {
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Color(0xFF020F37),
+                color: AppColors.primary,
               ),
             ),
           ],
@@ -271,7 +272,7 @@ class _FeedbackDetailSheet extends StatefulWidget {
 }
 
 class _FeedbackDetailSheetState extends State<_FeedbackDetailSheet> {
-  static const Color _darkGreen = Color(0xFF020F37);
+  static const Color _darkGreen = AppColors.primary;
 
   bool _isLoading = true;
   String? _errorMessage;

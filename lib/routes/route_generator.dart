@@ -1,26 +1,26 @@
-import 'package:final_crackteck/screens/Delivery_person/vehicalregistration.dart';
-import 'package:final_crackteck/screens/sales_person/Sales_new_follow-up_screen.dart';
-import 'package:final_crackteck/screens/sales_person/Task.dart';
-import 'package:final_crackteck/screens/sales_person/sales_add_new_meeting.dart';
-import 'package:final_crackteck/screens/sales_person/sales_dashbord.dart';
-import 'package:final_crackteck/screens/sales_person/sales_new_lead_screens.dart';
-import 'package:final_crackteck/screens/sales_person/sales_new_quotation.dart';
-import 'package:final_crackteck/screens/sales_person/sales_person_sales_overview_screen.dart';
-import 'package:final_crackteck/screens/sales_person/sales_personal_info_screen.dart';
-import 'package:final_crackteck/screens/sales_person/salesperson_leads_screen.dart';
-import 'package:final_crackteck/screens/sales_person/salesperson_ followup_ screen.dart';
-import 'package:final_crackteck/screens/sales_person/sales_person_meeting_tabs.dart';
-import 'package:final_crackteck/screens/sales_person/sales_quatation_tabs_screen.dart';
-import 'package:final_crackteck/screens/sales_person/salesperson_profile_tab.dart';
-import 'package:final_crackteck/model/sales_person/leads_provider.dart';
-import 'package:final_crackteck/model/sales_person/followup_provider.dart';
-import 'package:final_crackteck/model/sales_person/meetings_provider.dart';
-import 'package:final_crackteck/model/sales_person/quotations_provider.dart';
-import 'package:final_crackteck/model/sales_person/profile_provider.dart';
-import 'package:final_crackteck/provider/delivery_person/delivery_home_provider.dart';
-import 'package:final_crackteck/provider/delivery_person/delivery_order_action_provider.dart';
-import 'package:final_crackteck/provider/delivery_person/delivery_profile_provider.dart';
-import 'package:final_crackteck/provider/signup/signup_provider.dart';
+import 'package:srb_computer_engineer/screens/Delivery_person/vehicalregistration.dart';
+import 'package:srb_computer_engineer/screens/sales_person/Sales_new_follow-up_screen.dart';
+import 'package:srb_computer_engineer/screens/sales_person/Task.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_add_new_meeting.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_dashbord.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_new_lead_screens.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_new_quotation.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_person_sales_overview_screen.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_personal_info_screen.dart';
+import 'package:srb_computer_engineer/screens/sales_person/salesperson_leads_screen.dart';
+import 'package:srb_computer_engineer/screens/sales_person/salesperson_ followup_ screen.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_person_meeting_tabs.dart';
+import 'package:srb_computer_engineer/screens/sales_person/sales_quatation_tabs_screen.dart';
+import 'package:srb_computer_engineer/screens/sales_person/salesperson_profile_tab.dart';
+import 'package:srb_computer_engineer/model/sales_person/leads_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/followup_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/meetings_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/quotations_provider.dart';
+import 'package:srb_computer_engineer/model/sales_person/profile_provider.dart';
+import 'package:srb_computer_engineer/provider/delivery_person/delivery_home_provider.dart';
+import 'package:srb_computer_engineer/provider/delivery_person/delivery_order_action_provider.dart';
+import 'package:srb_computer_engineer/provider/delivery_person/delivery_profile_provider.dart';
+import 'package:srb_computer_engineer/provider/signup/signup_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -76,8 +76,8 @@ import '../screens/Delivery_person/delivery_otp_verification_screen.dart'
 import '../screens/Delivery_person/map_with-start.dart';
 import '../temp_placeholder_screen.dart';
 import 'app_routes.dart';
-import 'package:final_crackteck/otp_screen.dart';
-import 'package:final_crackteck/signup.dart';
+import 'package:srb_computer_engineer/otp_screen.dart';
+import 'package:srb_computer_engineer/signup.dart';
 
 /// Centralized route generator for the application
 class RouteGenerator {

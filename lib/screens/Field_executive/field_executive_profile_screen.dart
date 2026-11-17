@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -33,8 +34,8 @@ class CombinedProfileScreen extends StatefulWidget {
 }
 
 class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
-  static const Color midGreen = Color(0xFF020F37);
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color midGreen = AppColors.primary;
+  static const Color darkGreen = AppColors.primary;
   bool _isLoggingOut = false;
   late String _displayName;
 
@@ -264,12 +265,12 @@ class _CombinedProfileScreenState extends State<CombinedProfileScreen> {
                       child: _TimeCard(
                         title: "Clockin",
                         time: loginTime,
-                        bg: const Color(0xFFE9FFE6),
-                        iconBg: const Color(0xFF2E7D32),
+                        bg: AppColors.primarySurface,
+                        iconBg: AppColors.primary,
                         icon: attendanceProvider.isUpdating
                             ? Icons.sync
                             : Icons.login,
-                        titleColor: const Color(0xFF2E7D32),
+                        titleColor: AppColors.primary,
                         onTap: attendanceProvider.canClockIn
                             ? _handleClockIn
                             : null,
@@ -583,7 +584,7 @@ class _OptionTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.trailing,
-    this.iconColor = const Color(0xFF020F37),
+    this.iconColor = AppColors.primary,
     this.textColor = Colors.black,
   });
 
@@ -614,7 +615,7 @@ class _OptionTile extends StatelessWidget {
                 ),
               ),
             ),
-            trailing ?? const Icon(Icons.arrow_forward, color: Color(0xFF020F37)),
+            trailing ?? const Icon(Icons.arrow_forward, color: AppColors.primary),
           ],
         ),
       ),

@@ -1,3 +1,4 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 
@@ -11,8 +12,8 @@ class DeliveryDoneScreen extends StatelessWidget {
     required this.roleName,
   });
 
-  static const Color darkGreen = Color(0xFF020F37);
-  static const Color lightGreen = Color(0xFFD8E6D2);
+  static const Color darkGreen = AppColors.primary;
+  static const Color lightGreen = AppColors.primarySurface;
 
   @override
   Widget build(BuildContext context) {

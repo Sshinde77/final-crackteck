@@ -1,7 +1,8 @@
+import '../../constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/api_constants.dart';
+import '../../core/media/media_url.dart';
 import '../../provider/delivery_person/delivery_documents_provider.dart';
 import 'delivery_edit_License_card.dart';
 import 'delivery_edit_adhar_card.dart';
@@ -11,7 +12,7 @@ import 'delivery_vehilcle_details.dart';
 class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
 
-  static const Color darkGreen = Color(0xFF020F37);
+  static const Color darkGreen = AppColors.primary;
 
   @override
   State<DocumentsScreen> createState() => _DocumentsScreenState();
@@ -96,11 +97,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   }
 
   String _imageUrl(Map<String, dynamic> source, List<String> keys) {
-    final raw = _pick(source, keys, fallback: '');
-    if (raw.isEmpty) return '';
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('/')) return '${ApiConstants.siteBaseUrl}$raw';
-    return '${ApiConstants.siteBaseUrl}/$raw';
+    return MediaUrl.fromMap(source, keys);
   }
 
   @override
